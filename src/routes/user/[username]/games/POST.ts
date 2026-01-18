@@ -104,11 +104,11 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         ),
       },
       {
-        error: (input: { value: Record<string, any> }) => {
+        error: (error) => {
+          const value = error.value as Record<string, any>;
           if (
-            (input.value.status === "finished" ||
-              input.value.status === "dropped") &&
-            !input.value.endedAt
+            (value.status === "finished" || value.status === "dropped") &&
+            !value.endedAt
           ) {
             return "Date is required when status is 'finished' or 'dropped'";
           }

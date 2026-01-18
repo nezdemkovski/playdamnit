@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username, admin, apiKey, openAPI } from "better-auth/plugins";
-import { passkey } from "better-auth/plugins/passkey";
+import { passkey } from "@better-auth/passkey"
 
 import { db } from "@/db/postgres";
 import { getConfig } from "@/config";
@@ -41,12 +41,11 @@ export const auth = betterAuth({
       });
     },
   },
-  passkey: {
-    enabled: true,
-  },
   plugins: [username(), passkey(), admin(), apiKey(), openAPI()],
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: (request) => {
+    if (!request) return [];
+
     const origin = request.headers.get("origin");
 
     if (!origin) return [];

@@ -13,9 +13,10 @@ const AXIOS_INSTANCE = axios.create({
 export const customInstance = async <T>(
   config: AxiosRequestConfig,
   options?: AxiosRequestConfig
-): Promise<AxiosResponse<T>> => {
-  return AXIOS_INSTANCE({
+): Promise<T> => {
+  const response = await AXIOS_INSTANCE({
     ...config,
     ...options,
   });
+  return response.data;
 };

@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { CoreMessage, streamText, tool } from "ai";
+import { streamText, tool, type ModelMessage } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -8,7 +8,7 @@ import { betterAuth } from "@/lib/betterAuth";
 
 const searchGamesTool = tool({
   description: "Search for games by name or description",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query for finding games"),
     rating: z.number().min(0).max(10).optional(),
     status: z
@@ -17,14 +17,14 @@ const searchGamesTool = tool({
     review: z.string().optional(),
     showOnlyGames: z.boolean().default(true),
   }),
-  execute: async ({ query, rating, status, review, showOnlyGames }) => {
-    const searchGames = await searchGamesWithCache(query);
+  execute: async (input) => {
+    const searchGames = await searchGamesWithCache(input.query);
 
     return {
       results: searchGames.results,
-      userRating: rating,
-      userStatus: status,
-      userReview: review,
+      userRating: input.rating,
+      userStatus: input.status,
+      userReview: input.review,
     };
   },
 });
@@ -44,13 +44,13 @@ export const postAIChat = new Elysia().use(betterAuth).post(
       const result = streamText({
         model: openai("gpt-4o"),
         system: systemPrompt,
-        messages: body.messages as CoreMessage[],
+        messages: body.messages as ModelMessage[],
         tools: {
           search_games: searchGamesTool,
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toTextStreamResponse();
     } catch (error) {
       console.error("AI chat error:", error);
       set.status = 500;

@@ -1,5 +1,6 @@
 import { Context, Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
+import { openapi } from '@elysiajs/openapi'
 
 import { routes } from "@/routes";
 import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
@@ -61,12 +62,13 @@ const betterAuthView = (context: Context) => {
   if (BETTER_AUTH_ACCEPT_METHODS.includes(context.request.method)) {
     return auth.handler(context.request);
   } else {
-    context.error(405);
+    return new Response("Method Not Allowed", { status: 405 });
   }
 };
 
 const setupApp = async () => {
   const app = new Elysia({ name: "playdamnit-api" })
+    .use(openapi())
     .use(getCors())
     .use(
       jwt({
@@ -74,15 +76,20 @@ const setupApp = async () => {
         secret: process.env.JWT_SECRET || "supersecret",
       })
     )
-    .onError(({ code, error, set, path }) => {
-      logger.exception(error, { code });
+    .onError(({ code, error, set, path, request }) => {
+      if (code === "NOT_FOUND" && path === "/favicon.ico") {
+        set.status = 204;
+        return null;
+      }
+
+      logger.exception(error, { 
+        code, 
+        path,
+        method: request.method,
+        url: request.url 
+      });
 
       if (code === "NOT_FOUND") {
-        if (path === "/favicon.ico") {
-          set.status = 204;
-          return null;
-        }
-
         set.status = 404;
         return {
           error: "Not Found",
