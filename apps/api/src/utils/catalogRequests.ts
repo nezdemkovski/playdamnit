@@ -1,8 +1,8 @@
 import { inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, userGames } from "@/db/postgres/schema";
-import { QUEUES, type FetchByIdsJob, type SearchIgdbJob } from "@/db/postgres/jobs";
+import { game, userGames } from "@playdamnit/db/schema";
+import { QUEUES, type FetchByIdsJob, type SearchIgdbJob } from "@playdamnit/db/jobs";
 import { getBoss } from "@/utils/pgBoss";
 import { waitForNotify, type NotifyResult } from "@/utils/pgNotify";
 

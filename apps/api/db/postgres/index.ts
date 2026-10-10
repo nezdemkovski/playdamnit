@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/bun-sql";
+import { relations } from "@playdamnit/db/relations";
 
-import { relations } from "./relations";
 import { getConfig } from "@/config";
 
 const { postgresUrl } = getConfig();
@@ -11,4 +11,4 @@ if (!postgresUrl) {
 
 export const db = drizzle(postgresUrl, { relations });
 
-export * from "./schema";
+export * from "@playdamnit/db/schema";

@@ -1,0 +1,66 @@
+name: Generate and Publish API Client
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      # Not package.json: the version bump commit below must not retrigger this workflow
+      - "packages/api-client/spec.yaml"
+      - "packages/api-client/custom-axios.ts"
+      - "packages/api-client/orval.config.mjs"
+  pull_request:
+    paths:
+      # Not package.json: the version bump commit below must not retrigger this workflow
+      - "packages/api-client/spec.yaml"
+      - "packages/api-client/custom-axios.ts"
+      - "packages/api-client/orval.config.mjs"
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate and build the client
+        run: bunx turbo run build --filter=@playdamnit/api-client
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Bump patch version
+        id: package-version
+        working-directory: packages/api-client
+        run: |
+          npm version patch --no-git-tag-version
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Commit version update
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add packages/api-client/package.json
+          git commit -m "chore: bump api client version to ${{ steps.package-version.outputs.version }}" || exit 0
+          git push
+
+      - name: Publish to npm
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: packages/api-client
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

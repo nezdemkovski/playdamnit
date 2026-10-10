@@ -1,15 +1,19 @@
-FROM oven/bun:1.4 AS base
+# Build context: repository root
+#   docker build -f apps/api/Dockerfile .
+FROM oven/bun:1.4 AS pruner
+WORKDIR /repo
+COPY . .
+# Keep only the API and the workspace packages it depends on
+RUN bunx turbo@2.11.7 prune @playdamnit/api --docker
 
-WORKDIR /app
+FROM oven/bun:1.4 AS runner
+WORKDIR /repo
 
-# Install dependencies
-COPY package.json bun.lock tsconfig.json drizzle.postgres.config.ts ./
+COPY --from=pruner /repo/out/json/ .
 RUN bun install --frozen-lockfile --production
+COPY --from=pruner /repo/out/full/ .
 
-# Copy source code, schema and migrations
-COPY src/ src/
-COPY db/ db/
-COPY scripts/migrate.ts scripts/migrate.ts
+WORKDIR /repo/apps/api
 
 ENV PORT=3030
 ENV NODE_ENV=production
@@ -20,7 +24,5 @@ EXPOSE 3030
 HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
   CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 3030) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["/repo/apps/api/entrypoint.sh"]

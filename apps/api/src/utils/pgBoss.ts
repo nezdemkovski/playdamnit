@@ -1,6 +1,6 @@
 import { PgBoss } from "pg-boss";
 
-import { ALL_QUEUES } from "@/db/postgres/jobs";
+import { ALL_QUEUES } from "@playdamnit/db/jobs";
 import { createLogger } from "@/utils/enhancedLogger";
 
 const logger = createLogger("pg-boss");

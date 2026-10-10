@@ -1,6 +1,6 @@
 import { Client } from "pg";
 
-import { NOTIFY_CHANNEL, type CatalogUpdatedPayload } from "@/db/postgres/jobs";
+import { NOTIFY_CHANNEL, type CatalogUpdatedPayload } from "@playdamnit/db/jobs";
 import { createLogger } from "@/utils/enhancedLogger";
 
 const logger = createLogger("pg-notify");

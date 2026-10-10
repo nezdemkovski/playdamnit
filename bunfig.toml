@@ -1,0 +1,4 @@
+[install]
+linker = "isolated"
+# Next.js' legacy ESLint config resolves its plugins from apps/web; expose them at the root
+publicHoistPattern = ["*eslint*", "@next/eslint-plugin-next", "@rushstack/eslint-patch"]

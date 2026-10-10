@@ -7,7 +7,7 @@ import {
   user as userSchema,
   USER_GAME_STATUSES,
   type UserGameStatus,
-} from "@/db/postgres/schema";
+} from "@playdamnit/db/schema";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import { GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import {

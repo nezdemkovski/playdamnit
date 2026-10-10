@@ -1,0 +1,29 @@
+{
+  "name": "@playdamnit/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Postgres schema, relations, migrations and the backend \u21c4 librarian job contract",
+  "exports": {
+    "./schema": "./src/schema.ts",
+    "./relations": "./src/relations.ts",
+    "./jobs": "./src/jobs.ts",
+    "./migrate": "./src/migrate.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun --env-file=../../apps/api/.env run src/migrate.ts",
+    "db:check": "drizzle-kit check",
+    "db:studio": "bun --env-file=../../apps/api/.env --bun drizzle-kit studio",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "drizzle-orm": "1.0.0-rc.4"
+  },
+  "devDependencies": {
+    "@playdamnit/tsconfig": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "drizzle-kit": "1.0.0-rc.4",
+    "typescript": "^7.0.2"
+  }
+}

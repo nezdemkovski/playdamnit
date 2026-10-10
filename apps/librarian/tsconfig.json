@@ -1,0 +1,10 @@
+{
+  "extends": "@playdamnit/tsconfig/bun.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/db/*": ["./db/*"]
+    }
+  },
+  "include": ["src", "db"]
+}

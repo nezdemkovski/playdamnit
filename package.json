@@ -1,0 +1,26 @@
+{
+  "name": "playdamnit",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --env-mode=loose",
+    "dev:backend": "turbo run dev --env-mode=loose --filter=@playdamnit/api --filter=@playdamnit/librarian",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "generate": "turbo run generate",
+    "db:generate": "turbo run db:generate --env-mode=loose --filter=@playdamnit/db",
+    "db:migrate": "turbo run db:migrate --env-mode=loose --filter=@playdamnit/db",
+    "db:studio": "bun run --cwd packages/db db:studio",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.7"
+  }
+}

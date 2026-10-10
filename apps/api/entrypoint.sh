@@ -3,7 +3,7 @@ set -e
 
 if [ "$RUN_MIGRATIONS" = "true" ]; then
   echo "Running migrations..."
-  bun run scripts/migrate.ts
+  bun run ../../packages/db/src/migrate.ts
 else
   echo "Skipping migrations"
 fi

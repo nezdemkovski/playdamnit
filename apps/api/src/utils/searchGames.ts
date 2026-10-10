@@ -1,7 +1,7 @@
 import { count, desc, ilike, or, sql, type Column, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, igdbSearchLog } from "@/db/postgres/schema";
+import { game, igdbSearchLog } from "@playdamnit/db/schema";
 import { GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { requestIgdbSearch } from "@/utils/catalogRequests";
 import { createLogger } from "@/utils/enhancedLogger";

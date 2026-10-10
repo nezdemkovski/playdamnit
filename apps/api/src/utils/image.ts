@@ -1,4 +1,4 @@
-import { ImageSourceEnum } from "@/db/postgres/schema";
+import { ImageSourceEnum } from "@playdamnit/db/schema";
 
 export enum IgdbImageSize {
   COVER_SMALL = "cover_small", // 90x128

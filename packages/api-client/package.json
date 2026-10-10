@@ -1,0 +1,40 @@
+{
+  "name": "@playdamnit/api-client",
+  "version": "0.0.12",
+  "description": "Generated API client for PlayDamnit",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "*.js",
+    "*.d.ts"
+  ],
+  "scripts": {
+    "generate": "orval",
+    "build": "bun build index.ts --outdir ./ --target=browser --format=esm --external=react --external=@tanstack/react-query --external=axios && tsc && rm -f custom-axios.d.ts",
+    "prepublishOnly": "bun run generate && bun run build"
+  },
+  "peerDependencies": {
+    "react": ">=19.2.3",
+    "@tanstack/react-query": "^5.90.19",
+    "axios": "^1.13.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.104.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.2.0",
+    "axios": "^1.20.0",
+    "orval": "^8.41.0",
+    "prettier": "^3.9.10",
+    "react": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/playdamnit/playdamnit.git",
+    "directory": "packages/api-client"
+  }
+}

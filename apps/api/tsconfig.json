@@ -1,22 +1,10 @@
 {
+  "extends": "@playdamnit/tsconfig/bun.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ESNext"],
-    "module": "Preserve",
-    "moduleResolution": "bundler",
-    "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "verbatimModuleSyntax": false,
     "paths": {
       "@/*": ["./src/*"],
       "@/db/*": ["./db/*"]
-    },
-    "types": ["bun-types"],
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true
+    }
   },
-  "include": ["src", "db", "scripts/migrate.ts", "tests", "drizzle.postgres.config.ts"]
+  "include": ["src", "db", "tests"]
 }

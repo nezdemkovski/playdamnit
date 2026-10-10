@@ -27,11 +27,8 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     pg.query(`select pg_notify('game_catalog_updated', $1)`, [JSON.stringify({ requestId, ok })]);
 
   beforeAll(async () => {
-    const { drizzle } = await import("drizzle-orm/bun-sql");
-    const { migrate } = await import("drizzle-orm/bun-sql/migrator");
-    const migrationDb = drizzle(TEST_URL!);
-    await migrate(migrationDb, { migrationsFolder: "./db/postgres/migrations" });
-    await migrationDb.$client.close();
+    const { runMigrations } = await import("@playdamnit/db/migrate");
+    await runMigrations(TEST_URL!);
 
     pg = new Client(TEST_URL);
     await pg.connect();

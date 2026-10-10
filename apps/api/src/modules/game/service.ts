@@ -1,7 +1,7 @@
 import { and, count, eq, exists, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, gameToPlatform } from "@/db/postgres/schema";
+import { game, gameToPlatform } from "@playdamnit/db/schema";
 import {
   GAME_CARD_WITH,
   GAME_DETAIL_WITH,

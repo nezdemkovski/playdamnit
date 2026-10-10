@@ -1,6 +1,6 @@
 import { t } from "elysia";
 
-import { USER_GAME_STATUSES } from "@/db/postgres/schema";
+import { USER_GAME_STATUSES } from "@playdamnit/db/schema";
 
 export const MAX_REVIEW_LENGTH = 5000;
 
