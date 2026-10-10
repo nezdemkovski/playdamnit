@@ -1,6 +1,6 @@
 {
   "name": "@playdamnit/api-client",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Generated API client for PlayDamnit",
   "repository": {
     "type": "git",
