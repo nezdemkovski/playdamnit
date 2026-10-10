@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationMap": false,
@@ -12,8 +12,18 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": [
+      "node"
+    ]
   },
-  "include": ["*.ts", "*.tsx"],
-  "exclude": ["node_modules", "*.js", "*.d.ts"]
+  "include": [
+    "*.ts",
+    "*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "*.js",
+    "*.d.ts"
+  ]
 }

@@ -246,6 +246,7 @@ components:
           $ref: "#/components/schemas/GameCover"
         screenshots:
           type: array
+          description: Only present on GET /api/games/{id}
           items:
             $ref: "#/components/schemas/GameScreenshot"
         websites:
@@ -274,12 +275,12 @@ components:
         - slug
         - isPopular
         - cover
-        - screenshots
-        - websites
         - platforms
         - genres
         - types
-        - similarGames
+      description: >-
+        screenshots, websites and similarGames are only included by GET /api/games/{id};
+        list endpoints (search, catalog, library) omit them.
 
     GameScreenshot:
       type: object
@@ -1722,6 +1723,17 @@ paths:
           required: true
           schema:
             type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size (max 1000). Omit to get the whole library.
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
       operationId: getApiUserByUsernameGames
       tags:
         - User

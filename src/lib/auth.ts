@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username, admin, apiKey, openAPI } from "better-auth/plugins";
+import { username, admin, openAPI } from "better-auth/plugins";
+import { apiKey } from "@better-auth/api-key";
 import { passkey } from "@better-auth/passkey"
 
-import { db } from "@/db/postgres";
+import { db, user, session, account, verification, passkey as passkeyTable, apikey } from "@/db/postgres";
 import { getConfig } from "@/config";
 import {
   resetPasswordEmailTemplate,
@@ -16,6 +17,8 @@ const { trustedOrigins, isDev } = getConfig();
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    // Drizzle v1 clients are built from relations, so the adapter needs the tables explicitly
+    schema: { user, session, account, verification, passkey: passkeyTable, apikey },
   }),
   emailAndPassword: {
     enabled: true,

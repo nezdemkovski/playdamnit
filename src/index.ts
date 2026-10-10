@@ -1,10 +1,7 @@
-import { Context, Elysia } from "elysia";
-import { jwt } from "@elysiajs/jwt";
+import { Context, Elysia, status } from "elysia";
 import { openapi } from '@elysiajs/openapi'
 
 import { routes } from "@/routes";
-import { startWorkerInBackground } from "@/utils/redis/sqliteWriter";
-import { startSimilarGamesWorker } from "@/utils/redis/similarGamesQueue";
 import logger, {
   LogLevel,
   initSentry,
@@ -14,18 +11,26 @@ import logger, {
 import { auth } from "./lib/auth";
 import { getCors } from "@/utils/getCors";
 import { getConfig } from "@/config";
+import { getBoss, stopBoss } from "@/utils/pgBoss";
+import { initNotifyListener, closeNotifyListener } from "@/utils/pgNotify";
+import { AppError, TooManyRequestsError } from "@/utils/errors";
+import { backfillMissingLibraryGames } from "@/utils/catalogRequests";
+import { db } from "@/db/postgres";
+import { sql } from "drizzle-orm";
 
-const { redisUrl, sqliteUrl, postgresUrl } = getConfig();
+const { postgresUrl, betterAuthSecret, resendApiKey, isDev } = getConfig();
 
 const validateEnvironment = () => {
   const missingVars = [];
 
-  if (!redisUrl) {
-    missingVars.push("REDIS_URL");
+  if (!postgresUrl) {
+    missingVars.push("POSTGRES_URL");
   }
 
-  if (!sqliteUrl && !postgresUrl) {
-    missingVars.push("SQLITE_DATABASE_URL or POSTGRES_URL");
+  if (!isDev) {
+    if (!betterAuthSecret) missingVars.push("BETTER_AUTH_SECRET");
+    // Sign-up requires email verification, so production can't work without email
+    if (!resendApiKey) missingVars.push("RESEND_API_KEY");
   }
 
   if (missingVars.length > 0) {
@@ -55,8 +60,6 @@ if (sentryEnabled) {
   logger.system("Sentry error tracking disabled");
 }
 
-startWorkerInBackground();
-
 const betterAuthView = (context: Context) => {
   const BETTER_AUTH_ACCEPT_METHODS = ["POST", "GET"];
   if (BETTER_AUTH_ACCEPT_METHODS.includes(context.request.method)) {
@@ -67,53 +70,91 @@ const betterAuthView = (context: Context) => {
 };
 
 const setupApp = async () => {
+  // Initialize pg-boss (job queue) and LISTEN/NOTIFY
+  await getBoss();
+  logger.system("pg-boss started");
+
+  await initNotifyListener();
+
+  backfillMissingLibraryGames()
+    .then((count) => count && logger.system(`Requested ${count} library games missing from the catalog`))
+    .catch((error) => logger.exception(error, { source: "backfill-library-games" }));
+
   const app = new Elysia({ name: "playdamnit-api" })
     .use(openapi())
     .use(getCors())
-    .use(
-      jwt({
-        name: "jwt",
-        secret: process.env.JWT_SECRET || "supersecret",
-      })
-    )
-    .onError(({ code, error, set, path, request }) => {
+    .onError(({ code, error, path, request, set }) => {
+      // Special case: don't log favicon 404s
       if (code === "NOT_FOUND" && path === "/favicon.ico") {
-        set.status = 204;
-        return null;
+        return status(204, null);
       }
 
-      logger.exception(error, { 
-        code, 
+      // Errors thrown on purpose by services
+      if (error instanceof AppError) {
+        if (error.statusCode >= 500) {
+          logger.exception(error, { path, method: request.method });
+        }
+        if (error instanceof TooManyRequestsError && error.retryAfterSeconds) {
+          set.headers["retry-after"] = String(error.retryAfterSeconds);
+        }
+        return status(error.statusCode, {
+          error: error.errorType,
+          message: error.message,
+        });
+      }
+
+      // Log all errors with context
+      logger.exception(error, {
+        code,
         path,
         method: request.method,
-        url: request.url 
+        url: request.url
       });
 
+      // Handle validation errors
+      if (code === "VALIDATION") {
+        return status(400, {
+          error: "Validation Error",
+          message: error instanceof Error ? error.message : "Invalid request data",
+        });
+      }
+
+      // Handle parse errors
+      if (code === "PARSE") {
+        return status(400, {
+          error: "Parse Error",
+          message: "Invalid request body format",
+        });
+      }
+
+      // Handle not found
       if (code === "NOT_FOUND") {
-        set.status = 404;
-        return {
+        return status(404, {
           error: "Not Found",
-          message:
-            error instanceof Error ? error.message : "Resource not found",
-        };
+          message: error instanceof Error ? error.message : "Resource not found",
+        });
       }
 
+      // Handle unauthorized
       if (code === 401) {
-        set.status = 401;
-        return {
+        return status(401, {
           error: "Unauthorized",
-          message:
-            error instanceof Error ? error.message : "Authentication required",
-        };
+          message: error instanceof Error ? error.message : "Authentication required",
+        });
       }
 
-      set.status = 500;
-      return {
+      // Handle all other errors as 500
+      return status(500, {
         error: "Internal Server Error",
-        message: "An unexpected error occurred",
-      };
+        message: process.env.NODE_ENV === "development" && error instanceof Error
+          ? error.message
+          : "An unexpected error occurred",
+      });
     })
-
+    .get("/health", async () => {
+      await db.execute(sql`select 1`);
+      return { status: "ok" };
+    })
     .group("/api", (app) => app.all("/auth/*", betterAuthView).use(routes));
 
   const PORT = process.env.PORT || 3030;
@@ -123,34 +164,48 @@ const setupApp = async () => {
       `🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`
     );
     logger.system(
-      `📚 Swagger documentation available at ${app.server?.hostname}:${app.server?.port}/swagger`
+      `📚 OpenAPI documentation available at ${app.server?.hostname}:${app.server?.port}/openapi`
     );
-
-    startSimilarGamesWorker(60000, 25)
-      .then((workerId) => {
-        logger.system(`Similar games worker started with ID: ${workerId}`);
-      })
-      .catch((error) => {
-        logger.exception(error, { source: "similar-games-worker" });
-      });
   });
 
   return app;
 };
 
-setupApp().catch((error) => {
-  logger.exception(error, { source: "app-setup" });
-  process.exit(1);
-});
+let appInstance: Awaited<ReturnType<typeof setupApp>> | null = null;
+
+setupApp()
+  .then((app) => {
+    appInstance = app;
+  })
+  .catch((error) => {
+    logger.exception(error, { source: "app-setup" });
+    process.exit(1);
+  });
 
 const shutdown = async () => {
   logger.system("Application shutting down...");
 
-  if (isSentryEnabled()) {
-    await flushSentry();
-  }
+  try {
+    // Stop the Elysia app (triggers .onStop() lifecycle)
+    if (appInstance) {
+      await appInstance.stop();
+    }
 
-  process.exit(0);
+    // Stop pg-boss and LISTEN client
+    await closeNotifyListener();
+    await stopBoss();
+
+    // Flush Sentry events
+    if (isSentryEnabled()) {
+      await flushSentry();
+    }
+
+    logger.system("Application shut down successfully");
+    process.exit(0);
+  } catch (error) {
+    logger.exception(error, { source: "shutdown" });
+    process.exit(1);
+  }
 };
 
 process.on("SIGINT", shutdown);

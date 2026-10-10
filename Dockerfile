@@ -1,37 +1,26 @@
-FROM oven/bun:latest as base
+FROM oven/bun:1.4 AS base
 
 WORKDIR /app
 
 # Install dependencies
-COPY package.json .
-COPY bun.lock .
-COPY tsconfig.json .
-COPY drizzle.sqlite.config.ts .
-COPY drizzle.postgres.config.ts .
-RUN bun install --frozen-lockfile
+COPY package.json bun.lock tsconfig.json drizzle.postgres.config.ts ./
+RUN bun install --frozen-lockfile --production
 
-# Copy source code
+# Copy source code, schema and migrations
 COPY src/ src/
-
-# Copy database migrations and schema
 COPY db/ db/
+COPY scripts/migrate.ts scripts/migrate.ts
 
-# Create database directory
-RUN mkdir -p data
-
-# Set environment variables
 ENV PORT=3030
 ENV NODE_ENV=production
-ENV SQLITE_DATABASE_URL=./games.db
 ENV RUN_MIGRATIONS=true
-ENV RUN_SEED=false
 
-# Expose the port
 EXPOSE 3030
 
-# Copy the entrypoint script
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=5 \
+  CMD bun -e "fetch('http://localhost:' + (process.env.PORT || 3030) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Set the entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"] 
+ENTRYPOINT ["/app/entrypoint.sh"]

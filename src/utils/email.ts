@@ -4,7 +4,8 @@ import { getConfig } from "@/config";
 
 const { resendApiKey, isDev } = getConfig();
 
-const resend = new Resend(resendApiKey);
+// The Resend constructor throws without a key, so only create it when one is configured
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export const resetPasswordEmailTemplate = (url: string) => `
     <h1>Reset Your Password</h1>
@@ -43,6 +44,11 @@ export const sendEmail = async ({
     console.log("Subject:", subject);
     console.log("HTML:", html);
     console.log("==============================");
+  }
+
+  if (!resend) {
+    if (isDev) return;
+    throw new Error("RESEND_API_KEY is not set, cannot send email");
   }
 
   return resend.emails.send({

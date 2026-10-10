@@ -61,3 +61,6 @@ api-client/*.js
 api-client/*.d.ts
 api-client/*.map
 api-client/node_modules
+
+# Legacy SQLite files
+*.db

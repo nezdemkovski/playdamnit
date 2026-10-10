@@ -19,7 +19,8 @@
     "axios": "^1.13.2"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2",
+    "@types/node": "^26.6.5"
   },
   "publishConfig": {
     "access": "public"

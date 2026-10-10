@@ -1,36 +1,44 @@
 import { Elysia, t } from "elysia";
 
-import { searchGamesWithCache } from "@/utils/searchGames";
+import {
+  MAX_QUERY_LENGTH,
+  MAX_SEARCH_LIMIT,
+  searchGamesWithCache,
+} from "@/utils/searchGames";
+import { clientKey, createRateLimiter } from "@/utils/rateLimit";
+
+// Searches can enqueue IGDB work, so keep a per-client budget
+const searchLimiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
+const freshSearchLimiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
 
 export const getGamesSearch = new Elysia().get(
   "/games/search",
-  async ({ query }) => {
-    const searchQuery = query?.q as string;
-    const limit = query?.limit ? query.limit : 50;
-    const offset = query?.offset ? query.offset : 0;
-    const forceFresh = query?.fresh === "true" || query?.fresh === "1";
+  async ({ query, request, server }) => {
+    const key = clientKey({ request, server });
+    const forceFresh = query.fresh === "true" || query.fresh === "1";
 
-    const searchResults = await searchGamesWithCache(
-      searchQuery,
-      limit,
-      offset,
-      forceFresh
-    );
+    searchLimiter.check(key);
+    if (forceFresh) freshSearchLimiter.check(key);
+
+    const limit = query.limit ?? MAX_SEARCH_LIMIT;
+    const offset = query.offset ?? 0;
+
+    const searchResults = await searchGamesWithCache(query.q, limit, offset, forceFresh);
 
     return {
       results: searchResults.results,
       meta: {
         total: searchResults.meta.total,
-        limit: Number(limit),
-        offset: Number(offset),
+        limit,
+        offset,
       },
     };
   },
   {
     query: t.Object({
-      q: t.String(),
-      limit: t.Optional(t.Numeric()),
-      offset: t.Optional(t.Numeric()),
+      q: t.String({ maxLength: MAX_QUERY_LENGTH }),
+      limit: t.Optional(t.Numeric({ minimum: 1, maximum: MAX_SEARCH_LIMIT })),
+      offset: t.Optional(t.Numeric({ minimum: 0 })),
       fresh: t.Optional(t.String()),
     }),
   }

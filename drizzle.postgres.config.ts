@@ -1,6 +1,6 @@
 import { defineConfig } from "drizzle-kit";
 
-const dbUrl = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@localhost:5432/${process.env.POSTGRES_DB}`;
+const dbUrl = process.env.POSTGRES_URL;
 
 if (!dbUrl) {
   throw new Error("POSTGRES_URL is not set");

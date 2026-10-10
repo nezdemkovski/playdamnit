@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/bun-sql";
-// import { drizzle } from "drizzle-orm/node-postgres";
 
-import * as schema from "./schema";
+import { relations } from "./relations";
 import { getConfig } from "@/config";
 
 const { postgresUrl } = getConfig();
@@ -10,6 +9,6 @@ if (!postgresUrl) {
   throw new Error("POSTGRES_URL is not set");
 }
 
-export const db = drizzle(postgresUrl, { schema });
+export const db = drizzle(postgresUrl, { relations });
 
 export * from "./schema";
