@@ -1,0 +1,83 @@
+---
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: playdamnit-api
+    ports:
+      - "3030:3030"
+    environment:
+      - NODE_ENV=production
+      - PORT=3030
+
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+
+      - RESEND_API_KEY=${RESEND_API_KEY:?RESEND_API_KEY is required}
+
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - TRUST_PROXY=${TRUST_PROXY:-false}
+
+      - LOG_LEVEL=${LOG_LEVEL:-error}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - playdamnit-network
+
+  librarian:
+    build:
+      # Context is the repo root: the librarian reuses the backend's schema and job contract
+      context: ..
+      dockerfile: librarian/Dockerfile
+    container_name: playdamnit-librarian
+    environment:
+      - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:?TWITCH_CLIENT_ID is required}
+      - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:?TWITCH_CLIENT_SECRET is required}
+      - LOG_LEVEL=${LOG_LEVEL:-error}
+      - SIMILAR_GAMES_MAX_DEPTH=${SIMILAR_GAMES_MAX_DEPTH:-1}
+    depends_on:
+      # The api container runs the migrations; wait until the catalog tables exist
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - playdamnit-network
+
+  postgres:
+    image: postgres:17.4-alpine
+    container_name: playdamnit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    # Only reachable from the host machine, not from the network
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - playdamnit-network
+
+volumes:
+  postgres-data:
+    name: playdamnit-postgres-data
+
+networks:
+  playdamnit-network:
+    driver: bridge

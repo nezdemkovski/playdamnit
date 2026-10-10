@@ -1,0 +1,2107 @@
+openapi: 3.1.1
+info:
+  title: Your API
+  description: Development documentation
+  version: 1.0.0
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+
+  schemas:
+    BadRequestErrorResponse:
+      description: 400 Bad request
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad request
+      required:
+        - error
+
+    UnauthorizedErrorResponse:
+      description: 401 Unauthorized
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+        message:
+          type: string
+          enum:
+            - Authentication required
+      required:
+        - error
+        - message
+
+    ForbiddenErrorResponse:
+      description: 403 Forbidden
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Forbidden
+        message:
+          type: string
+          description: Human readable error message
+      required:
+        - error
+
+    NotFoundErrorResponse:
+      description: 404 Not found
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Not found
+        message:
+          type: string
+          description: Human readable error message
+      required:
+        - error
+
+    ConflictErrorResponse:
+      description: 409 Conflict
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Conflict
+        message:
+          type: string
+          description: Human readable error message
+      required:
+        - error
+
+    InternalServerErrorResponse:
+      description: 500 Internal server error
+      type: object
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal server error
+        message:
+          type: string
+          description: Human readable error message
+      required:
+        - error
+
+    BaseMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+            - system
+        content:
+          type: string
+          nullable: true
+      required:
+        - role
+        - content
+
+    ChatRole:
+      type: string
+      enum:
+        - user
+        - assistant
+        - system
+        - function
+
+    DeleteSuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          enum:
+            - Removed successfully
+        id:
+          type: number
+      required:
+        - message
+        - id
+
+    FunctionMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - function
+        name:
+          type: string
+        content:
+          type: string
+          nullable: true
+      required:
+        - role
+        - name
+        - content
+
+    GameCover:
+      type: object
+      properties:
+        id:
+          type: number
+        url:
+          type: string
+          nullable: true
+        width:
+          type: number
+          nullable: true
+        height:
+          type: number
+          nullable: true
+      required:
+        - id
+        - url
+
+    GameGenre:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+
+    GameListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - results
+        - meta
+
+    GamePlatform:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+
+    Game:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        storyline:
+          type: string
+          nullable: true
+        firstReleaseDate:
+          type: number
+          nullable: true
+        createdAt:
+          type: number
+          nullable: true
+        totalRating:
+          type: number
+          nullable: true
+        involvedCompanies:
+          type: string
+          nullable: true
+        keywords:
+          type: string
+          nullable: true
+        updatedAt:
+          type: number
+          nullable: true
+        isPopular:
+          type: boolean
+        cover:
+          $ref: "#/components/schemas/GameCover"
+        screenshots:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameScreenshot"
+        websites:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameWebsite"
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamePlatform"
+        genres:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameGenre"
+        types:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameType"
+        similarGames:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameSimilarGame"
+      required:
+        - id
+        - name
+        - slug
+        - isPopular
+        - cover
+        - platforms
+        - genres
+        - types
+      description: >-
+        screenshots, websites and similarGames are only included by GET /api/games/{id};
+        list endpoints (search, catalog, library) omit them.
+
+    GameScreenshot:
+      type: object
+      properties:
+        id:
+          type: number
+        url:
+          type: string
+          nullable: true
+        width:
+          type: number
+          nullable: true
+        height:
+          type: number
+          nullable: true
+      required:
+        - id
+        - url
+
+    GameSimilarGame:
+      type: object
+      properties:
+        id:
+          type: number
+      required:
+        - id
+
+    GameType:
+      type: object
+      properties:
+        id:
+          type: number
+        type:
+          type: string
+      required:
+        - id
+        - type
+
+    GameWebsite:
+      type: object
+      properties:
+        id:
+          type: number
+        url:
+          type: string
+        trusted:
+          type: boolean
+        typeId:
+          type: number
+      required:
+        - id
+        - url
+
+    Message:
+      anyOf:
+        - $ref: "#/components/schemas/BaseMessage"
+        - $ref: "#/components/schemas/FunctionMessage"
+
+    Meta:
+      type: object
+      properties:
+        total:
+          type: number
+        limit:
+          type: number
+        offset:
+          type: number
+      required:
+        - total
+        - limit
+        - offset
+
+    OpenAIChatRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        showOnlyGames:
+          type: boolean
+          default: true
+      required:
+        - messages
+
+    OpenAIChatResponse:
+      type: object
+      properties:
+        message:
+          type: object
+          properties:
+            role:
+              type: string
+              enum:
+                - assistant
+            content:
+              type: string
+            gameData:
+              $ref: "#/components/schemas/Game"
+            gameResults:
+              type: array
+              items:
+                $ref: "#/components/schemas/Game"
+            userRating:
+              type: number
+            userStatus:
+              type: string
+              nullable: true
+            userReview:
+              type: string
+              nullable: true
+          required:
+            - role
+            - content
+            - gameData
+      required:
+        - message
+
+    StatusEnum:
+      type: string
+      enum:
+        - finished
+        - playing
+        - dropped
+        - online
+        - on_hold
+        - want_to_play
+        - backlog
+
+    UserGameData:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        addedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
+        source:
+          type: string
+          enum:
+            - steam
+            - gog
+            - manual
+      required:
+        - status
+        - rating
+        - platformId
+        - addedAt
+
+    UserGamePatchResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          enum:
+            - Game updated successfully
+        game:
+          type: object
+          properties:
+            userId:
+              type: string
+            gameId:
+              type: number
+            status:
+              $ref: "#/components/schemas/StatusEnum"
+            rating:
+              type: number
+              nullable: true
+            review:
+              type: string
+              nullable: true
+            platformId:
+              type: number
+              default: 0
+            source:
+              type: string
+            addedAt:
+              type: string
+              nullable: true
+          required:
+            - userId
+            - gameId
+            - status
+            - rating
+            - review
+            - platformId
+            - source
+            - addedAt
+      required:
+        - message
+        - game
+
+    UserGameResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserGameWithUserData"
+        meta:
+          type: object
+          properties:
+            total:
+              type: number
+          required:
+            - total
+      required:
+        - results
+        - meta
+
+    UserGameWithUserData:
+      allOf:
+        - $ref: "#/components/schemas/Game"
+        - type: object
+          properties:
+            userGameData:
+              $ref: "#/components/schemas/UserGameData"
+          required:
+            - userGameData
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        image:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+      required:
+        - id
+        - image
+        - name
+        - username
+        - email
+
+    PublicUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        image:
+          type: string
+        name:
+          type: string
+        username:
+          type: string
+        games:
+          type: array
+          items:
+            type: object
+            properties: {}
+      required:
+        - id
+        - image
+        - name
+        - username
+        - games
+
+    UserGameCreateRequest:
+      type: object
+      properties:
+        gameId:
+          type: number
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+        review:
+          type: string
+          minLength: 3
+          maxLength: 5000
+          nullable: true
+        platformId:
+          type: number
+        endedAt:
+          type: string
+          nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
+      required:
+        - gameId
+        - status
+        - rating
+        - platformId
+
+    UserGameUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        endedAt:
+          type: string
+          nullable: true
+          description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
+      minProperties: 1
+
+    ChatRequest:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum:
+                  - system
+                  - user
+                  - assistant
+                  - tool
+              content:
+                type: string
+                nullable: true
+              name:
+                type: string
+            required:
+              - role
+              - content
+      required:
+        - messages
+
+    GameExportData:
+      type: object
+      properties:
+        gameId:
+          type: number
+        gameName:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        addedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        source:
+          type: string
+      required:
+        - gameId
+        - gameName
+        - status
+        - platformId
+
+    GameExportResponse:
+      type: object
+      properties:
+        username:
+          type: string
+        exportedAt:
+          type: string
+        totalGames:
+          type: number
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameExportData"
+      required:
+        - username
+        - exportedAt
+        - totalGames
+        - games
+
+    GameImportData:
+      type: object
+      properties:
+        gameId:
+          type: number
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          minimum: 0
+          maximum: 10
+          nullable: true
+        review:
+          type: string
+          nullable: true
+        platformId:
+          type: number
+        endedAt:
+          type: string
+          nullable: true
+      required:
+        - gameId
+        - status
+        - platformId
+
+    GameImportRequest:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameImportData"
+        overwriteExisting:
+          type: boolean
+          default: false
+          description: Whether to overwrite existing games in the library
+      required:
+        - games
+
+    GameImportResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        imported:
+          type: number
+        skipped:
+          type: number
+        errors:
+          type: number
+        details:
+          type: object
+          properties:
+            importedGames:
+              type: array
+              items:
+                type: number
+            skippedGames:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: number
+                  reason:
+                    type: string
+                required:
+                  - gameId
+                  - reason
+            errorGames:
+              type: array
+              items:
+                type: object
+                properties:
+                  gameId:
+                    type: number
+                  error:
+                    type: string
+                required:
+                  - gameId
+                  - error
+          required:
+            - importedGames
+            - skippedGames
+            - errorGames
+      required:
+        - message
+        - imported
+        - skipped
+        - errors
+        - details
+
+    SearchFilters:
+      type: object
+      properties:
+        genres:
+          type: array
+          items:
+            type: string
+          description: Filter by genre names
+        platforms:
+          type: array
+          items:
+            type: string
+          description: Filter by platform names
+        gameModes:
+          type: array
+          items:
+            type: string
+          description: Filter by game modes
+        gameTypes:
+          type: array
+          items:
+            type: string
+          description: Filter by game types
+        ratingMin:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Minimum rating filter
+        ratingMax:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Maximum rating filter
+        releaseYearMin:
+          type: number
+          minimum: 1970
+          description: Minimum release year filter
+        releaseYearMax:
+          type: number
+          description: Maximum release year filter
+        isPopular:
+          type: boolean
+          description: Filter for popular games only
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+        totalResults:
+          type: number
+        totalPages:
+          type: number
+        currentPage:
+          type: number
+        perPage:
+          type: number
+        searchTime:
+          type: number
+          description: Search time in milliseconds
+        facets:
+          type: object
+          properties:
+            genres:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+            platforms:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+            game_modes:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+            game_types:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+            release_year:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+            is_popular:
+              type: array
+              items:
+                type: object
+                properties:
+                  value:
+                    type: string
+                  count:
+                    type: number
+                required:
+                  - value
+                  - count
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+        search_options:
+          type: object
+          properties:
+            typo_tolerance:
+              type: number
+            prefix_search:
+              type: boolean
+            exhaustive_search:
+              type: boolean
+            included_facets:
+              type: array
+              items:
+                type: string
+        meta:
+          type: object
+          properties:
+            has_filters:
+              type: boolean
+            filter_count:
+              type: number
+            query_length:
+              type: number
+            is_empty_search:
+              type: boolean
+      required:
+        - results
+        - totalResults
+        - totalPages
+        - currentPage
+        - perPage
+        - searchTime
+
+    AutocompleteSuggestion:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - game
+            - genre
+            - platform
+            - company
+            - keyword
+        value:
+          type: string
+        display:
+          type: string
+        count:
+          type: number
+          description: Number of games (for non-game suggestions)
+        metadata:
+          type: object
+          properties:
+            cover_url:
+              type: string
+            release_year:
+              type: number
+            total_rating:
+              type: number
+            platforms:
+              type: array
+              items:
+                type: string
+            genres:
+              type: array
+              items:
+                type: string
+      required:
+        - type
+        - value
+        - display
+
+    AutocompleteResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AutocompleteSuggestion"
+        query:
+          type: string
+        total_count:
+          type: number
+        search_time_ms:
+          type: number
+        type:
+          type: string
+          enum:
+            - simple
+            - enhanced
+            - trending
+        count:
+          type: number
+        message:
+          type: string
+          description: Error or info message
+        categories:
+          type: object
+          properties:
+            games:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutocompleteSuggestion"
+            genres:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutocompleteSuggestion"
+            platforms:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutocompleteSuggestion"
+            companies:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutocompleteSuggestion"
+            keywords:
+              type: array
+              items:
+                $ref: "#/components/schemas/AutocompleteSuggestion"
+      required:
+        - suggestions
+        - query
+        - type
+
+    FacetValue:
+      type: object
+      properties:
+        value:
+          type: string
+        count:
+          type: number
+      required:
+        - value
+        - count
+
+    FacetsResponse:
+      type: object
+      properties:
+        field:
+          type: string
+          nullable: true
+        values:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacetValue"
+        count:
+          type: number
+        query:
+          type: string
+          nullable: true
+        limit:
+          type: number
+        total_count:
+          type: number
+        timestamp:
+          type: number
+        facets:
+          type: object
+          description: All facets when requesting all=true
+        stats:
+          type: object
+          properties:
+            totalGames:
+              type: number
+            totalGenres:
+              type: number
+            totalPlatforms:
+              type: number
+            totalGameModes:
+              type: number
+            averageRating:
+              type: number
+      required:
+        - values
+        - timestamp
+
+    FilterPreset:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+        sort_by:
+          type: string
+      required:
+        - name
+        - description
+        - filters
+
+    FilterCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        filters:
+          $ref: "#/components/schemas/SearchFilters"
+      required:
+        - name
+        - description
+        - filters
+
+    FilterPresetsResponse:
+      type: object
+      properties:
+        preset:
+          $ref: "#/components/schemas/FilterPreset"
+        category:
+          $ref: "#/components/schemas/FilterCategory"
+        presets:
+          type: array
+          items:
+            $ref: "#/components/schemas/FilterPreset"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/FilterCategory"
+        type:
+          type: string
+          enum:
+            - preset
+            - category
+            - all
+            - presets
+            - categories
+        meta:
+          type: object
+          properties:
+            preset_count:
+              type: number
+            category_count:
+              type: number
+            type:
+              type: string
+
+    AnalyticsResponse:
+      type: object
+      properties:
+        health:
+          type: object
+          properties:
+            ok:
+              type: boolean
+        collection:
+          type: object
+          properties:
+            name:
+              type: string
+            num_documents:
+              type: number
+            created_at:
+              type: number
+        cluster_metrics:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          type: number
+        metrics:
+          type: object
+          description: Search metrics data
+        report:
+          type: object
+          description: Performance report data
+
+paths:
+  /api/me:
+    get:
+      operationId: getApiMe
+      tags:
+        - User
+      summary: Get current authenticated user
+      description: Returns info about the currently authenticated user
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: User data returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
+
+  /api/user/{username}:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: getApiUserByUsername
+      tags:
+        - User
+      summary: Get a user by username
+      description: Returns public info about a user, by their username
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUserResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
+  /api/games:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+        - name: platformId
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+      operationId: getApiGames
+      tags:
+        - Games
+      summary: Get all games
+      description: >
+        Retrieves a list of games from the catalog. Supports filtering by
+        platform and pagination.
+      responses:
+        "200":
+          description: List of games with metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameListResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/{id}:
+    get:
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      operationId: getApiGamesById
+      tags:
+        - Games
+      summary: Get a single game by ID
+      description: Retrieves detailed information about a specific game by its ID.
+      responses:
+        "200":
+          description: Game found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid game ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/search:
+    get:
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+          description: Search query
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 1
+          description: Page number for pagination
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 20
+            maximum: 100
+          description: Number of results per page
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sort field and direction
+        - name: genres
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of genres to filter by
+        - name: platforms
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of platforms to filter by
+        - name: game_modes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of game modes to filter by
+        - name: game_types
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of game types to filter by
+        - name: rating_min
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Minimum rating filter (0-100)
+        - name: rating_max
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Maximum rating filter (0-100)
+        - name: release_year_min
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Minimum release year filter
+        - name: release_year_max
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Maximum release year filter
+        - name: is_popular
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Filter for popular games only
+        - name: facets
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of facets to include
+        - name: typo_tolerance
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 2
+            minimum: 0
+            maximum: 3
+          description: Typo tolerance level
+        - name: prefix
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "true"
+          description: Enable prefix search
+        - name: exhaustive
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "false"
+          description: Enable exhaustive search
+      operationId: getApiGamesSearch
+      tags:
+        - Games
+      summary: Advanced search games with filters and facets
+      description: >
+        Performs advanced search using Typesense with fuzzy matching, filters, facets, and sorting.
+        Supports genre, platform, rating, and release year filtering. Returns faceted results
+        for building dynamic filter UIs. Uses intelligent caching and fallback systems.
+      responses:
+        "200":
+          description: Search results with facets and metadata
+          headers:
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+            X-Total-Results:
+              description: Total number of results
+              schema:
+                type: string
+            X-Search-Time:
+              description: Search time in milliseconds
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "500":
+          description: Search service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/autocomplete:
+    get:
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ""
+          description: Search query (minimum 2 characters for search-based autocomplete)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 10
+            maximum: 50
+          description: Maximum number of suggestions to return
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["simple", "enhanced", "trending"]
+            default: "enhanced"
+          description: Type of autocomplete (simple, enhanced, or trending)
+        - name: metadata
+          in: query
+          required: false
+          schema:
+            type: string
+            default: "true"
+          description: Include metadata in suggestions
+        - name: categories
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of categories to search (games,genres,platforms,companies,keywords)
+      operationId: getApiGamesAutocomplete
+      tags:
+        - Games
+      summary: Get autocomplete suggestions for games
+      description: >
+        Provides intelligent autocomplete suggestions for games, genres, platforms, companies, and keywords.
+        Supports multiple modes: simple (game names only), enhanced (with metadata), and trending (popular games).
+        Uses fuzzy matching and returns categorized suggestions with metadata.
+      responses:
+        "200":
+          description: Autocomplete suggestions returned
+          headers:
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutocompleteResponse"
+        "400":
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "500":
+          description: Autocomplete service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/facets:
+    get:
+      parameters:
+        - name: field
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                "genres",
+                "platforms",
+                "game_modes",
+                "game_types",
+                "release_year",
+                "is_popular",
+              ]
+          description: Specific facet field to retrieve
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional search query to filter facet values
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 50
+            maximum: 200
+          description: Maximum number of facet values to return
+        - name: all
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Return all facets and statistics
+      operationId: getApiGamesFacets
+      tags:
+        - Games
+      summary: Get facet values for search filters
+      description: >
+        Retrieves facet values for building dynamic search filters. Can return individual facet fields
+        or all facets with statistics. Includes counts for each facet value to show result quantities.
+        Supports filtering facet values by search query.
+      responses:
+        "200":
+          description: Facet values returned
+          headers:
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacetsResponse"
+        "400":
+          description: Invalid facet field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "500":
+          description: Facets service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/filters/presets:
+    get:
+      parameters:
+        - name: preset
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Get specific filter preset by name
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Get specific filter category by name
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["all", "presets", "categories"]
+            default: "all"
+          description: Type of filters to return
+      operationId: getApiGamesFiltersPresets
+      tags:
+        - Games
+      summary: Get predefined filter presets and categories
+      description: >
+        Retrieves predefined filter combinations for common search scenarios.
+        Includes presets like "highly_rated", "recent_releases", and gaming categories
+        like "action", "rpg", "strategy". Useful for quick filter application and UI building.
+      responses:
+        "200":
+          description: Filter presets and categories returned
+          headers:
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilterPresetsResponse"
+        "404":
+          description: Preset or category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Filter presets service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/analytics:
+    get:
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["metrics", "health", "report"]
+            default: "metrics"
+          description: Type of analytics data to retrieve
+        - name: hours
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 24
+          description: Number of hours to include in metrics/report
+      operationId: getApiAnalytics
+      tags:
+        - Analytics
+      summary: Get search analytics and system health
+      description: >
+        Retrieves search analytics, performance metrics, and Typesense cluster health information.
+        Supports different data types: metrics (search performance), health (system status),
+        and report (detailed performance analysis). Used for monitoring and optimization.
+      responses:
+        "200":
+          description: Analytics data returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponse"
+        "400":
+          description: Invalid analytics type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "500":
+          description: Analytics service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/user/{username}/games:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size (max 1000). Omit to get the whole library.
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      operationId: getApiUserByUsernameGames
+      tags:
+        - User
+      summary: Get all games for a user by username
+      description: >
+        Retrieves all games in a user's library with their statuses, ratings,
+        and reviews
+      responses:
+        "200":
+          description: List of games returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGameResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+    post:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: postApiUserByUsernameGames
+      tags:
+        - User
+      summary: Add a game to user's library
+      description: >
+        Adds a game to the authenticated user's library. Username must match the
+        authorized user.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Game added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    enum:
+                      - Game added successfully
+                  game:
+                    type: object
+                required:
+                  - message
+                  - game
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "409":
+          description: Game already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserGameCreateRequest"
+
+  /api/user/{username}/games/{id}:
+    patch:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      operationId: patchApiUserByUsernameGamesById
+      tags:
+        - User
+      summary: Update a game in user's library
+      description: Updates game status, rating, review or platform in the authenticated user's library. At least one field must be provided.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Game updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGamePatchResponse"
+        "400":
+          description: Invalid input or no fields provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserGameUpdateRequest"
+
+    delete:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      operationId: deleteApiUserByUsernameGamesById
+      tags:
+        - User
+      summary: Remove a game from user's library
+      description: Removes a game from the authenticated user's library by game ID.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Game removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteSuccessResponse"
+        "404":
+          description: Game not found in library
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/user/{username}/games/export:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - csv
+            default: json
+          description: Export format (json or csv)
+        - name: download
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Whether to return as downloadable file with proper headers
+      operationId: getApiUserByUsernameGamesExport
+      tags:
+        - User
+      summary: Export user's game library to downloadable file
+      description: >
+        Exports all games in the authenticated user's library as a downloadable file.
+        Backend generates the file with proper Content-Disposition headers for download.
+        Supports JSON and CSV formats. Username must match the authorized user.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Games exported successfully as downloadable file
+          headers:
+            Content-Disposition:
+              description: Attachment header for file download
+              schema:
+                type: string
+                example: 'attachment; filename="games-export-2024-01-15.json"'
+            Content-Type:
+              description: MIME type of the exported file
+              schema:
+                type: string
+                example: "application/json"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameExportResponse"
+            text/csv:
+              schema:
+                type: string
+                description: CSV format of the exported games
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Binary file download
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/user/{username}/games/import:
+    post:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: postApiUserByUsernameGamesImport
+      tags:
+        - User
+      summary: Import games to user's library from file upload
+      description: >
+        Imports games to the authenticated user's library from uploaded JSON or CSV file.
+        Backend handles file parsing, validation, and processing. Username must match the
+        authorized user. Can optionally overwrite existing games.
+        Note: endedAt field is only valid for games with status 'finished' or 'dropped'.
+        Limits: Maximum 1000 games per import, maximum file size 10MB.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Games imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameImportResponse"
+        "400":
+          description: Bad request - invalid import data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "403":
+          description: Forbidden — username mismatch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameImportRequest"
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JSON or CSV file containing games to import
+                overwriteExisting:
+                  type: boolean
+                  default: false
+                  description: Whether to overwrite existing games in the library
+
+  /api/chat/ai:
+    post:
+      operationId: postApiChatAi
+      tags:
+        - Chat
+      summary: Stream AI chat with game assistant
+      description: Uses OpenAI + function calling via ai-sdk
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Streamed assistant response (SSE)
+          content:
+            text/event-stream: {}
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
+        "500":
+          description: AI service error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerErrorResponse"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"

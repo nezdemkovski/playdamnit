@@ -1,0 +1,72 @@
+import { defineRelations } from "drizzle-orm";
+
+import * as schema from "./schema";
+
+// Relational query (RQB v2) definitions. Only the game catalog and library need them;
+// Better Auth's adapter uses the plain query builder.
+export const relations = defineRelations(
+  {
+    user: schema.user,
+    session: schema.session,
+    account: schema.account,
+    verification: schema.verification,
+    passkey: schema.passkey,
+    apikey: schema.apikey,
+    userMetadata: schema.userMetadata,
+    userGames: schema.userGames,
+    userFollows: schema.userFollows,
+    igdbSearchLog: schema.igdbSearchLog,
+    platform: schema.platform,
+    genre: schema.genre,
+    gameMode: schema.gameMode,
+    type: schema.type,
+    websiteType: schema.websiteType,
+    game: schema.game,
+    cover: schema.cover,
+    screenshot: schema.screenshot,
+    website: schema.website,
+    gameToSimilarGame: schema.gameToSimilarGame,
+    gameToPlatform: schema.gameToPlatform,
+    gameToGenre: schema.gameToGenre,
+    gameToGameMode: schema.gameToGameMode,
+    gameToType: schema.gameToType,
+  },
+  (r) => ({
+    userGames: {
+      game: r.one.game({
+        from: r.userGames.gameId,
+        to: r.game.id,
+        optional: false,
+      }),
+    },
+    game: {
+      cover: r.one.cover({ from: r.game.id, to: r.cover.gameId }),
+      screenshots: r.many.screenshot({ from: r.game.id, to: r.screenshot.gameId }),
+      websites: r.many.website({ from: r.game.id, to: r.website.gameId }),
+      platforms: r.many.platform({
+        from: r.game.id.through(r.gameToPlatform.gameId),
+        to: r.platform.id.through(r.gameToPlatform.platformId),
+      }),
+      genres: r.many.genre({
+        from: r.game.id.through(r.gameToGenre.gameId),
+        to: r.genre.id.through(r.gameToGenre.genreId),
+      }),
+      gameModes: r.many.gameMode({
+        from: r.game.id.through(r.gameToGameMode.gameId),
+        to: r.gameMode.id.through(r.gameToGameMode.gameModeId),
+      }),
+      types: r.many.type({
+        from: r.game.id.through(r.gameToType.gameId),
+        to: r.type.id.through(r.gameToType.typeId),
+      }),
+      similarGames: r.many.game({
+        from: r.game.id.through(r.gameToSimilarGame.gameId),
+        to: r.game.id.through(r.gameToSimilarGame.similarGameId),
+        alias: "similar_games",
+      }),
+    },
+    website: {
+      websiteType: r.one.websiteType({ from: r.website.typeId, to: r.websiteType.id }),
+    },
+  })
+);
