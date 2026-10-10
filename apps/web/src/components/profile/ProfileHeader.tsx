@@ -87,13 +87,6 @@ export function ProfileHeader({
                 <>
                   <ExportButton username={username} />
                   <ImportButton username={username} />
-                  <button
-                    onClick={onAddGameClick}
-                    className="px-4 py-2 bg-gradient-to-r from-playdamnit-purple to-playdamnit-cyan text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Game
-                  </button>
                 </>
               )}
             </div>

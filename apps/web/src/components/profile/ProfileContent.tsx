@@ -8,6 +8,7 @@ import { SearchAndFilter } from "./SearchAndFilter";
 import { GamesList } from "./GamesList";
 import GameModal from "@/components/game-modal";
 import SearchAndAddModal from "@/components/search-and-add-modal";
+import { InlineGameSearch } from "@/components/ui/inline-game-search";
 import {
   Game,
   UserGameWithUserData,
@@ -243,6 +244,12 @@ export const ProfileContent = ({
     });
   };
 
+  const handleGameAdded = () => {
+    queryClient.invalidateQueries({
+      queryKey: getGetApiUserByUsernameGamesQueryKey(username),
+    });
+  };
+
   const handleDeleteGame = (game: UserGameWithUserData) => {
     if (!isOwnProfile) return;
     console.log("game", game);
@@ -279,6 +286,18 @@ export const ProfileContent = ({
   return (
     <div className="flex-1 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Universal Game Search - Only for own profile */}
+        {isOwnProfile && (
+          <div className="mb-8">
+            <InlineGameSearch
+              username={username}
+              onGameAdded={handleGameAdded}
+              className="max-w-3xl mx-auto"
+              placeholder="Search and add games to your collection..."
+            />
+          </div>
+        )}
+
         <ProfileHeader
           isOwnProfile={isOwnProfile}
           username={username}
