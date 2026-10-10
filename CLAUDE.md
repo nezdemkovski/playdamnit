@@ -74,7 +74,7 @@ Run this script to update project documentation:
 
 ### Framework & Runtime
 
-- **Elysia** web framework with Bun runtime
+- **Elysia 2.0 (beta, pinned)** web framework with Bun runtime; official plugins come from `@elysia/*` (`@elysiajs/*` is the 1.x scope). The `.claude/skills/elysiajs` docs describe 1.x — prefer the Elysia 2 notes below where they differ.
 - Entry point: `src/index.ts`
 - Port: 3030 (configurable via `PORT` env var)
 - OpenAPI docs at `/openapi`
@@ -152,9 +152,15 @@ routes/
             └── DELETE.ts      # Remove from library
 ```
 
-Each route file exports an Elysia instance. They're composed in `index.ts` using `.use()`. Use Elysia's `macro({ auth: true })` for protected routes.
+Each route file exports an Elysia instance. They're composed in `index.ts` using `.use()`. Use the `auth: true` macro for protected routes.
 
-Use `t.Union([t.Literal(...)])` for enums, not `t.UnionEnum`: inside `t.Optional`, Elysia 1.4.30 fills a missing `UnionEnum` with its first value.
+Elysia 2 conventions used here:
+- Route options come **before** the handler: `.get("/path", { auth: true, query: t.Object(...) }, handler)`.
+- Lifecycle hooks have no `on` prefix (`.error()`, `.beforeHandle()`, ...). The global `.error()` dispatches with `instanceof` (`ValidationError`, `ParseError`, `NotFound`, `ElysiaStatus`, our `AppError`); `error.code` no longer exists. Validation errors are mapped to 400 (Elysia's default is 422) to keep the API contract.
+- Macros use the object form and `derive` (`resolve` was removed); `src/lib/betterAuth.ts` derives `user`/`session`.
+- TypeBox is 1.x (`typebox` package): `t.Transform` is now `t.Codec`.
+
+Use `t.Union([t.Literal(...)])` for enums, not `t.UnionEnum`: inside `t.Optional`, Elysia 1.4.30 filled a missing `UnionEnum` with its first value (covered by a unit test).
 
 Routes stay thin: business logic lives in `src/modules/*/service.ts`, request schemas shared between routes in `src/modules/*/model.ts`. Services **throw** `AppError` subclasses (`src/utils/errors.ts`); the global `onError` in `src/index.ts` maps them to `{ error, message }` with the right status. Rate limits (`src/utils/rateLimit.ts`, in-memory per instance) guard search, import and AI chat.
 

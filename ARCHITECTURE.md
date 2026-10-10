@@ -5,7 +5,7 @@
 | Layer | Technology |
 |---|---|
 | Runtime | Bun |
-| Web framework | Elysia 1.4 |
+| Web framework | Elysia 2.0 beta |
 | Database | PostgreSQL 17 (single DB for everything) |
 | ORM | Drizzle ORM 1.0 RC (pg-core, relational queries v2) |
 | Job queue | pg-boss 12 (runs inside PostgreSQL) |
