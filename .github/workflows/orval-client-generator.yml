@@ -59,6 +59,13 @@ jobs:
           '
           echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
+      - name: Publish to npm
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        working-directory: packages/api-client
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Commit version update
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         run: |
@@ -67,10 +74,3 @@ jobs:
           git add packages/api-client/package.json
           git commit -m "chore: bump api client version to ${{ steps.package-version.outputs.version }}" || exit 0
           git push
-
-      - name: Publish to npm
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-        working-directory: packages/api-client
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
