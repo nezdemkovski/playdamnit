@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "ignorePatterns": [
+    "**/*.gen.ts",
+    "packages/api-client/generated.ts",
+    "packages/db/migrations/**",
+    "apps/api/.claude/**",
+    "apps/api/.cursor/**",
+    "bun.lock"
+  ]
+}

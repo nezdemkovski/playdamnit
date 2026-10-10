@@ -78,6 +78,7 @@ const igdbRequest = async <T>(body: string, retryAuth = true): Promise<T> => {
 export const escapeApicalypseString = (value: string) =>
   value
     .slice(0, MAX_SEARCH_QUERY_LENGTH)
+    // oxlint-disable-next-line no-control-regex -- stripping control characters is the point
     .replace(/[\u0000-\u001f]/g, " ")
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"');

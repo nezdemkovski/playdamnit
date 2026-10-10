@@ -1,10 +1,9 @@
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
 import {
   platform,
   userGames,
-  user as userSchema,
   USER_GAME_STATUSES,
   type UserGameStatus,
 } from "@playdamnit/db/schema";
