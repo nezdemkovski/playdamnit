@@ -67,6 +67,6 @@ const requestNewToken = async (): Promise<{ token: string; expiresAt: number }> 
       context: "IGDB",
       operation: "requestNewToken",
     });
-    throw new Error("Failed to get IGDB access token");
+    throw new Error("Failed to get IGDB access token", { cause: error });
   }
 };

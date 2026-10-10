@@ -1,6 +1,5 @@
-# syntax=docker.io/docker/dockerfile:1
 # Build context: repository root
-#   docker build -f apps/web/Dockerfile .
+#   docker build -f apps/web/Dockerfile --build-arg VITE_API_URL=https://api.example.com .
 FROM oven/bun:1.4 AS pruner
 WORKDIR /repo
 COPY . .
@@ -14,29 +13,15 @@ COPY --from=pruner /repo/out/json/ .
 RUN bun install --frozen-lockfile
 COPY --from=pruner /repo/out/full/ .
 
-# Public env is inlined into the client bundle at build time
-ARG BACKEND_URL
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_BETTER_AUTH_URL
-ENV NEXT_TELEMETRY_DISABLED=1
+# Browser-facing API URL, inlined into the bundle at build time
+ARG VITE_API_URL=http://localhost:3030
+ENV VITE_API_URL=$VITE_API_URL
 RUN bunx turbo run build --filter=@playdamnit/web
 
-FROM node:22-alpine AS runner
-WORKDIR /app
+# The app is a static SPA: serve dist/ with nginx
+FROM nginx:1.29-alpine AS runner
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /repo/apps/web/dist /usr/share/nginx/html
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
-
-# Standalone output mirrors the monorepo layout (outputFileTracingRoot is the repo root)
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/public ./apps/web/public
-
-USER nextjs
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-CMD ["node", "apps/web/server.js"]
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1

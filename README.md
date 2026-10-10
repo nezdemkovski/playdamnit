@@ -6,7 +6,7 @@ Game backlog tracker. Bun workspaces + Turborepo monorepo.
 apps/
   api/         Elysia 2 HTTP API
   librarian/   pg-boss worker that owns all IGDB access
-  web/         Next.js frontend
+  web/         React SPA (Vite, TanStack Router + Query, Tailwind)
 packages/
   db/          Drizzle schema, relations, migrations, job contract
   api-client/  OpenAPI spec + generated React Query client (@playdamnit/api-client on npm)
@@ -34,6 +34,7 @@ bun run dev          # api :3030, web :3000, librarian
 | `bun run typecheck` | all packages |
 | `bun run test` | unit tests (`TEST_POSTGRES_URL=... bun run test` adds integration tests) |
 | `bun run build` | api client + web |
+| `bun run lint` / `bun run format` | Oxlint / Oxfmt over the whole repo |
 | `bun run db:generate` | migration after editing `packages/db/src/schema.ts` |
 | `bun run db:migrate` / `bun run db:studio` | apply migrations / browse data |
 

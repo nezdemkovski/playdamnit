@@ -8,12 +8,14 @@ on:
       # Not package.json: the version bump commit below must not retrigger this workflow
       - "packages/api-client/spec.yaml"
       - "packages/api-client/custom-axios.ts"
+      - "packages/api-client/index.ts"
       - "packages/api-client/orval.config.mjs"
   pull_request:
     paths:
       # Not package.json: the version bump commit below must not retrigger this workflow
       - "packages/api-client/spec.yaml"
       - "packages/api-client/custom-axios.ts"
+      - "packages/api-client/index.ts"
       - "packages/api-client/orval.config.mjs"
 
 jobs:

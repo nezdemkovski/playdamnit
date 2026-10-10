@@ -57,20 +57,11 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Browser-facing URLs of the API, inlined at build time
-        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3030}
-        NEXT_PUBLIC_BETTER_AUTH_URL: ${PUBLIC_API_URL:-http://localhost:3030}/api/auth
+        # Browser-facing URL of the API, inlined into the static bundle
+        VITE_API_URL: ${PUBLIC_API_URL:-http://localhost:3030}
     container_name: playdamnit-web
     ports:
       - "3000:3000"
-    environment:
-      # Server-side calls go over the compose network
-      - BACKEND_URL=http://api:3030/api
-      - API_URL=http://api:3030
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
-    depends_on:
-      api:
-        condition: service_healthy
     restart: unless-stopped
     networks:
       - playdamnit-network

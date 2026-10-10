@@ -10,7 +10,7 @@
         "$TURBO_DEFAULT$"
       ],
       "outputs": [
-        "index.ts"
+        "generated.ts"
       ]
     },
     "build": {
@@ -19,22 +19,15 @@
         "generate"
       ],
       "env": [
-        "NEXT_PUBLIC_*",
-        "BACKEND_URL"
+        "VITE_*"
       ],
       "outputs": [
-        ".next/**",
-        "!.next/cache/**",
+        "dist/**",
         "*.js",
         "*.d.ts"
       ]
     },
     "typecheck": {
-      "dependsOn": [
-        "^build"
-      ]
-    },
-    "lint": {
       "dependsOn": [
         "^build"
       ]

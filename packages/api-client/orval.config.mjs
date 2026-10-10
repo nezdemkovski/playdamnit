@@ -5,7 +5,7 @@ export default defineConfig({
     // spec.yaml is the hand-maintained API contract (update it with every route change)
     input: "./spec.yaml",
     output: {
-      target: "./index.ts",
+      target: "./generated.ts",
       client: "react-query",
       httpClient: "axios",
       override: {
@@ -14,9 +14,6 @@ export default defineConfig({
           name: "customInstance",
         },
       },
-    },
-    hooks: {
-      afterAllFilesWrite: "prettier --write",
     },
   },
 });

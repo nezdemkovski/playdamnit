@@ -1,14 +1,17 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
-
-const baseURL =
-  typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3030")
-    : (process.env.API_URL ?? "http://localhost:3030");
+import axios, { AxiosRequestConfig } from "axios";
 
 const AXIOS_INSTANCE = axios.create({
-  baseURL,
+  baseURL: "http://localhost:3030",
   withCredentials: true,
 });
+
+/**
+ * Point the client at an API. Call once at startup, before any request
+ * (e.g. with `import.meta.env.VITE_API_URL` in a Vite app).
+ */
+export const configureApiClient = (options: { baseURL: string }) => {
+  AXIOS_INSTANCE.defaults.baseURL = options.baseURL;
+};
 
 export const customInstance = async <T>(
   config: AxiosRequestConfig,
