@@ -1,5 +1,13 @@
-import { Context, Elysia, status } from "elysia";
-import { openapi } from '@elysiajs/openapi'
+import {
+  Context,
+  Elysia,
+  ElysiaStatus,
+  NotFound,
+  ParseError,
+  ValidationError,
+  status,
+} from "elysia";
+import { openapi } from '@elysia/openapi'
 
 import { routes } from "@/routes";
 import logger, {
@@ -83,9 +91,12 @@ const setupApp = async () => {
   const app = new Elysia({ name: "playdamnit-api" })
     .use(openapi())
     .use(getCors())
-    .onError(({ code, error, path, request, set }) => {
+    .error(({ error, path, request, set }) => {
+      // status() responses (e.g. 401 from the auth macro) pass through untouched
+      if (error instanceof ElysiaStatus) return error;
+
       // Special case: don't log favicon 404s
-      if (code === "NOT_FOUND" && path === "/favicon.ico") {
+      if (error instanceof NotFound && path === "/favicon.ico") {
         return status(204, null);
       }
 
@@ -103,52 +114,38 @@ const setupApp = async () => {
         });
       }
 
-      // Log all errors with context
-      logger.exception(error, {
-        code,
-        path,
-        method: request.method,
-        url: request.url
-      });
+      if (error instanceof NotFound) {
+        return status(404, { error: "Not Found", message: "Resource not found" });
+      }
 
-      // Handle validation errors
-      if (code === "VALIDATION") {
+      // Elysia 2 answers validation errors with 422; the API contract (and the
+      // generated client) expects 400 with { error, message }
+      if (error instanceof ValidationError) {
         return status(400, {
           error: "Validation Error",
-          message: error instanceof Error ? error.message : "Invalid request data",
+          message: error.message,
         });
       }
 
-      // Handle parse errors
-      if (code === "PARSE") {
+      if (error instanceof ParseError) {
         return status(400, {
           error: "Parse Error",
           message: "Invalid request body format",
         });
       }
 
-      // Handle not found
-      if (code === "NOT_FOUND") {
-        return status(404, {
-          error: "Not Found",
-          message: error instanceof Error ? error.message : "Resource not found",
-        });
-      }
+      logger.exception(error, {
+        path,
+        method: request.method,
+        url: request.url,
+      });
 
-      // Handle unauthorized
-      if (code === 401) {
-        return status(401, {
-          error: "Unauthorized",
-          message: error instanceof Error ? error.message : "Authentication required",
-        });
-      }
-
-      // Handle all other errors as 500
       return status(500, {
         error: "Internal Server Error",
-        message: process.env.NODE_ENV === "development" && error instanceof Error
-          ? error.message
-          : "An unexpected error occurred",
+        message:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
       });
     })
     .get("/health", async () => {

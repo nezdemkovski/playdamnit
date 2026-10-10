@@ -31,6 +31,6 @@
     "directory": "backend/api-client"
   },
   "dependencies": {
-    "orval": "^8.0.1"
+    "orval": "^8.41.0"
   }
 }

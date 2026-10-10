@@ -75,9 +75,9 @@ describe("request schemas", () => {
   test("an omitted optional status stays omitted", async () => {
     const { Elysia, t } = await import("elysia");
     const { statusSchema } = await import("@/modules/userGame/model");
-    const app = new Elysia().patch("/", ({ body }) => body, {
+    const app = new Elysia().patch("/", {
       body: t.Object({ status: t.Optional(statusSchema), rating: t.Optional(t.Number()) }),
-    });
+    }, ({ body }) => body);
 
     const res = await app.handle(
       new Request("http://localhost/", {

@@ -39,39 +39,35 @@ const readImportFile = async (file: File): Promise<ImportGameInput[]> => {
   throw new BadRequestError("Invalid file format. Expected JSON with 'games' array or CSV format");
 };
 
-export const importUserGames = new Elysia().use(betterAuth).post(
-  "/user/:username/games/import",
-  async ({ params, user, body, request, server }) => {
-    UserGameService.assertOwnLibrary(params.username, user);
-    importLimiter.check(clientKey({ request, server }, user.id));
+export const importUserGames = new Elysia().use(betterAuth).post("/user/:username/games/import", {
+  auth: true,
+  params: libraryParams,
+  body: t.Union([
+    t.Object({
+      games: t.Array(
+        t.Object({
+          gameId: t.Number(),
+          status: t.String(),
+          rating: t.Optional(t.Union([t.Number(), t.Null()])),
+          review: t.Optional(t.Union([t.String(), t.Null()])),
+          platformId: t.Optional(t.Union([t.Number(), t.Null()])),
+          endedAt: t.Optional(t.Union([t.String(), t.Null()])),
+        })
+      ),
+      overwriteExisting: t.Optional(t.Boolean()),
+    }),
+    t.Object({
+      file: t.File(),
+      overwriteExisting: t.Optional(t.Union([t.String(), t.Boolean()])),
+    }),
+  ]),
+}, async ({ params, user, body, request, server }) => {
+  UserGameService.assertOwnLibrary(params.username, user);
+  importLimiter.check(clientKey({ request, server }, user.id));
 
-    const rows = "games" in body ? body.games : await readImportFile(body.file);
-    const overwriteExisting =
-      body.overwriteExisting === true || body.overwriteExisting === "true";
+  const rows = "games" in body ? body.games : await readImportFile(body.file);
+  const overwriteExisting =
+    body.overwriteExisting === true || body.overwriteExisting === "true";
 
-    return UserGameService.importUserGames(user.id, rows, overwriteExisting);
-  },
-  {
-    auth: true,
-    params: libraryParams,
-    body: t.Union([
-      t.Object({
-        games: t.Array(
-          t.Object({
-            gameId: t.Number(),
-            status: t.String(),
-            rating: t.Optional(t.Union([t.Number(), t.Null()])),
-            review: t.Optional(t.Union([t.String(), t.Null()])),
-            platformId: t.Optional(t.Union([t.Number(), t.Null()])),
-            endedAt: t.Optional(t.Union([t.String(), t.Null()])),
-          })
-        ),
-        overwriteExisting: t.Optional(t.Boolean()),
-      }),
-      t.Object({
-        file: t.File(),
-        overwriteExisting: t.Optional(t.Union([t.String(), t.Boolean()])),
-      }),
-    ]),
-  }
-);
+  return UserGameService.importUserGames(user.id, rows, overwriteExisting);
+});

@@ -1,4 +1,4 @@
-import { cors } from "@elysiajs/cors";
+import { cors } from "@elysia/cors";
 
 import { createLogger } from "./enhancedLogger";
 import { getConfig } from "@/config";

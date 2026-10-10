@@ -48,47 +48,43 @@ If the user provides any comments or review about the game, extract this for the
 
 Be conversational and friendly. If the user doesn't mention a specific game, just chat normally.`;
 
-export const postAIChat = new Elysia().use(betterAuth).post(
-  "/chat/ai",
-  ({ body, user, request, server }) => {
-    const { openaiApiKey, openaiModel } = getConfig();
-    if (!openaiApiKey) {
-      throw new ServiceUnavailableError("AI chat is not configured");
-    }
-
-    chatLimiter.check(clientKey({ request, server }, user.id));
-
-    // Only user/assistant turns come from the client; the system prompt is ours
-    const messages: ModelMessage[] = body.messages.map((message) =>
-      message.role === "user"
-        ? { role: "user", content: message.content ?? "" }
-        : { role: "assistant", content: message.content ?? "" }
-    );
-
-    const result = streamText({
-      model: openai(openaiModel),
-      system: systemPrompt,
-      messages,
-      tools: {
-        search_games: searchGamesTool,
-      },
-      onError: ({ error }) => {
-        logger.exception(error, { operation: "streamText", userId: user.id });
-      },
-    });
-
-    return result.toTextStreamResponse();
-  },
-  {
-    auth: true,
-    body: t.Object({
-      messages: t.Array(
-        t.Object({
-          role: t.Union([t.Literal("user"), t.Literal("assistant")]),
-          content: t.Nullable(t.String({ maxLength: MAX_MESSAGE_LENGTH })),
-        }),
-        { minItems: 1, maxItems: MAX_MESSAGES }
-      ),
-    }),
+export const postAIChat = new Elysia().use(betterAuth).post("/chat/ai", {
+  auth: true,
+  body: t.Object({
+    messages: t.Array(
+      t.Object({
+        role: t.Union([t.Literal("user"), t.Literal("assistant")]),
+        content: t.Nullable(t.String({ maxLength: MAX_MESSAGE_LENGTH })),
+      }),
+      { minItems: 1, maxItems: MAX_MESSAGES }
+    ),
+  }),
+}, ({ body, user, request, server }) => {
+  const { openaiApiKey, openaiModel } = getConfig();
+  if (!openaiApiKey) {
+    throw new ServiceUnavailableError("AI chat is not configured");
   }
-);
+
+  chatLimiter.check(clientKey({ request, server }, user.id));
+
+  // Only user/assistant turns come from the client; the system prompt is ours
+  const messages: ModelMessage[] = body.messages.map((message) =>
+    message.role === "user"
+      ? { role: "user", content: message.content ?? "" }
+      : { role: "assistant", content: message.content ?? "" }
+  );
+
+  const result = streamText({
+    model: openai(openaiModel),
+    system: systemPrompt,
+    messages,
+    tools: {
+      search_games: searchGamesTool,
+    },
+    onError: ({ error }) => {
+      logger.exception(error, { operation: "streamText", userId: user.id });
+    },
+  });
+
+  return result.toTextStreamResponse();
+});
