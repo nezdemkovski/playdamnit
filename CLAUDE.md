@@ -83,7 +83,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema. In short:
 
 - `spec.yaml` is the hand-maintained OpenAPI contract. **Update it with every route change.** `bun run generate` runs orval (`index.ts` is generated and gitignored), `build` bundles it.
 - Calls return the response body directly (the axios mutator unwraps `response.data`).
-- Changes to `spec.yaml`, `custom-axios.ts` or `orval.config.mjs` on `main` publish a new patch version to npm.
+- Changes to `spec.yaml`, `custom-axios.ts` or `orval.config.mjs` on `master` publish a new patch version to npm.
 
 ### Web (`apps/web`)
 
