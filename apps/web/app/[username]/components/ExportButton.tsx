@@ -32,14 +32,15 @@ export function ExportButton({ username }: ExportButtonProps) {
   const handleExport = async (format: "json" | "csv") => {
     try {
       const response = await exportMutation.mutateAsync({ format });
-      const data = response.data;
+      // The API client returns the body directly; the export format decides the MIME type
+      const data = response;
 
       // Create blob from the response data
       const blob =
         data instanceof Blob
           ? data
           : new Blob([typeof data === "string" ? data : JSON.stringify(data)], {
-              type: response.headers["content-type"],
+              type: format === "csv" ? "text/csv" : "application/json",
             });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

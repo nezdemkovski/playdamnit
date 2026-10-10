@@ -111,10 +111,10 @@ export default function SearchAndAddModal({
               </div>
             ))}
           </div>
-        ) : searchResults?.data?.results &&
-          searchResults.data.results.length > 0 ? (
+        ) : searchResults?.results &&
+          searchResults.results.length > 0 ? (
           <div className="space-y-3">
-            {searchResults.data.results.map((game) => (
+            {searchResults.results.map((game) => (
               <div
                 key={game.id}
                 onClick={() => handleGameSelect(game)}

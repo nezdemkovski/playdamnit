@@ -73,16 +73,16 @@ export function ImportButton({ username }: ImportButtonProps) {
         stage: "completed",
         message: "Import completed successfully!",
         details: {
-          imported: result.data.imported,
-          skipped: result.data.skipped,
-          errors: result.data.errors,
-          errorGames: result.data.details.errorGames || [],
+          imported: result.imported,
+          skipped: result.skipped,
+          errors: result.errors,
+          errorGames: result.details.errorGames || [],
         },
       });
 
       // Show success toast and refresh data immediately
       toast.success(
-        `Import completed: ${result.data.imported} imported, ${result.data.skipped} skipped, ${result.data.errors} errors`
+        `Import completed: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`
       );
       queryClient.invalidateQueries({
         queryKey: getGetApiUserByUsernameGamesQueryKey(username),

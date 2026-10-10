@@ -126,7 +126,7 @@ export default function GameForm({
   ];
 
   const handleSubmit = async () => {
-    if (!me?.data.username) {
+    if (!me?.username) {
       console.error("No username available");
       return;
     }
@@ -144,10 +144,10 @@ export default function GameForm({
 
       const invalidateQueries = () => {
         queryClient.invalidateQueries({
-          queryKey: getGetApiUserByUsernameQueryKey(me?.data.username),
+          queryKey: getGetApiUserByUsernameQueryKey(me?.username),
         });
         queryClient.invalidateQueries({
-          queryKey: getGetApiUserByUsernameGamesQueryKey(me?.data.username),
+          queryKey: getGetApiUserByUsernameGamesQueryKey(me?.username),
         });
         queryClient.invalidateQueries({
           queryKey: getGetApiMeQueryKey(),
@@ -158,7 +158,7 @@ export default function GameForm({
       if (mode === "add") {
         await addGameMutation.mutateAsync(
           {
-            username: me?.data.username,
+            username: me?.username,
             data: {
               gameId: game.id,
               status: dbStatus,
@@ -175,7 +175,7 @@ export default function GameForm({
       } else {
         await updateGameMutation.mutateAsync(
           {
-            username: me?.data.username,
+            username: me?.username,
             id: game.id,
             data: {
               status: dbStatus,

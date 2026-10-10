@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/react";
-import { passkeyClient, usernameClient } from "better-auth/client/plugins";
+import { usernameClient } from "better-auth/client/plugins";
+import { passkeyClient } from "@better-auth/passkey/client";
 import { getConfig } from "@/config";
 
 const { betterAuthUrl, betterAuthSecret } = getConfig();

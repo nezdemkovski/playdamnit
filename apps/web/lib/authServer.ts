@@ -1,13 +1,16 @@
 "use server";
 
 import { createAuthClient } from "better-auth/react";
-import { passkeyClient, usernameClient } from "better-auth/client/plugins";
+import { usernameClient } from "better-auth/client/plugins";
+import { passkeyClient } from "@better-auth/passkey/client";
 import { cache } from "react";
 import { headers } from "next/headers";
 
-const BETTER_AUTH_URL =
-  process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3030/api/auth";
-const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || "";
+import { getConfig } from "@/config";
+
+// Server-side calls use BACKEND_URL (read at runtime), not the NEXT_PUBLIC_ URL inlined at
+// build time: inside Docker the API isn't reachable on the browser-facing address
+const { betterAuthUrl: BETTER_AUTH_URL, betterAuthSecret: BETTER_AUTH_SECRET } = getConfig();
 
 const auth = createAuthClient({
   baseURL: BETTER_AUTH_URL,

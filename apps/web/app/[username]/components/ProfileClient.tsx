@@ -49,10 +49,10 @@ export default function ProfileClient({
       isOwnProfile={isOwnProfile}
       username={username}
       fullName={
-        profileUser?.data?.name || (isOwnProfile ? currentUser?.name : "") || ""
+        profileUser?.name || (isOwnProfile ? currentUser?.name : "") || ""
       }
       avatarUrl={
-        profileUser?.data?.image ||
+        profileUser?.image ||
         (isOwnProfile ? currentUser?.image : "") ||
         ""
       }

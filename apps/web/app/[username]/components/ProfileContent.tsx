@@ -75,7 +75,7 @@ export const ProfileContent = ({
   //     : new Date().toLocaleDateString(),
   // }));
 
-  const games = userGames?.data.results || [];
+  const games = userGames?.results || [];
 
   const getStatusCount = (status: string) => {
     if (status === "All") return games?.length || 0;

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/authClient";
 import { User } from "better-auth";
-import { Passkey } from "better-auth/plugins/passkey";
+import type { Passkey } from "@better-auth/passkey";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
