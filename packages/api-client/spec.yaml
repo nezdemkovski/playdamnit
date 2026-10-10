@@ -1549,15 +1549,7 @@ paths:
           required: false
           schema:
             type: string
-            enum:
-              [
-                "genres",
-                "platforms",
-                "game_modes",
-                "game_types",
-                "release_year",
-                "is_popular",
-              ]
+            enum: ["genres", "platforms", "game_modes", "game_types", "release_year", "is_popular"]
           description: Specific facet field to retrieve
         - name: q
           in: query

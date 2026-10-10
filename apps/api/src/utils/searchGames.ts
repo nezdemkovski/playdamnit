@@ -33,8 +33,7 @@ export interface SearchResult {
 /** Escape LIKE wildcards so user input is matched literally. */
 export const escapeLike = (value: string) => value.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-const substringMatch = (name: Column, query: string) =>
-  ilike(name, `%${escapeLike(query)}%`);
+const substringMatch = (name: Column, query: string) => ilike(name, `%${escapeLike(query)}%`);
 
 // `%` is the pg_trgm similarity operator (threshold 0.3) and, unlike similarity(),
 // can use the GIN trigram index
@@ -91,7 +90,7 @@ async function doSearch(
   query: string,
   limit: number,
   offset: number,
-  forceFresh: boolean
+  forceFresh: boolean,
 ): Promise<SearchResult> {
   const startTime = Date.now();
   const cleanedQuery = query.replace(/[^\w\s]/gi, "").trim();
@@ -133,7 +132,7 @@ export async function searchGamesWithCache(
   searchQuery: string,
   limit: number = MAX_SEARCH_LIMIT,
   offset: number = 0,
-  forceFresh: boolean = false
+  forceFresh: boolean = false,
 ): Promise<SearchResult> {
   const query = searchQuery?.trim().slice(0, MAX_QUERY_LENGTH) ?? "";
   if (query.length === 0) {

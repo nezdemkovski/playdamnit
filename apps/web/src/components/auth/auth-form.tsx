@@ -107,10 +107,7 @@ export function AuthForm() {
       <div className="w-[100vw] flex min-h-screen flex-col items-center justify-center p-4 md:p-8 lg:p-12">
         <div className="w-full max-w-3xl overflow-hidden rounded-xl border border-playdamnit-purple/20 bg-background/90 backdrop-blur-xl shadow-lg">
           <div className="flex min-h-[80vh] flex-col items-center justify-center p-6 md:p-8 lg:p-10">
-            <Link
-              to="/"
-              className="mb-8 transition-transform hover:scale-105"
-            >
+            <Link to="/" className="mb-8 transition-transform hover:scale-105">
               <Logo size={120} />
             </Link>
 
@@ -127,9 +124,7 @@ export function AuthForm() {
                 >
                   <form onSubmit={handleSignIn} className="space-y-6">
                     <div className="text-center">
-                      <h1 className="text-3xl font-bold text-playdamnit-purple">
-                        Sign in
-                      </h1>
+                      <h1 className="text-3xl font-bold text-playdamnit-purple">Sign in</h1>
                       <div className="mt-2 flex justify-center gap-1 text-sm text-muted-foreground">
                         <span>New user?</span>
                         <button
@@ -202,9 +197,7 @@ export function AuthForm() {
                           <div className="w-full border-t border-playdamnit-purple/20"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            OR
-                          </span>
+                          <span className="bg-background px-2 text-muted-foreground">OR</span>
                         </div>
                       </div>
 
@@ -216,9 +209,7 @@ export function AuthForm() {
                         className="w-full h-12 border-playdamnit-purple/20 hover:bg-playdamnit-purple/10 text-playdamnit-light flex items-center justify-center gap-2"
                       >
                         <span className="text-xl">🔑</span>
-                        {passkeySignIn.isPending
-                          ? "Signing in..."
-                          : "Sign in with Passkey"}
+                        {passkeySignIn.isPending ? "Signing in..." : "Sign in with Passkey"}
                       </Button>
                     </div>
                   </form>
@@ -237,9 +228,7 @@ export function AuthForm() {
                 >
                   <form onSubmit={handleSignUp} className="space-y-6">
                     <div className="text-center">
-                      <h1 className="text-3xl font-bold text-playdamnit-purple">
-                        Create account
-                      </h1>
+                      <h1 className="text-3xl font-bold text-playdamnit-purple">Create account</h1>
                       <div className="mt-2 flex justify-center gap-1 text-sm text-muted-foreground">
                         <span>Already registered?</span>
                         <button
@@ -313,9 +302,7 @@ export function AuthForm() {
                         disabled={isPending || emailSignUp.isPending}
                         className="w-full h-12 mt-2 bg-playdamnit-purple hover:bg-playdamnit-purple/90 text-white text-base"
                       >
-                        {emailSignUp.isPending
-                          ? "Creating account..."
-                          : "Create account"}
+                        {emailSignUp.isPending ? "Creating account..." : "Create account"}
                       </Button>
                     </div>
                   </form>
@@ -334,9 +321,7 @@ export function AuthForm() {
                 >
                   <div className="space-y-6">
                     <div className="text-center">
-                      <h1 className="text-3xl font-bold text-playdamnit-purple">
-                        Reset password
-                      </h1>
+                      <h1 className="text-3xl font-bold text-playdamnit-purple">Reset password</h1>
                       <div className="mt-2 flex justify-center gap-1 text-sm text-muted-foreground">
                         <span>Remember your password?</span>
                         <button
@@ -352,9 +337,7 @@ export function AuthForm() {
                     <div className="space-y-4">
                       <div className="mt-6 text-center text-playdamnit-light/70">
                         <p>Password reset functionality is coming soon.</p>
-                        <p className="mt-2">
-                          Please contact support for assistance.
-                        </p>
+                        <p className="mt-2">Please contact support for assistance.</p>
                       </div>
                     </div>
                   </div>

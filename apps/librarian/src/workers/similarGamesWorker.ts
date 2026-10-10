@@ -18,14 +18,14 @@ const handleSimilarGames = async (boss: PgBoss, [job]: Job<ProcessSimilarGamesJo
   const { gameId, similarGameIds, depth = 0 } = job.data;
 
   const validIds = [...new Set(similarGameIds ?? [])].filter(
-    (id) => Number.isInteger(id) && id > 0 && id !== gameId
+    (id) => Number.isInteger(id) && id > 0 && id !== gameId,
   );
   if (!gameId || validIds.length === 0) return;
 
   const existingIds = new Set(
     (await db.select({ id: game.id }).from(game).where(inArray(game.id, validIds))).map(
-      (g) => g.id
-    )
+      (g) => g.id,
+    ),
   );
   const missingIds = validIds.filter((id) => !existingIds.has(id));
 
@@ -33,13 +33,16 @@ const handleSimilarGames = async (boss: PgBoss, [job]: Job<ProcessSimilarGamesJo
   const nextDepth = depth + 1;
   if (missingIds.length > 0 && nextDepth <= SIMILAR_GAMES_MAX_DEPTH) {
     logger.info(
-      `Fetching ${missingIds.length} missing similar games of ${gameId} (depth ${nextDepth})`
+      `Fetching ${missingIds.length} missing similar games of ${gameId} (depth ${nextDepth})`,
     );
     for (let i = 0; i < missingIds.length; i += FETCH_BATCH_SIZE) {
       await boss.send(
         QUEUES.FETCH_BY_IDS,
-        { ids: missingIds.slice(i, i + FETCH_BATCH_SIZE), depth: nextDepth } satisfies FetchByIdsJob,
-        { retryLimit: 3, retryDelay: 30, retryBackoff: true }
+        {
+          ids: missingIds.slice(i, i + FETCH_BATCH_SIZE),
+          depth: nextDepth,
+        } satisfies FetchByIdsJob,
+        { retryLimit: 3, retryDelay: 30, retryBackoff: true },
       );
     }
   }
@@ -57,6 +60,6 @@ export const registerSimilarGamesWorker = async (boss: PgBoss): Promise<void> =>
   await boss.work<ProcessSimilarGamesJob>(
     QUEUES.PROCESS_SIMILAR_GAMES,
     { localConcurrency: 5 },
-    (jobs) => handleSimilarGames(boss, jobs)
+    (jobs) => handleSimilarGames(boss, jobs),
   );
 };

@@ -11,7 +11,7 @@ export const ENDED_STATUSES: readonly string[] = ["finished", "dropped"];
 // first value, which turned a PATCH without `status` into status "finished"
 export const statusSchema = t.Union(
   USER_GAME_STATUSES.map((status) => t.Literal(status)),
-  { error: `Status must be one of: ${USER_GAME_STATUSES.join(", ")}` }
+  { error: `Status must be one of: ${USER_GAME_STATUSES.join(", ")}` },
 );
 
 export const ratingSchema = t.Number({

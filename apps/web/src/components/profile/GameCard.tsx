@@ -49,8 +49,7 @@ export function GameCard({
     switch (status) {
       case "finished":
         return {
-          color:
-            "bg-playdamnit-cyan/15 text-playdamnit-cyan border-playdamnit-cyan/30",
+          color: "bg-playdamnit-cyan/15 text-playdamnit-cyan border-playdamnit-cyan/30",
           icon: "✓",
           label: "Finished",
         };
@@ -74,8 +73,7 @@ export function GameCard({
         };
       default:
         return {
-          color:
-            "bg-playdamnit-purple/15 text-playdamnit-purple border-playdamnit-purple/30",
+          color: "bg-playdamnit-purple/15 text-playdamnit-purple border-playdamnit-purple/30",
           icon: "?",
           label: "Unknown",
         };
@@ -189,11 +187,7 @@ export function GameCard({
             {/* Game Cover */}
             <div className="w-20 h-28 rounded-lg overflow-hidden bg-playdamnit-dark/50 flex-shrink-0 shadow-md">
               {coverUrl ? (
-                <img
-                  src={coverUrl}
-                  alt={game.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={coverUrl} alt={game.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-playdamnit-light/30">
                   <Gamepad2 className="w-8 h-8" />
@@ -230,22 +224,15 @@ export function GameCard({
                 {rating > 0 ? (
                   <div className="flex items-center gap-1">
                     <Star className={`w-3 h-3 ${getRatingColor(rating)}`} />
-                    <span
-                      className={`text-sm font-medium ${getRatingColor(rating)}`}
-                    >
+                    <span className={`text-sm font-medium ${getRatingColor(rating)}`}>
                       {formatRating(rating)}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs text-playdamnit-light/40">
-                    Not rated
-                  </span>
+                  <span className="text-xs text-playdamnit-light/40">Not rated</span>
                 )}
 
-                {shouldShowEndedDate(
-                  game.userGameData?.status,
-                  game.userGameData?.endedAt
-                ) && (
+                {shouldShowEndedDate(game.userGameData?.status, game.userGameData?.endedAt) && (
                   <div className="text-xs text-playdamnit-light/60">
                     {formatEndedDate(game.userGameData.endedAt!)}
                   </div>
@@ -307,11 +294,7 @@ export function GameCard({
           {/* Game Cover - Smaller */}
           <div className="w-16 h-20 rounded-lg overflow-hidden bg-playdamnit-dark/50 flex-shrink-0 shadow-md">
             {coverUrl ? (
-              <img
-                src={coverUrl}
-                alt={game.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={coverUrl} alt={game.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-playdamnit-light/30">
                 <Gamepad2 className="w-6 h-6" />
@@ -356,10 +339,7 @@ export function GameCard({
                   >
                     {statusInfo.icon} {statusInfo.label}
                   </Badge>
-                  {shouldShowEndedDate(
-                    game.userGameData?.status,
-                    game.userGameData?.endedAt
-                  ) && (
+                  {shouldShowEndedDate(game.userGameData?.status, game.userGameData?.endedAt) && (
                     <div className="text-xs text-playdamnit-light/50 mt-1">
                       {formatEndedDate(game.userGameData.endedAt!)}
                     </div>
@@ -371,15 +351,11 @@ export function GameCard({
                   <div className="text-center">
                     <div className="flex items-center gap-1 justify-center">
                       <Star className={`w-4 h-4 ${getRatingColor(rating)}`} />
-                      <span
-                        className={`text-lg font-bold ${getRatingColor(rating)}`}
-                      >
+                      <span className={`text-lg font-bold ${getRatingColor(rating)}`}>
                         {formatRating(rating)}
                       </span>
                     </div>
-                    <div className="text-xs text-playdamnit-light/50">
-                      Your Score
-                    </div>
+                    <div className="text-xs text-playdamnit-light/50">Your Score</div>
                   </div>
                 )}
               </div>

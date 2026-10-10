@@ -58,8 +58,7 @@ export default function HeaderClient({ user }: HeaderClientProps) {
               {user.image ? (
                 <img
                   src={
-                    user.image.startsWith("data:") ||
-                    user.image.startsWith("http")
+                    user.image.startsWith("data:") || user.image.startsWith("http")
                       ? user.image
                       : `data:image/png;base64,${user.image}`
                   }
@@ -109,11 +108,7 @@ export default function HeaderClient({ user }: HeaderClientProps) {
           className="md:hidden rounded-lg bg-playdamnit-purple/20 text-white hover:bg-playdamnit-purple/40"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
+          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 

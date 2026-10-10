@@ -1,12 +1,5 @@
 import { useState, useRef } from "react";
-import {
-  Upload,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,13 +46,7 @@ export function ImportButton({ username }: ImportButtonProps) {
 
   // Import mutation
   const importMutation = useMutation({
-    mutationFn: async ({
-      file,
-      overwriteExisting,
-    }: {
-      file: File;
-      overwriteExisting: boolean;
-    }) => {
+    mutationFn: async ({ file, overwriteExisting }: { file: File; overwriteExisting: boolean }) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("overwriteExisting", overwriteExisting.toString());
@@ -80,7 +67,7 @@ export function ImportButton({ username }: ImportButtonProps) {
 
       // Show success toast and refresh data immediately
       toast.success(
-        `Import completed: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`
+        `Import completed: ${result.imported} imported, ${result.skipped} skipped, ${result.errors} errors`,
       );
       queryClient.invalidateQueries({
         queryKey: getGetApiUserByUsernameGamesQueryKey(username),
@@ -94,10 +81,7 @@ export function ImportButton({ username }: ImportButtonProps) {
     },
   });
 
-  const handleImport = async (
-    file: File,
-    overwriteExisting: boolean = false
-  ) => {
+  const handleImport = async (file: File, overwriteExisting: boolean = false) => {
     setIsImporting(true);
     setShowProgressDialog(true);
 
@@ -117,16 +101,12 @@ export function ImportButton({ username }: ImportButtonProps) {
       setImportProgress({
         stage: "error",
         message:
-          error instanceof Error
-            ? error.message
-            : "Failed to import games. Please try again.",
+          error instanceof Error ? error.message : "Failed to import games. Please try again.",
       });
 
       // Show error toast immediately
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to import games. Please try again."
+        error instanceof Error ? error.message : "Failed to import games. Please try again.",
       );
     } finally {
       setIsImporting(false);
@@ -151,7 +131,7 @@ export function ImportButton({ username }: ImportButtonProps) {
 
     // Ask about overwriting existing games
     const overwrite = window.confirm(
-      "Do you want to overwrite existing games in your library? Click OK to overwrite, Cancel to skip existing games."
+      "Do you want to overwrite existing games in your library? Click OK to overwrite, Cancel to skip existing games.",
     );
 
     handleImport(file, overwrite);
@@ -164,9 +144,7 @@ export function ImportButton({ username }: ImportButtonProps) {
       case "error":
         return <AlertCircle className="w-6 h-6 text-red-500" />;
       default:
-        return (
-          <Loader2 className="w-6 h-6 text-playdamnit-cyan animate-spin" />
-        );
+        return <Loader2 className="w-6 h-6 text-playdamnit-cyan animate-spin" />;
     }
   };
 
@@ -214,9 +192,7 @@ export function ImportButton({ username }: ImportButtonProps) {
             {/* Simple Loading Message */}
             {importProgress.stage === "importing" && (
               <div className="text-center py-4">
-                <div className="text-playdamnit-light/80 mb-2">
-                  {importProgress.message}
-                </div>
+                <div className="text-playdamnit-light/80 mb-2">{importProgress.message}</div>
                 <div className="text-xs text-playdamnit-light/60">
                   Please wait while we process your file...
                 </div>
@@ -251,9 +227,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                       <div className="text-2xl font-bold text-green-400">
                         {importProgress.details.imported || 0}
                       </div>
-                      <div className="text-xs text-playdamnit-light/60">
-                        Games Imported
-                      </div>
+                      <div className="text-xs text-playdamnit-light/60">Games Imported</div>
                       <div className="w-full h-1 bg-green-500/20 rounded-full">
                         <div
                           className="h-full bg-green-500 rounded-full transition-all duration-500"
@@ -268,9 +242,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                       <div className="text-2xl font-bold text-yellow-400">
                         {importProgress.details.skipped || 0}
                       </div>
-                      <div className="text-xs text-playdamnit-light/60">
-                        Games Skipped
-                      </div>
+                      <div className="text-xs text-playdamnit-light/60">Games Skipped</div>
                       <div className="w-full h-1 bg-yellow-500/20 rounded-full">
                         <div
                           className="h-full bg-yellow-500 rounded-full transition-all duration-500"
@@ -285,9 +257,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                       <div className="text-2xl font-bold text-red-400">
                         {importProgress.details.errors || 0}
                       </div>
-                      <div className="text-xs text-playdamnit-light/60">
-                        Errors
-                      </div>
+                      <div className="text-xs text-playdamnit-light/60">Errors</div>
                       <div className="w-full h-1 bg-red-500/20 rounded-full">
                         <div
                           className="h-full bg-red-500 rounded-full transition-all duration-500"
@@ -302,9 +272,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                   {/* Total Processed */}
                   <div className="border-t border-playdamnit-light/10 pt-3">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-playdamnit-light/60">
-                        Total Processed:
-                      </span>
+                      <span className="text-playdamnit-light/60">Total Processed:</span>
                       <span className="font-medium text-playdamnit-light">
                         {(importProgress.details.imported || 0) +
                           (importProgress.details.skipped || 0) +
@@ -313,9 +281,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm mt-1">
-                      <span className="text-playdamnit-light/60">
-                        Success Rate:
-                      </span>
+                      <span className="text-playdamnit-light/60">Success Rate:</span>
                       <span className="font-medium text-green-400">
                         {Math.round(
                           ((importProgress.details.imported || 0) /
@@ -323,9 +289,9 @@ export function ImportButton({ username }: ImportButtonProps) {
                               1,
                               (importProgress.details.imported || 0) +
                                 (importProgress.details.skipped || 0) +
-                                (importProgress.details.errors || 0)
+                                (importProgress.details.errors || 0),
                             )) *
-                            100
+                            100,
                         )}
                         %
                       </span>
@@ -338,12 +304,9 @@ export function ImportButton({ username }: ImportButtonProps) {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                         <div className="text-xs text-yellow-200">
-                          <div className="font-medium mb-1">
-                            Games were skipped
-                          </div>
+                          <div className="font-medium mb-1">Games were skipped</div>
                           <div className="text-yellow-200/80">
-                            These games already exist in your library and were
-                            not overwritten.
+                            These games already exist in your library and were not overwritten.
                           </div>
                         </div>
                       </div>
@@ -355,12 +318,10 @@ export function ImportButton({ username }: ImportButtonProps) {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
                         <div className="text-xs text-red-200 flex-1">
-                          <div className="font-medium mb-1">
-                            Some games had errors
-                          </div>
+                          <div className="font-medium mb-1">Some games had errors</div>
                           <div className="text-red-200/80">
-                            These games could not be imported due to data issues
-                            or validation errors.
+                            These games could not be imported due to data issues or validation
+                            errors.
                           </div>
                         </div>
                       </div>
@@ -370,9 +331,7 @@ export function ImportButton({ username }: ImportButtonProps) {
                         importProgress.details.errorGames.length > 0 && (
                           <div className="border-t border-red-500/20 pt-3">
                             <button
-                              onClick={() =>
-                                setShowFailedGames(!showFailedGames)
-                              }
+                              onClick={() => setShowFailedGames(!showFailedGames)}
                               className="flex items-center gap-2 text-xs text-red-200 hover:text-red-100 transition-colors w-full text-left"
                             >
                               {showFailedGames ? (
@@ -381,36 +340,33 @@ export function ImportButton({ username }: ImportButtonProps) {
                                 <ChevronRight className="w-3 h-3" />
                               )}
                               <span className="font-medium">
-                                View failed games (
-                                {importProgress.details.errorGames.length})
+                                View failed games ({importProgress.details.errorGames.length})
                               </span>
                             </button>
 
                             {showFailedGames && (
                               <div className="mt-3 space-y-3 max-h-40 overflow-y-auto">
-                                {importProgress.details.errorGames.map(
-                                  (errorGame, index) => (
-                                    <div
-                                      key={index}
-                                      className="bg-red-500/5 border border-red-500/10 rounded-lg p-3 text-xs"
-                                    >
-                                      <div className="flex items-start gap-2">
-                                        <AlertCircle className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                          <div
-                                            className="font-semibold text-red-100 mb-1 truncate"
-                                            title={`Game ID: ${errorGame.gameId}`}
-                                          >
-                                            Game ID: {errorGame.gameId}
-                                          </div>
-                                          <div className="text-red-200/80 text-[11px] leading-relaxed">
-                                            {errorGame.error}
-                                          </div>
+                                {importProgress.details.errorGames.map((errorGame, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-red-500/5 border border-red-500/10 rounded-lg p-3 text-xs"
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <AlertCircle className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div
+                                          className="font-semibold text-red-100 mb-1 truncate"
+                                          title={`Game ID: ${errorGame.gameId}`}
+                                        >
+                                          Game ID: {errorGame.gameId}
+                                        </div>
+                                        <div className="text-red-200/80 text-[11px] leading-relaxed">
+                                          {errorGame.error}
                                         </div>
                                       </div>
                                     </div>
-                                  )
-                                )}
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -424,9 +380,7 @@ export function ImportButton({ username }: ImportButtonProps) {
             {/* Simple Results for In-Progress */}
             {importProgress.details && importProgress.stage !== "completed" && (
               <div className="bg-playdamnit-purple/10 rounded-lg p-3 space-y-1">
-                <div className="text-sm font-medium text-playdamnit-light">
-                  Import Summary
-                </div>
+                <div className="text-sm font-medium text-playdamnit-light">Import Summary</div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   {importProgress.details.imported !== undefined && (
                     <div className="text-center">
@@ -458,16 +412,11 @@ export function ImportButton({ username }: ImportButtonProps) {
 
             {/* Close button - always available */}
             <div className="mt-4">
-              {importProgress.stage === "completed" ||
-              importProgress.stage === "error" ? (
+              {importProgress.stage === "completed" || importProgress.stage === "error" ? (
                 <Button
                   onClick={() => setShowProgressDialog(false)}
                   className="w-full"
-                  variant={
-                    importProgress.stage === "completed"
-                      ? "default"
-                      : "destructive"
-                  }
+                  variant={importProgress.stage === "completed" ? "default" : "destructive"}
                 >
                   {importProgress.stage === "completed" ? "Done" : "Close"}
                 </Button>

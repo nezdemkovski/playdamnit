@@ -1,49 +1,26 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": [
-    "NODE_ENV"
-  ],
+  "globalEnv": ["NODE_ENV"],
   "tasks": {
     "generate": {
-      "inputs": [
-        "$TURBO_DEFAULT$"
-      ],
-      "outputs": [
-        "generated.ts"
-      ]
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["generated.ts"]
     },
     "build": {
-      "dependsOn": [
-        "^build",
-        "generate"
-      ],
-      "env": [
-        "VITE_*"
-      ],
-      "outputs": [
-        "dist/**",
-        "*.js",
-        "*.d.ts"
-      ]
+      "dependsOn": ["^build", "generate"],
+      "env": ["VITE_*"],
+      "outputs": ["dist/**", "*.js", "*.d.ts"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": [
-        "^build"
-      ],
-      "env": [
-        "TEST_POSTGRES_URL"
-      ]
+      "dependsOn": ["^build"],
+      "env": ["TEST_POSTGRES_URL"]
     },
     "dev": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

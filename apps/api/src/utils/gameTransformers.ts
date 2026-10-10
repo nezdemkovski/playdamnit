@@ -36,8 +36,7 @@ interface GameWithRelations {
 }
 
 export const transformGameResponse = <T extends GameWithRelations>(game: T) => {
-  const { cover, platforms, genres, types, screenshots, websites, similarGames, ...rest } =
-    game;
+  const { cover, platforms, genres, types, screenshots, websites, similarGames, ...rest } = game;
 
   return {
     ...rest,
@@ -46,9 +45,7 @@ export const transformGameResponse = <T extends GameWithRelations>(game: T) => {
     types: types ?? [],
     cover: {
       id: cover?.id,
-      url: cover?.hash
-        ? getImageUrl(cover.source, cover.hash, IgdbImageSize.COVER_BIG)
-        : null,
+      url: cover?.hash ? getImageUrl(cover.source, cover.hash, IgdbImageSize.COVER_BIG) : null,
       width: cover?.width,
       height: cover?.height,
     },

@@ -70,7 +70,7 @@ export class TooManyRequestsError extends AppError {
 
   constructor(
     message: string = "Too many requests",
-    readonly retryAfterSeconds?: number
+    readonly retryAfterSeconds?: number,
   ) {
     super(message);
   }

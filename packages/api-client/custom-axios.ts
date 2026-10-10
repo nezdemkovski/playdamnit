@@ -15,7 +15,7 @@ export const configureApiClient = (options: { baseURL: string }) => {
 
 export const customInstance = async <T>(
   config: AxiosRequestConfig,
-  options?: AxiosRequestConfig
+  options?: AxiosRequestConfig,
 ): Promise<T> => {
   const response = await AXIOS_INSTANCE({
     ...config,

@@ -95,11 +95,7 @@ export const useDeletePasskey = () => {
 export const useSignIn = () => {
   const queryClient = useQueryClient();
 
-  const emailSignIn = useMutation<
-    any,
-    Error,
-    { identifier: string; password: string }
-  >({
+  const emailSignIn = useMutation<any, Error, { identifier: string; password: string }>({
     mutationKey: ["emailSignIn"],
     mutationFn: async ({ identifier, password }) => {
       const isEmail = z.string().email().safeParse(identifier).success;

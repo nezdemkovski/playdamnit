@@ -32,9 +32,7 @@ export const ProfileContent = ({
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "row">("row");
-  const [selectedGame, setSelectedGame] = useState<UserGameWithUserData | null>(
-    null
-  );
+  const [selectedGame, setSelectedGame] = useState<UserGameWithUserData | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isSearchAndAddModalOpen, setIsSearchAndAddModalOpen] = useState(false);
   const { data: userGames, isLoading } = useGetApiUserByUsernameGames(username);
@@ -86,7 +84,7 @@ export const ProfileContent = ({
             ? game.userGameData?.status === "playing"
             : status === "dropped"
               ? game.userGameData?.status === "dropped"
-              : game.userGameData?.status === status
+              : game.userGameData?.status === status,
     ).length;
   };
 
@@ -142,23 +140,20 @@ export const ProfileContent = ({
   //   0
   // );
 
-  const platformDistribution = Array.from(
-    new Set(games?.map((g) => g.platforms?.[0]?.name))
-  ).map((platform) => {
-    const count = games?.filter(
-      (g) => g.platforms?.[0]?.name === platform
-    ).length;
-    const percentage = games?.length ? ((count || 0) / games.length) * 100 : 0;
-    return { platform, count, percentage };
-  });
+  const platformDistribution = Array.from(new Set(games?.map((g) => g.platforms?.[0]?.name))).map(
+    (platform) => {
+      const count = games?.filter((g) => g.platforms?.[0]?.name === platform).length;
+      const percentage = games?.length ? ((count || 0) / games.length) * 100 : 0;
+      return { platform, count, percentage };
+    },
+  );
 
   // Sort games by createdAt date (or firstReleaseDate as fallback)
   const sortedGames = [...(games || [])].sort((a, b) => {
     // First try to use userGameData.addedAt
     if (a.userGameData?.addedAt && b.userGameData?.addedAt) {
       return (
-        new Date(b.userGameData.addedAt).getTime() -
-        new Date(a.userGameData.addedAt).getTime()
+        new Date(b.userGameData.addedAt).getTime() - new Date(a.userGameData.addedAt).getTime()
       );
     }
 
@@ -186,12 +181,8 @@ export const ProfileContent = ({
 
     const matchesSearch =
       game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      game.platforms?.[0]?.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      game.genres.some((genre) =>
-        genre.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      game.platforms?.[0]?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      game.genres.some((genre) => genre.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return matchesTab && matchesSearch;
   });
@@ -255,11 +246,7 @@ export const ProfileContent = ({
   const handleDeleteGame = (game: UserGameWithUserData) => {
     if (!isOwnProfile) return;
     console.log("game", game);
-    if (
-      window.confirm(
-        `Are you sure you want to remove ${game.name} from your collection?`
-      )
-    ) {
+    if (window.confirm(`Are you sure you want to remove ${game.name} from your collection?`)) {
       deleteGameMutation.mutate(
         { username, id: game.id },
         {
@@ -272,7 +259,7 @@ export const ProfileContent = ({
             console.error("Error deleting game:", error);
             alert("Failed to delete game. Please try again.");
           },
-        }
+        },
       );
     }
   };
@@ -282,9 +269,7 @@ export const ProfileContent = ({
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-12">
-            <div className="text-playdamnit-light/40 mb-2">
-              Loading games...
-            </div>
+            <div className="text-playdamnit-light/40 mb-2">Loading games...</div>
           </div>
         </div>
       </div>
@@ -299,8 +284,7 @@ export const ProfileContent = ({
           username={username}
           fullName={fullName}
           avatarUrl={
-            avatarUrl &&
-            !(avatarUrl.startsWith("http") || avatarUrl.startsWith("data:"))
+            avatarUrl && !(avatarUrl.startsWith("http") || avatarUrl.startsWith("data:"))
               ? `data:image/png;base64,${avatarUrl}`
               : avatarUrl
           }
@@ -323,11 +307,7 @@ export const ProfileContent = ({
           onViewModeChange={setViewMode}
         />
 
-        <ProfileTabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <ProfileTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
         <GamesList
           games={filteredGames}

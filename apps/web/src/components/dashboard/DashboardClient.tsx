@@ -64,10 +64,7 @@ export default function DashboardClient() {
             </Button>
           </h2>
         ))}
-        <button
-          onClick={handlePasskeyLogin}
-          disabled={addPasskeyMutation.isPending}
-        >
+        <button onClick={handlePasskeyLogin} disabled={addPasskeyMutation.isPending}>
           {addPasskeyMutation.isPending ? "Registering..." : "Register Passkey"}
         </button>
       </div>

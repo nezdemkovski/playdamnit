@@ -40,9 +40,7 @@ export const transformIGDBResponse = (game: IGDBGameResponse) => {
       trusted,
     })),
     keywords: keywords?.map((keyword) => keyword.name).join(", "),
-    involved_companies: involved_companies
-      ?.map((company) => company.company.name)
-      .join(", "),
+    involved_companies: involved_companies?.map((company) => company.company.name).join(", "),
     game_types: game_type && [
       {
         id: game_type.id,

@@ -67,13 +67,9 @@ const consoleFormat = combine(
   colorize(),
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   printf(({ timestamp, level, message, service, ...meta }) => {
-    const metaString = Object.keys(meta).length
-      ? JSON.stringify(meta, null, 2)
-      : "";
-    return `[${timestamp}] [${level}] [${
-      service || "app"
-    }] ${message} ${metaString}`;
-  })
+    const metaString = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : "";
+    return `[${timestamp}] [${level}] [${service || "app"}] ${message} ${metaString}`;
+  }),
 );
 
 const winstonLogger = winston.createLogger({
@@ -198,8 +194,7 @@ export const createLogger = (namespace: string): EnhancedLogger => {
     },
 
     exception: (error: unknown, meta: Record<string, any> = {}) => {
-      const errorObject =
-        error instanceof Error ? error : new Error(String(error));
+      const errorObject = error instanceof Error ? error : new Error(String(error));
 
       winstonLogger.error(errorObject.message, {
         namespace,

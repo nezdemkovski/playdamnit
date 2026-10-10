@@ -14,9 +14,7 @@ const validateEnvironment = () => {
   if (!process.env.TWITCH_CLIENT_SECRET) missingVars.push("TWITCH_CLIENT_SECRET");
 
   if (missingVars.length > 0) {
-    logger.error(
-      `Missing required environment variables: ${missingVars.join(", ")}`
-    );
+    logger.error(`Missing required environment variables: ${missingVars.join(", ")}`);
     process.exit(1);
   }
 };

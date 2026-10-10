@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { getApiUserByUsernameGamesExport } from "@playdamnit/api-client";
@@ -72,9 +68,7 @@ export function ExportButton({ username }: ExportButtonProps) {
       </PopoverTrigger>
       <PopoverContent className="w-48 bg-playdamnit-dark border-playdamnit-purple/30">
         <div className="space-y-2">
-          <p className="text-sm text-playdamnit-light/60 mb-3">
-            Choose export format:
-          </p>
+          <p className="text-sm text-playdamnit-light/60 mb-3">Choose export format:</p>
           <Button
             variant="ghost"
             size="sm"

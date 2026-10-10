@@ -57,9 +57,7 @@ export function ProfileHeader({
                   </button>
                 )}
               </h1>
-              <div className="text-playdamnit-light/60 text-sm mb-2">
-                @{username}
-              </div>
+              <div className="text-playdamnit-light/60 text-sm mb-2">@{username}</div>
 
               <div className="flex gap-6 items-center">
                 <div className="flex items-center gap-1.5">
@@ -74,15 +72,11 @@ export function ProfileHeader({
                 <div className="flex items-center gap-4">
                   <div className="text-sm">
                     <span className="text-playdamnit-light/40">Following</span>
-                    <span className="ml-1.5 text-playdamnit-light font-medium">
-                      0
-                    </span>
+                    <span className="ml-1.5 text-playdamnit-light font-medium">0</span>
                   </div>
                   <div className="text-sm">
                     <span className="text-playdamnit-light/40">Followers</span>
-                    <span className="ml-1.5 text-playdamnit-light font-medium">
-                      0
-                    </span>
+                    <span className="ml-1.5 text-playdamnit-light font-medium">0</span>
                   </div>
                 </div>
               </div>

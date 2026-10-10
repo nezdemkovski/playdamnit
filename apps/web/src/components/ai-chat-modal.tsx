@@ -4,12 +4,7 @@ import { cn } from "@/lib/utils";
 import { Bot, User, Send, Loader2, Filter } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@ai-sdk/react";
 import GameResult from "./chat/GameResult";
 import GameResultsList from "./chat/GameResultsList";
@@ -25,15 +20,14 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showOnlyGames, setShowOnlyGames] = useState(true);
 
-  const { messages, input, handleInputChange, handleSubmit, status, error } =
-    useChat({
-      api: `${getConfig().backendUrl}/chat/ai`,
-      fetch: (input, init) =>
-        fetch(input, {
-          ...init,
-          credentials: "include",
-        }),
-    });
+  const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
+    api: `${getConfig().backendUrl}/chat/ai`,
+    fetch: (input, init) =>
+      fetch(input, {
+        ...init,
+        credentials: "include",
+      }),
+  });
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -50,9 +44,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-playdamnit-darker border border-playdamnit-purple/20 text-white max-w-2xl p-0 h-[80vh] flex flex-col overflow-hidden">
         <div className="p-4 border-b border-playdamnit-purple/20 flex items-center justify-between">
-          <DialogTitle className="text-xl font-bold text-white">
-            Game Assistant
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold text-white">Game Assistant</DialogTitle>
 
           <TooltipProvider>
             <Tooltip>
@@ -68,9 +60,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                   <span
                     className={cn(
                       "text-xs font-medium py-0 min-w-[70px] text-center",
-                      showOnlyGames
-                        ? "text-playdamnit-cyan"
-                        : "text-playdamnit-light"
+                      showOnlyGames ? "text-playdamnit-cyan" : "text-playdamnit-light",
                     )}
                   >
                     {showOnlyGames ? "Games only" : "All types"}
@@ -95,12 +85,9 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
           {messages.length === 0 ? (
             <div className="text-center text-gray-400 my-8">
               <Bot className="w-12 h-12 mx-auto mb-4 text-playdamnit-cyan" />
-              <p className="text-lg font-medium">
-                How can I help you with games?
-              </p>
+              <p className="text-lg font-medium">How can I help you with games?</p>
               <p className="text-sm mt-2">
-                Try saying something like &quot;I played Doom and gave it
-                9/10&quot;
+                Try saying something like &quot;I played Doom and gave it 9/10&quot;
               </p>
             </div>
           ) : (
@@ -119,7 +106,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                         "flex items-start gap-3 p-3 rounded-lg",
                         message.role === "user"
                           ? "bg-playdamnit-purple/10"
-                          : "bg-playdamnit-dark/30"
+                          : "bg-playdamnit-dark/30",
                       )}
                     >
                       <div className="w-8 h-8 rounded-full flex items-center justify-center bg-playdamnit-purple/20">
@@ -160,10 +147,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                                         <GameResultsList
                                           games={result.results}
                                           onSelectGame={(game) => {
-                                            handleGameSelection(
-                                              message.id,
-                                              game
-                                            );
+                                            handleGameSelection(message.id, game);
                                           }}
                                         />
                                       </div>
@@ -218,10 +202,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="border-t border-playdamnit-purple/20 p-4"
-        >
+        <form onSubmit={handleSubmit} className="border-t border-playdamnit-purple/20 p-4">
           <div className="relative">
             <input
               type="text"
@@ -238,7 +219,7 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                 "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center",
                 input.trim()
                   ? "bg-playdamnit-cyan text-playdamnit-dark"
-                  : "bg-playdamnit-purple/20 text-gray-400"
+                  : "bg-playdamnit-purple/20 text-gray-400",
               )}
             >
               <Send className="w-4 h-4" />

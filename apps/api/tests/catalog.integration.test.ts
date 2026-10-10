@@ -18,10 +18,11 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   };
 
   const insertGame = (id: number, name: string) =>
-    pg.query(
-      `insert into game (id, name, slug) values ($1, $2, $3) on conflict do nothing`,
-      [id, name, `${name.toLowerCase().replace(/\W+/g, "-")}-${id}`]
-    );
+    pg.query(`insert into game (id, name, slug) values ($1, $2, $3) on conflict do nothing`, [
+      id,
+      name,
+      `${name.toLowerCase().replace(/\W+/g, "-")}-${id}`,
+    ]);
 
   const notify = (requestId: string, ok: boolean) =>
     pg.query(`select pg_notify('game_catalog_updated', $1)`, [JSON.stringify({ requestId, ok })]);
@@ -46,15 +47,16 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
       async ([job]) => {
         if (job.data.query.toLowerCase().includes("zzyzx")) await insertGame(900001, "Zzyzx Quest");
         await notify(job.data.requestId, true);
-      }
+      },
     );
     await fakeLibrarian.work<{ ids: number[]; requestId?: string }>(
       "fetch-by-ids",
       { pollingIntervalSeconds: 0.5 },
       async ([job]) => {
-        for (const id of job.data.ids.filter((id) => id < 950000)) await insertGame(id, `Game ${id}`);
+        for (const id of job.data.ids.filter((id) => id < 950000))
+          await insertGame(id, `Game ${id}`);
         if (job.data.requestId) await notify(job.data.requestId, true);
-      }
+      },
     );
 
     mod = {
@@ -91,7 +93,7 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   test("import fetches missing games and reports the ones IGDB doesn't have", async () => {
     await pg.query(
       `insert into "user" (id, name, email, email_verified, created_at, updated_at, username)
-       values ('u1', 'U', 'u@example.com', true, now(), now(), 'u1')`
+       values ('u1', 'U', 'u@example.com', true, now(), now(), 'u1')`,
     );
 
     const rows = [

@@ -82,7 +82,7 @@ export const initNotifyListener = async (): Promise<void> => {
 
 export const waitForNotify = (
   requestId: string,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<NotifyResult> => {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {

@@ -30,38 +30,34 @@ export function GamesList({
   }
 
   // Group games by year
-  const groupedGames = games.reduce<Record<string, UserGameWithUserData[]>>(
-    (acc, game) => {
-      // Get year based on game status and available dates
-      let year = "Unknown Year";
+  const groupedGames = games.reduce<Record<string, UserGameWithUserData[]>>((acc, game) => {
+    // Get year based on game status and available dates
+    let year = "Unknown Year";
 
-      // For finished or dropped games, prioritize endedAt (when user finished/dropped the game)
-      if (
-        (game.userGameData?.status === "finished" ||
-          game.userGameData?.status === "dropped") &&
-        game.userGameData?.endedAt
-      ) {
-        year = new Date(game.userGameData.endedAt).getFullYear().toString();
-      }
-      // Fall back to when the game was added to the user's library
-      else if (game.userGameData?.addedAt) {
-        year = new Date(game.userGameData.addedAt).getFullYear().toString();
-      }
-      // Final fallback to the game's original release date
-      else if (game.firstReleaseDate) {
-        // Convert Unix timestamp to year
-        year = new Date(game.firstReleaseDate * 1000).getFullYear().toString();
-      }
+    // For finished or dropped games, prioritize endedAt (when user finished/dropped the game)
+    if (
+      (game.userGameData?.status === "finished" || game.userGameData?.status === "dropped") &&
+      game.userGameData?.endedAt
+    ) {
+      year = new Date(game.userGameData.endedAt).getFullYear().toString();
+    }
+    // Fall back to when the game was added to the user's library
+    else if (game.userGameData?.addedAt) {
+      year = new Date(game.userGameData.addedAt).getFullYear().toString();
+    }
+    // Final fallback to the game's original release date
+    else if (game.firstReleaseDate) {
+      // Convert Unix timestamp to year
+      year = new Date(game.firstReleaseDate * 1000).getFullYear().toString();
+    }
 
-      if (!acc[year]) {
-        acc[year] = [];
-      }
+    if (!acc[year]) {
+      acc[year] = [];
+    }
 
-      acc[year].push(game);
-      return acc;
-    },
-    {}
-  );
+    acc[year].push(game);
+    return acc;
+  }, {});
 
   // Sort years in descending order (newest first)
   const sortedYears = Object.keys(groupedGames).sort((a, b) => {
@@ -77,8 +73,7 @@ export function GamesList({
       const getDateForSorting = (game: UserGameWithUserData): Date => {
         // For finished or dropped games, prioritize endedAt
         if (
-          (game.userGameData?.status === "finished" ||
-            game.userGameData?.status === "dropped") &&
+          (game.userGameData?.status === "finished" || game.userGameData?.status === "dropped") &&
           game.userGameData?.endedAt
         ) {
           return new Date(game.userGameData.endedAt);

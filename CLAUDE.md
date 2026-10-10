@@ -6,14 +6,14 @@ Guidance for Claude Code (claude.ai/code) in this repository.
 
 Bun workspaces + Turborepo. Use **Bun** only (never npm, node, pnpm or yarn for scripts and installs).
 
-| Path | Package | What |
-|---|---|---|
-| `apps/api` | `@playdamnit/api` | Elysia 2 HTTP API (Bun) |
-| `apps/librarian` | `@playdamnit/librarian` | pg-boss worker, sole owner of IGDB access (Bun) |
-| `apps/web` | `@playdamnit/web` | React SPA: Vite, TanStack Router + Query, Tailwind |
-| `packages/db` | `@playdamnit/db` | Drizzle schema, relations, migrations, migrator, job contract |
+| Path                  | Package                  | What                                                                 |
+| --------------------- | ------------------------ | -------------------------------------------------------------------- |
+| `apps/api`            | `@playdamnit/api`        | Elysia 2 HTTP API (Bun)                                              |
+| `apps/librarian`      | `@playdamnit/librarian`  | pg-boss worker, sole owner of IGDB access (Bun)                      |
+| `apps/web`            | `@playdamnit/web`        | React SPA: Vite, TanStack Router + Query, Tailwind                   |
+| `packages/db`         | `@playdamnit/db`         | Drizzle schema, relations, migrations, migrator, job contract        |
 | `packages/api-client` | `@playdamnit/api-client` | OpenAPI spec + orval-generated React Query client (published to npm) |
-| `packages/tsconfig` | `@playdamnit/tsconfig` | Shared tsconfig for Bun services |
+| `packages/tsconfig`   | `@playdamnit/tsconfig`   | Shared tsconfig for Bun services                                     |
 
 Workspace packages are imported by name (`@playdamnit/db/schema`, `@playdamnit/db/jobs`, ...) — never with relative paths across packages. `packages/db` ships TypeScript source; Bun and the bundler resolve it directly.
 
@@ -52,7 +52,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema. In short:
 ### Database (`packages/db`)
 
 - **Drizzle ORM 1.0 RC**. Tables: `src/schema.ts`; relations: `src/relations.ts` (`defineRelations`, RQB v2). Each app builds its own client (`apps/api/db/postgres/index.ts` with `bun-sql`, `apps/librarian/db/postgres/index.ts` with `node-postgres`) via `drizzle(url, { relations })`.
-- RQB v2 syntax: `where: { id: 1 }`, `where: { platforms: { id } }`, `where: { RAW: (t) => sql\`...\` }`, `orderBy: { addedAt: "desc" }` or `orderBy: (t) => [...]`. Inside `RAW`/`orderBy` callbacks use the table passed in (RQB aliases it).
+- RQB v2 syntax: `where: { id: 1 }`, `where: { platforms: { id } }`, `where: { RAW: (t) => sql\`...\` }`, `orderBy: { addedAt: "desc" }`or`orderBy: (t) => [...]`. Inside `RAW`/`orderBy` callbacks use the table passed in (RQB aliases it).
 - Many-to-many relations go `through` junction tables, so `with: { platforms: true }` returns platform rows.
 - Migrations: `migrations/<timestamp>_<name>/{migration.sql,snapshot.json}` (drizzle-kit v1, no journal). For renames `drizzle-kit generate` asks for `--hints`. CI runs `db:check`. The API Docker entrypoint applies migrations on start (`src/migrate.ts`).
 - Queue names, payloads and the NOTIFY channel live in `src/jobs.ts`. Both services `createQueue()` every queue on startup (pg-boss ≥ 10 requires it); work handlers receive an **array** of jobs.

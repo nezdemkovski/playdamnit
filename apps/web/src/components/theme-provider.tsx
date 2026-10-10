@@ -7,8 +7,7 @@ type ResolvedTheme = "light" | "dark";
 
 const query = "(prefers-color-scheme: dark)";
 
-const getSystemTheme = (): ResolvedTheme =>
-  window.matchMedia(query).matches ? "dark" : "light";
+const getSystemTheme = (): ResolvedTheme => (window.matchMedia(query).matches ? "dark" : "light");
 
 const ThemeContext = createContext<{ theme: ResolvedTheme }>({ theme: "light" });
 

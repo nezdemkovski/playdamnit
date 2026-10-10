@@ -47,9 +47,11 @@ export const parseCSV = (content: string): Record<string, string>[] => {
 
   const headers = nonEmpty[0].map((h) => h.trim());
 
-  return nonEmpty.slice(1).map((values) =>
-    Object.fromEntries(headers.map((header, index) => [header, (values[index] ?? "").trim()]))
-  );
+  return nonEmpty
+    .slice(1)
+    .map((values) =>
+      Object.fromEntries(headers.map((header, index) => [header, (values[index] ?? "").trim()])),
+    );
 };
 
 export const escapeCsvField = (field: unknown): string => {

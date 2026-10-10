@@ -1,15 +1,7 @@
 import type React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Star, Edit3 } from "lucide-react";
-import {
-  Game,
-  UserGameWithUserData,
-} from "@playdamnit/api-client";
+import { Game, UserGameWithUserData } from "@playdamnit/api-client";
 import GameForm from "./game-form";
 
 type GameModalMode = "add" | "update";
@@ -67,11 +59,9 @@ export default function GameModal({
           </DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-6 pb-6">
-            {modalContent}
-          </div>
+          <div className="px-6 pb-6">{modalContent}</div>
         </div>
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -27,7 +27,10 @@ const GAME_FIELDS = `
          game_type.id, game_type.type;`;
 
 export class IGDBError extends Error {
-  constructor(message: string, readonly status?: number) {
+  constructor(
+    message: string,
+    readonly status?: number,
+  ) {
     super(message);
     this.name = "IGDBError";
   }
@@ -64,7 +67,7 @@ const igdbRequest = async <T>(body: string, retryAuth = true): Promise<T> => {
     const errorText = await response.text();
     throw new IGDBError(
       `IGDB request failed with ${response.status}: ${errorText.slice(0, 500)}`,
-      response.status
+      response.status,
     );
   }
 
@@ -89,7 +92,7 @@ export const escapeApicalypseString = (value: string) =>
 export const searchIGDB = async (
   query: string,
   showOnlyGames: boolean = true,
-  limit: number = 50
+  limit: number = 50,
 ) => {
   logger.info("Searching IGDB for:", { query, showOnlyGames });
 
@@ -110,7 +113,7 @@ export const searchIGDB = async (
  */
 export const fetchIGDBByIds = async (
   ids: number[],
-  showOnlyGames: boolean = true
+  showOnlyGames: boolean = true,
 ): Promise<IGDBGameResponse[]> => {
   const validIds = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0);
   if (validIds.length === 0) return [];

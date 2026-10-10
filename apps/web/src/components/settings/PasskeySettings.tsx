@@ -55,9 +55,7 @@ export function PasskeySettings({ user }: { user: any }) {
       <div className="space-y-6">
         <div className="bg-playdamnit-dark/50 p-4 rounded-lg">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-3">
-            <h3 className="text-lg font-semibold text-playdamnit-light">
-              Your Passkeys
-            </h3>
+            <h3 className="text-lg font-semibold text-playdamnit-light">Your Passkeys</h3>
             <Button
               onClick={handlePasskeyLogin}
               disabled={addPasskeyMutation.isPending}
@@ -94,8 +92,7 @@ export function PasskeySettings({ user }: { user: any }) {
                       {passkey.name || `Passkey ${passkey.id.substring(0, 8)}`}
                     </span>
                     <p className="text-xs text-playdamnit-light/50 mt-1">
-                      Created:{" "}
-                      {new Date(passkey.createdAt).toLocaleDateString()}
+                      Created: {new Date(passkey.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <Button
@@ -122,12 +119,10 @@ export function PasskeySettings({ user }: { user: any }) {
           ) : (
             <div className="text-center py-8 bg-playdamnit-darker/30 rounded-lg">
               <Key className="w-10 h-10 mx-auto mb-3 text-playdamnit-light/30" />
-              <p className="text-playdamnit-light/60 mb-2">
-                You don&apos;t have any passkeys yet
-              </p>
+              <p className="text-playdamnit-light/60 mb-2">You don&apos;t have any passkeys yet</p>
               <p className="text-sm text-playdamnit-light/40 max-w-md mx-auto">
-                Passkeys provide a secure, passwordless way to sign in to your
-                account using your device&apos;s authentication.
+                Passkeys provide a secure, passwordless way to sign in to your account using your
+                device&apos;s authentication.
               </p>
             </div>
           )}
@@ -135,30 +130,24 @@ export function PasskeySettings({ user }: { user: any }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <div className="bg-playdamnit-dark/40 p-4 rounded-lg">
-            <h4 className="font-semibold text-playdamnit-light mb-2">
-              What are passkeys?
-            </h4>
+            <h4 className="font-semibold text-playdamnit-light mb-2">What are passkeys?</h4>
             <p className="text-sm text-playdamnit-light/60">
-              Passkeys are a safer alternative to passwords. They use biometrics
-              or device PIN for verification.
+              Passkeys are a safer alternative to passwords. They use biometrics or device PIN for
+              verification.
             </p>
           </div>
           <div className="bg-playdamnit-dark/40 p-4 rounded-lg">
-            <h4 className="font-semibold text-playdamnit-light mb-2">
-              Why use passkeys?
-            </h4>
+            <h4 className="font-semibold text-playdamnit-light mb-2">Why use passkeys?</h4>
             <p className="text-sm text-playdamnit-light/60">
-              Passkeys can&apos;t be phished or stolen in data breaches, and
-              work across your devices with the same security.
+              Passkeys can&apos;t be phished or stolen in data breaches, and work across your
+              devices with the same security.
             </p>
           </div>
           <div className="bg-playdamnit-dark/40 p-4 rounded-lg">
-            <h4 className="font-semibold text-playdamnit-light mb-2">
-              How to use
-            </h4>
+            <h4 className="font-semibold text-playdamnit-light mb-2">How to use</h4>
             <p className="text-sm text-playdamnit-light/60">
-              Click &quot;Register New Passkey&quot; and follow the prompts on
-              your device to set up passwordless login.
+              Click &quot;Register New Passkey&quot; and follow the prompts on your device to set up
+              passwordless login.
             </p>
           </div>
         </div>
@@ -178,9 +167,8 @@ export function PasskeySettings({ user }: { user: any }) {
               Delete Passkey
             </AlertDialogTitle>
             <AlertDialogDescription className="text-playdamnit-light/70">
-              Are you sure you want to delete this passkey? This action cannot
-              be undone and you will need to register a new passkey if you want
-              to use passwordless login again.
+              Are you sure you want to delete this passkey? This action cannot be undone and you
+              will need to register a new passkey if you want to use passwordless login again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
@@ -188,9 +176,7 @@ export function PasskeySettings({ user }: { user: any }) {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                passkeyToDelete && handleDeletePasskey(passkeyToDelete)
-              }
+              onClick={() => passkeyToDelete && handleDeletePasskey(passkeyToDelete)}
               className="bg-red-500/80 hover:bg-red-500 text-white border-none"
             >
               Delete Passkey

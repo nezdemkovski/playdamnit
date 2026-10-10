@@ -36,9 +36,7 @@ export default function GameForm({
   onCancel,
   onBackToSearch,
 }: GameFormProps) {
-  const [status, setStatus] = useState<
-    "Finished" | "Playing" | "Dropped" | "Want"
-  >("Want");
+  const [status, setStatus] = useState<"Finished" | "Playing" | "Dropped" | "Want">("Want");
   const [rating, setRating] = useState<number>(0);
   const [review, setReview] = useState("");
   const [endedAt, setEndedAt] = useState<string>("");
@@ -48,21 +46,16 @@ export default function GameForm({
   const addGameMutation = usePostApiUserByUsernameGames();
   const updateGameMutation = usePatchApiUserByUsernameGamesById();
 
-  const isSubmitting = mode === "add" 
-    ? addGameMutation.isPending 
-    : updateGameMutation.isPending;
+  const isSubmitting = mode === "add" ? addGameMutation.isPending : updateGameMutation.isPending;
 
   // Initialize with existing data for update mode
   useEffect(() => {
     if (mode === "update" && game) {
       const userGame = game as UserGameWithUserData;
-      
+
       // Try to extract status from game data if available
       if (userGame.userGameData?.status) {
-        const statusMap: Record<
-          string,
-          "Finished" | "Playing" | "Dropped" | "Want"
-        > = {
+        const statusMap: Record<string, "Finished" | "Playing" | "Dropped" | "Want"> = {
           finished: "Finished",
           playing: "Playing",
           dropped: "Dropped",
@@ -113,8 +106,7 @@ export default function GameForm({
     {
       value: "Finished",
       label: "Finished",
-      color:
-        "bg-playdamnit-cyan/20 text-playdamnit-cyan border-playdamnit-cyan/30",
+      color: "bg-playdamnit-cyan/20 text-playdamnit-cyan border-playdamnit-cyan/30",
     },
     {
       value: "Dropped",
@@ -134,11 +126,7 @@ export default function GameForm({
       const dbStatus =
         status === "Want"
           ? "want_to_play"
-          : (status.toLowerCase() as
-              | "finished"
-              | "playing"
-              | "dropped"
-              | "want_to_play");
+          : (status.toLowerCase() as "finished" | "playing" | "dropped" | "want_to_play");
 
       const invalidateQueries = () => {
         queryClient.invalidateQueries({
@@ -168,7 +156,7 @@ export default function GameForm({
           },
           {
             onSuccess: invalidateQueries,
-          }
+          },
         );
       } else {
         await updateGameMutation.mutateAsync(
@@ -184,7 +172,7 @@ export default function GameForm({
           },
           {
             onSuccess: invalidateQueries,
-          }
+          },
         );
       }
     } catch (error) {
@@ -208,9 +196,7 @@ export default function GameForm({
           </div>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-bold text-playdamnit-light mb-2 line-clamp-2">
-            {game.name}
-          </h3>
+          <h3 className="text-xl font-bold text-playdamnit-light mb-2 line-clamp-2">{game.name}</h3>
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-1">
               <span className="text-2xl font-bold text-playdamnit-cyan">
@@ -228,9 +214,7 @@ export default function GameForm({
             )}
           </div>
           {game.summary && (
-            <p className="text-sm text-playdamnit-light/60 line-clamp-2">
-              {game.summary}
-            </p>
+            <p className="text-sm text-playdamnit-light/60 line-clamp-2">{game.summary}</p>
           )}
         </div>
       </div>
@@ -238,9 +222,7 @@ export default function GameForm({
       <div className="space-y-6">
         {/* Status Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium text-playdamnit-light">
-            Status
-          </Label>
+          <Label className="text-sm font-medium text-playdamnit-light">Status</Label>
           <div className="grid grid-cols-2 gap-3">
             {statusOptions.map((option) => (
               <button
@@ -248,10 +230,7 @@ export default function GameForm({
                 onClick={() => {
                   setStatus(option.value as typeof status);
                   // Set default date for Finished/Dropped, clear for others
-                  if (
-                    option.value === "Finished" ||
-                    option.value === "Dropped"
-                  ) {
+                  if (option.value === "Finished" || option.value === "Dropped") {
                     if (!endedAt) {
                       setEndedAt(new Date().toISOString().split("T")[0]);
                     }
@@ -263,7 +242,7 @@ export default function GameForm({
                   "p-3 rounded-lg border text-sm font-medium transition-all duration-200",
                   status === option.value
                     ? option.color
-                    : "bg-playdamnit-dark/50 text-playdamnit-light/60 border-playdamnit-purple/20 hover:bg-playdamnit-purple/5 hover:border-playdamnit-purple/30"
+                    : "bg-playdamnit-dark/50 text-playdamnit-light/60 border-playdamnit-purple/20 hover:bg-playdamnit-purple/5 hover:border-playdamnit-purple/30",
                 )}
               >
                 {option.label}
@@ -274,15 +253,11 @@ export default function GameForm({
 
         {/* Rating */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium text-playdamnit-light">
-            Rating
-          </Label>
+          <Label className="text-sm font-medium text-playdamnit-light">Rating</Label>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-playdamnit-light/60">No Score</span>
-              <span className="text-xs text-playdamnit-light/60">
-                Perfect 10
-              </span>
+              <span className="text-xs text-playdamnit-light/60">Perfect 10</span>
             </div>
             <div className="relative">
               <input
@@ -306,7 +281,7 @@ export default function GameForm({
                       "w-6 h-6 rounded-full text-xs font-medium transition-all duration-200",
                       rating === value
                         ? "bg-playdamnit-cyan text-playdamnit-dark scale-110"
-                        : "bg-playdamnit-dark border border-playdamnit-purple/30 text-playdamnit-light/60 hover:border-playdamnit-cyan/50"
+                        : "bg-playdamnit-dark border border-playdamnit-purple/30 text-playdamnit-light/60 hover:border-playdamnit-cyan/50",
                     )}
                   >
                     {value}
@@ -382,12 +357,14 @@ export default function GameForm({
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 {mode === "add" ? "Adding..." : "Updating..."}
               </>
+            ) : mode === "add" ? (
+              "Add to Library"
             ) : (
-              mode === "add" ? "Add to Library" : "Update Game"
+              "Update Game"
             )}
           </Button>
         </div>
       </div>
     </div>
   );
-} 
+}

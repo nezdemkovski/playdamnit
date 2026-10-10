@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Filter,
-  ChevronDown,
-  BarChart3,
-  LayoutGrid,
-  List,
-  X,
-} from "lucide-react";
+import { Search, Filter, ChevronDown, BarChart3, LayoutGrid, List, X } from "lucide-react";
 
 interface SearchAndFilterProps {
   searchTerm: string;

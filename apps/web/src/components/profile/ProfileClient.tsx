@@ -15,11 +15,7 @@ type ProfileClientProps = {
   } | null;
 };
 
-export default function ProfileClient({
-  username,
-  isOwnProfile,
-  currentUser,
-}: ProfileClientProps) {
+export default function ProfileClient({ username, isOwnProfile, currentUser }: ProfileClientProps) {
   const {
     data: profileUser,
     isLoading: isUserLoading,
@@ -34,11 +30,7 @@ export default function ProfileClient({
     );
   }
 
-  if (
-    userError &&
-    userError instanceof AxiosError &&
-    userError.response?.status === 404
-  ) {
+  if (userError && userError instanceof AxiosError && userError.response?.status === 404) {
     return <UserNotFound />;
   }
 
@@ -46,14 +38,8 @@ export default function ProfileClient({
     <ProfileContent
       isOwnProfile={isOwnProfile}
       username={username}
-      fullName={
-        profileUser?.name || (isOwnProfile ? currentUser?.name : "") || ""
-      }
-      avatarUrl={
-        profileUser?.image ||
-        (isOwnProfile ? currentUser?.image : "") ||
-        ""
-      }
+      fullName={profileUser?.name || (isOwnProfile ? currentUser?.name : "") || ""}
+      avatarUrl={profileUser?.image || (isOwnProfile ? currentUser?.image : "") || ""}
     />
   );
 }

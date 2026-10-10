@@ -68,5 +68,5 @@ export const relations = defineRelations(
     website: {
       websiteType: r.one.websiteType({ from: r.website.typeId, to: r.websiteType.id }),
     },
-  })
+  }),
 );

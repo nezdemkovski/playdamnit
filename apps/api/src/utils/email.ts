@@ -52,9 +52,7 @@ export const sendEmail = async ({
   }
 
   return resend.emails.send({
-    from: isDev
-      ? "onboarding@resend.dev"
-      : "playdamnit.com <hello@playdamnit.com>",
+    from: isDev ? "onboarding@resend.dev" : "playdamnit.com <hello@playdamnit.com>",
     to: isDev ? "delivered@resend.dev" : to,
     subject,
     html,

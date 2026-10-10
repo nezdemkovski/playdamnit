@@ -29,9 +29,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      {/* Your app components */}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{/* Your app components */}</QueryClientProvider>
   );
 }
 ```
@@ -64,7 +62,9 @@ function GamesList() {
 
   return (
     <div>
-      {games?.results.map((game) => <div key={game.id}>{game.name}</div>)}
+      {games?.results.map((game) => (
+        <div key={game.id}>{game.name}</div>
+      ))}
     </div>
   );
 }

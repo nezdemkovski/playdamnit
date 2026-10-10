@@ -82,25 +82,17 @@ export default function GameResult({ game, className }: GameResultProps) {
           <div className="flex">
             {/* Game cover */}
             <div className="relative w-[100px] h-[140px] flex-shrink-0">
-              <img
-                src={imageUrl}
-                alt={game.name}
-                className="h-full w-full object-cover"
-              />
+              <img src={imageUrl} alt={game.name} className="h-full w-full object-cover" />
               {game.totalRating && !game.userRating && (
                 <div className="absolute bottom-2 left-2 bg-playdamnit-darker/80 rounded-full px-2 py-1 flex items-center z-20">
                   <Star className="h-3 w-3 text-playdamnit-cyan mr-1" />
-                  <span className="text-xs font-medium">
-                    {(game.totalRating / 10).toFixed(1)}
-                  </span>
+                  <span className="text-xs font-medium">{(game.totalRating / 10).toFixed(1)}</span>
                 </div>
               )}
               {game.userRating && (
                 <div className="absolute bottom-2 left-2 bg-playdamnit-purple/80 rounded-full px-2 py-1 flex items-center z-20">
                   <Star className="h-3 w-3 text-playdamnit-cyan mr-1" />
-                  <span className="text-xs font-medium">
-                    {game.userRating.toFixed(1)}
-                  </span>
+                  <span className="text-xs font-medium">{game.userRating.toFixed(1)}</span>
                 </div>
               )}
             </div>
@@ -122,9 +114,7 @@ export default function GameResult({ game, className }: GameResultProps) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-sm text-playdamnit-light/70">
-                    {formattedDate}
-                  </span>
+                  <span className="text-sm text-playdamnit-light/70">{formattedDate}</span>
 
                   {game.userStatus && (
                     <span className="bg-playdamnit-purple/30 rounded-full px-2 py-0.5 text-xs text-playdamnit-light flex items-center gap-1">
@@ -164,9 +154,7 @@ export default function GameResult({ game, className }: GameResultProps) {
 
                 {/* Game summary */}
                 {game.summary && !game.userReview && (
-                  <p className="text-xs text-playdamnit-light/80 line-clamp-3">
-                    {game.summary}
-                  </p>
+                  <p className="text-xs text-playdamnit-light/80 line-clamp-3">{game.summary}</p>
                 )}
               </div>
             </div>

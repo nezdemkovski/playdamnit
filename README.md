@@ -28,15 +28,15 @@ bun run dev          # api :3030, web :3000, librarian
 
 ## Everyday commands
 
-| Command | |
-|---|---|
-| `bun run dev` / `bun run dev:backend` | everything / api + librarian, hot reload |
-| `bun run typecheck` | all packages |
-| `bun run test` | unit tests (`TEST_POSTGRES_URL=... bun run test` adds integration tests) |
-| `bun run build` | api client + web |
-| `bun run lint` / `bun run format` | Oxlint / Oxfmt over the whole repo |
-| `bun run db:generate` | migration after editing `packages/db/src/schema.ts` |
-| `bun run db:migrate` / `bun run db:studio` | apply migrations / browse data |
+| Command                                    |                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------ |
+| `bun run dev` / `bun run dev:backend`      | everything / api + librarian, hot reload                                 |
+| `bun run typecheck`                        | all packages                                                             |
+| `bun run test`                             | unit tests (`TEST_POSTGRES_URL=... bun run test` adds integration tests) |
+| `bun run build`                            | api client + web                                                         |
+| `bun run lint` / `bun run format`          | Oxlint / Oxfmt over the whole repo                                       |
+| `bun run db:generate`                      | migration after editing `packages/db/src/schema.ts`                      |
+| `bun run db:migrate` / `bun run db:studio` | apply migrations / browse data                                           |
 
 API changes: update `packages/api-client/spec.yaml`, then `bun run generate`.
 

@@ -28,18 +28,14 @@ const renderIcon = (iconName: string) => {
 const SidebarLink = ({ item }: { item: NavigationItem }) => {
   return (
     // Exact match: "My Games" must not stay highlighted on the settings page
-    <Link
-      to={item.to}
-      params={item.params as never}
-      activeOptions={{ exact: true }}
-    >
+    <Link to={item.to} params={item.params as never} activeOptions={{ exact: true }}>
       {({ isActive }) => (
         <div
           className={cn(
             "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative overflow-hidden",
             isActive
               ? "text-playdamnit-cyan bg-playdamnit-purple/10 border-l-2 border-playdamnit-cyan"
-              : "text-playdamnit-light/60 hover:text-playdamnit-light hover:bg-playdamnit-purple/5"
+              : "text-playdamnit-light/60 hover:text-playdamnit-light hover:bg-playdamnit-purple/5",
           )}
         >
           <div
@@ -47,7 +43,7 @@ const SidebarLink = ({ item }: { item: NavigationItem }) => {
               "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200",
               isActive
                 ? "bg-playdamnit-purple/20 text-playdamnit-cyan"
-                : "text-playdamnit-light/40 group-hover:text-playdamnit-cyan"
+                : "text-playdamnit-light/40 group-hover:text-playdamnit-cyan",
             )}
           >
             {renderIcon(item.iconName)}

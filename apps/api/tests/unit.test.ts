@@ -75,16 +75,20 @@ describe("request schemas", () => {
   test("an omitted optional status stays omitted", async () => {
     const { Elysia, t } = await import("elysia");
     const { statusSchema } = await import("@/modules/userGame/model");
-    const app = new Elysia().patch("/", {
-      body: t.Object({ status: t.Optional(statusSchema), rating: t.Optional(t.Number()) }),
-    }, ({ body }) => body);
+    const app = new Elysia().patch(
+      "/",
+      {
+        body: t.Object({ status: t.Optional(statusSchema), rating: t.Optional(t.Number()) }),
+      },
+      ({ body }) => body,
+    );
 
     const res = await app.handle(
       new Request("http://localhost/", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ rating: 5 }),
-      })
+      }),
     );
 
     expect(await res.json()).toEqual({ rating: 5 });

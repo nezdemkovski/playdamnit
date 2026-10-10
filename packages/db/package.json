@@ -2,8 +2,8 @@
   "name": "@playdamnit/db",
   "version": "0.0.0",
   "private": true,
+  "description": "Postgres schema, relations, migrations and the backend ⇄ librarian job contract",
   "type": "module",
-  "description": "Postgres schema, relations, migrations and the backend \u21c4 librarian job contract",
   "exports": {
     "./schema": "./src/schema.ts",
     "./relations": "./src/relations.ts",

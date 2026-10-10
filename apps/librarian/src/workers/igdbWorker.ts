@@ -50,15 +50,15 @@ export const sendNotify = async (requestId: string, ok: boolean): Promise<void> 
 };
 
 // ON CONFLICT DO UPDATE fails if one statement hits the same key twice
-const uniqueBy = <T>(items: T[], key: (item: T) => string) =>
-  [...new Map(items.map((item) => [key(item), item])).values()];
+const uniqueBy = <T>(items: T[], key: (item: T) => string) => [
+  ...new Map(items.map((item) => [key(item), item])).values(),
+];
 
 /**
  * Upsert lookup rows (platforms, genres, ...) by their unique key and return their ids.
  */
-const upsertLookup = async <T extends { id: number }>(
-  run: () => Promise<T[]>
-): Promise<number[]> => (await run()).map((row) => row.id);
+const upsertLookup = async <T extends { id: number }>(run: () => Promise<T[]>): Promise<number[]> =>
+  (await run()).map((row) => row.id);
 
 const writeGame = async (tx: Tx, gameData: CatalogGame) => {
   const gameValues = {
@@ -106,7 +106,7 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         source: ImageSourceEnum.IGDB,
         width: ss.width,
         height: ss.height,
-      }))
+      })),
     );
   }
 
@@ -131,7 +131,7 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         url: ws.url,
         trusted: ws.trusted || false,
         typeId: ws.type ? (typeIds.get(ws.type) ?? null) : null,
-      }))
+      })),
     );
   }
 
@@ -139,9 +139,14 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
     ? await upsertLookup(() =>
         tx
           .insert(platform)
-          .values(uniqueBy(gameData.platforms!, (p) => p.slug).map((p) => ({ name: p.name, slug: p.slug })))
+          .values(
+            uniqueBy(gameData.platforms!, (p) => p.slug).map((p) => ({
+              name: p.name,
+              slug: p.slug,
+            })),
+          )
           .onConflictDoUpdate({ target: platform.slug, set: { name: sql`excluded.name` } })
-          .returning({ id: platform.id })
+          .returning({ id: platform.id }),
       )
     : [];
 
@@ -149,9 +154,11 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
     ? await upsertLookup(() =>
         tx
           .insert(genre)
-          .values(uniqueBy(gameData.genres!, (g) => g.slug).map((g) => ({ name: g.name, slug: g.slug })))
+          .values(
+            uniqueBy(gameData.genres!, (g) => g.slug).map((g) => ({ name: g.name, slug: g.slug })),
+          )
           .onConflictDoUpdate({ target: genre.slug, set: { name: sql`excluded.name` } })
-          .returning({ id: genre.id })
+          .returning({ id: genre.id }),
       )
     : [];
 
@@ -159,9 +166,14 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
     ? await upsertLookup(() =>
         tx
           .insert(gameMode)
-          .values(uniqueBy(gameData.game_modes!, (gm) => gm.slug).map((gm) => ({ name: gm.name, slug: gm.slug })))
+          .values(
+            uniqueBy(gameData.game_modes!, (gm) => gm.slug).map((gm) => ({
+              name: gm.name,
+              slug: gm.slug,
+            })),
+          )
           .onConflictDoUpdate({ target: gameMode.slug, set: { name: sql`excluded.name` } })
-          .returning({ id: gameMode.id })
+          .returning({ id: gameMode.id }),
       )
     : [];
 
@@ -171,7 +183,7 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
           .insert(type)
           .values(uniqueBy(gameData.game_types!, (gt) => gt.type).map((gt) => ({ type: gt.type })))
           .onConflictDoUpdate({ target: type.type, set: { type: sql`excluded.type` } })
-          .returning({ id: type.id })
+          .returning({ id: type.id }),
       )
     : [];
 
@@ -215,7 +227,7 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
 export const writeGamesBatch = async (
   boss: PgBoss,
   games: CatalogGame[],
-  depth: number
+  depth: number,
 ): Promise<number> => {
   let written = 0;
 
@@ -240,7 +252,7 @@ export const writeGamesBatch = async (
           similarGameIds: gameData.similar_games,
           depth,
         } satisfies ProcessSimilarGamesJob,
-        JOB_OPTIONS
+        JOB_OPTIONS,
       );
     }
   }
@@ -295,9 +307,9 @@ const handleFetchByIds = async (boss: PgBoss, [job]: Job<FetchByIdsJob>[]) => {
 
 export const registerIgdbWorkers = async (boss: PgBoss): Promise<void> => {
   await boss.work<SearchIgdbJob>(QUEUES.SEARCH_IGDB, INTERACTIVE_POLLING, (jobs) =>
-    handleSearch(boss, jobs)
+    handleSearch(boss, jobs),
   );
   await boss.work<FetchByIdsJob>(QUEUES.FETCH_BY_IDS, INTERACTIVE_POLLING, (jobs) =>
-    handleFetchByIds(boss, jobs)
+    handleFetchByIds(boss, jobs),
   );
 };

@@ -4,14 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import {
-  Camera,
-  User,
-  Save,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { Camera, User, Save, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useUpdateUserSettings } from "@/hooks/user";
@@ -34,9 +27,7 @@ interface FormData {
 export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
   const navigate = useNavigate();
   const router = useRouter();
-  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
+  const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState(initialData.avatarUrl);
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
@@ -101,8 +92,7 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
       if (name !== (initialData.fullName || "")) payload.name = name;
 
       // Track if username is changing
-      const isUsernameChanged =
-        formData.username !== (initialData.username || "");
+      const isUsernameChanged = formData.username !== (initialData.username || "");
       if (isUsernameChanged) payload.username = formData.username;
 
       // Optionally add bio if your backend supports it
@@ -141,9 +131,7 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
           <span className="inline-block w-1 h-6 bg-gradient-to-b from-playdamnit-purple to-playdamnit-cyan rounded-full mr-3"></span>
           Profile Settings
         </h2>
-        <p className="text-playdamnit-light/60">
-          Customize your gaming profile
-        </p>
+        <p className="text-playdamnit-light/60">Customize your gaming profile</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -155,9 +143,7 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`relative w-32 h-32 rounded-xl bg-gradient-to-br from-playdamnit-purple to-playdamnit-cyan p-1 cursor-pointer group transition-all duration-300 ${
-              isDragging
-                ? "scale-105 shadow-lg shadow-playdamnit-purple/20"
-                : ""
+              isDragging ? "scale-105 shadow-lg shadow-playdamnit-purple/20" : ""
             }`}
           >
             <div className="w-full h-full rounded-lg bg-playdamnit-dark/80 overflow-hidden flex items-center justify-center">
@@ -197,12 +183,9 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
             onChange={handleAvatarChange}
           />
           <div className="flex-1 text-center md:text-left">
-            <h3 className="text-lg font-semibold text-playdamnit-light mb-2">
-              Profile Picture
-            </h3>
+            <h3 className="text-lg font-semibold text-playdamnit-light mb-2">Profile Picture</h3>
             <p className="text-sm text-playdamnit-light/60 mb-3">
-              Upload a profile picture to personalize your gaming profile. PNG
-              or JPG, max 5MB.
+              Upload a profile picture to personalize your gaming profile. PNG or JPG, max 5MB.
             </p>
           </div>
         </div>
@@ -210,10 +193,7 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label
-              htmlFor="fullName"
-              className="text-playdamnit-light/80 font-medium"
-            >
+            <Label htmlFor="fullName" className="text-playdamnit-light/80 font-medium">
               Full Name
             </Label>
             <div className="relative group">
@@ -233,10 +213,7 @@ export function UserSettingsForm({ initialData }: UserSettingsFormProps) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label
-              htmlFor="username"
-              className="text-playdamnit-light/80 font-medium"
-            >
+            <Label htmlFor="username" className="text-playdamnit-light/80 font-medium">
               Username
             </Label>
             <div className="relative group">

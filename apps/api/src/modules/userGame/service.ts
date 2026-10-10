@@ -9,12 +9,7 @@ import {
 } from "@playdamnit/db/schema";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import { GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
-import {
-  BadRequestError,
-  ConflictError,
-  ForbiddenError,
-  NotFoundError,
-} from "@/utils/errors";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 
 export const MAX_IMPORT_GAMES = 1000;
@@ -110,18 +105,20 @@ export abstract class UserGameService {
 
     return {
       // Entries whose game the catalog hasn't fetched yet (pre-FK data) are skipped
-      results: entries.filter((entry) => entry.game).map((entry) => ({
-        ...transformGameResponse(entry.game),
-        userGameData: {
-          status: entry.status,
-          rating: entry.rating !== null ? Number(entry.rating) : null,
-          review: entry.review,
-          platformId: entry.platformId,
-          addedAt: entry.addedAt,
-          endedAt: entry.endedAt,
-          source: entry.source,
-        },
-      })),
+      results: entries
+        .filter((entry) => entry.game)
+        .map((entry) => ({
+          ...transformGameResponse(entry.game),
+          userGameData: {
+            status: entry.status,
+            rating: entry.rating !== null ? Number(entry.rating) : null,
+            review: entry.review,
+            platformId: entry.platformId,
+            addedAt: entry.addedAt,
+            endedAt: entry.endedAt,
+            source: entry.source,
+          },
+        })),
       meta: { total, limit: opts.limit, offset: opts.offset ?? 0 },
     };
   }
@@ -226,8 +223,10 @@ export abstract class UserGameService {
    * Validate and normalise one import row. Returns an error message for invalid rows.
    */
   static normalizeImportRow(
-    raw: ImportGameInput
-  ): { ok: true; gameId: number; value: UserGameInput } | { ok: false; gameId: number; error: string } {
+    raw: ImportGameInput,
+  ):
+    | { ok: true; gameId: number; value: UserGameInput }
+    | { ok: false; gameId: number; error: string } {
     const gameId = Number(raw.gameId);
     if (!Number.isInteger(gameId) || gameId <= 0) {
       return { ok: false, gameId: 0, error: "Invalid or missing gameId" };
@@ -261,7 +260,11 @@ export abstract class UserGameService {
       // Undo the formula-escaping quote added by the CSV export
       review = String(raw.review).replace(/^'(?=[=+\-@\t\r])/, "");
       if (review.length > MAX_REVIEW_LENGTH) {
-        return { ok: false, gameId, error: `Review must be at most ${MAX_REVIEW_LENGTH} characters` };
+        return {
+          ok: false,
+          gameId,
+          error: `Review must be at most ${MAX_REVIEW_LENGTH} characters`,
+        };
       }
     }
 
@@ -295,13 +298,17 @@ export abstract class UserGameService {
    * Bulk import into the user's library. Missing games are fetched from IGDB in one job,
    * everything is written in a single transaction.
    */
-  static async importUserGames(userId: string, rows: ImportGameInput[], overwriteExisting: boolean) {
+  static async importUserGames(
+    userId: string,
+    rows: ImportGameInput[],
+    overwriteExisting: boolean,
+  ) {
     if (rows.length === 0) {
       throw new BadRequestError("No games provided for import");
     }
     if (rows.length > MAX_IMPORT_GAMES) {
       throw new BadRequestError(
-        `Too many games to import. Maximum allowed: ${MAX_IMPORT_GAMES}, provided: ${rows.length}`
+        `Too many games to import. Maximum allowed: ${MAX_IMPORT_GAMES}, provided: ${rows.length}`,
       );
     }
 
@@ -321,7 +328,7 @@ export abstract class UserGameService {
 
     const { available, fetched } = await ensureGamesInCatalog(
       [...valid.keys()],
-      IMPORT_FETCH_TIMEOUT_MS
+      IMPORT_FETCH_TIMEOUT_MS,
     );
 
     // Platform ids are catalog ids; drop the ones this catalog doesn't know
@@ -336,7 +343,7 @@ export abstract class UserGameService {
               .from(platform)
               .where(inArray(platform.id, platformIds))
           ).map((row) => row.id)
-        : []
+        : [],
     );
 
     const toWrite: (typeof userGames.$inferInsert)[] = [];
@@ -372,18 +379,19 @@ export abstract class UserGameService {
         const chunk = toWrite.slice(i, i + INSERT_CHUNK_SIZE);
         const insert = tx.insert(userGames).values(chunk);
 
-        const written = await (overwriteExisting
-          ? insert.onConflictDoUpdate({
-              target: [userGames.userId, userGames.gameId],
-              set: {
-                status: sql`excluded.status`,
-                rating: sql`excluded.rating`,
-                review: sql`excluded.review`,
-                platformId: sql`excluded.platform_id`,
-                endedAt: sql`excluded.ended_at`,
-              },
-            })
-          : insert.onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
+        const written = await (
+          overwriteExisting
+            ? insert.onConflictDoUpdate({
+                target: [userGames.userId, userGames.gameId],
+                set: {
+                  status: sql`excluded.status`,
+                  rating: sql`excluded.rating`,
+                  review: sql`excluded.review`,
+                  platformId: sql`excluded.platform_id`,
+                  endedAt: sql`excluded.ended_at`,
+                },
+              })
+            : insert.onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
         ).returning({ gameId: userGames.gameId });
 
         const writtenIds = new Set(written.map((row) => row.gameId));
@@ -430,7 +438,9 @@ export abstract class UserGameService {
       review: entry.review,
       platformId: entry.platformId,
       addedAt: entry.addedAt.toISOString(),
-      endedAt: ENDED_STATUSES.includes(entry.status) ? (entry.endedAt?.toISOString() ?? null) : null,
+      endedAt: ENDED_STATUSES.includes(entry.status)
+        ? (entry.endedAt?.toISOString() ?? null)
+        : null,
       source: entry.source,
     }));
   }

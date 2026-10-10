@@ -1,11 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "import"
-  ],
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn"
@@ -28,17 +23,8 @@
   ],
   "overrides": [
     {
-      "files": [
-        "apps/web/**/*.{ts,tsx}"
-      ],
-      "plugins": [
-        "typescript",
-        "unicorn",
-        "oxc",
-        "import",
-        "react",
-        "jsx-a11y"
-      ],
+      "files": ["apps/web/**/*.{ts,tsx}"],
+      "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y"],
       "rules": {
         "react/rules-of-hooks": "error",
         "react/exhaustive-deps": "warn",

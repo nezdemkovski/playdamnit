@@ -15,7 +15,7 @@ export enum IgdbImageSize {
 
 export const getIgdbImageUrl = (
   hash: string,
-  size: IgdbImageSize = IgdbImageSize.COVER_BIG
+  size: IgdbImageSize = IgdbImageSize.COVER_BIG,
 ): string => {
   if (!hash) return "";
   return `https://images.igdb.com/igdb/image/upload/t_${size}/${hash}.jpg`;
@@ -24,7 +24,7 @@ export const getIgdbImageUrl = (
 export const getImageUrl = (
   source: string,
   hash: string,
-  size: IgdbImageSize = IgdbImageSize.COVER_BIG
+  size: IgdbImageSize = IgdbImageSize.COVER_BIG,
 ): string => {
   if (!hash) return "";
 

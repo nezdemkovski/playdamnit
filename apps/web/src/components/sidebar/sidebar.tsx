@@ -1,10 +1,6 @@
 import { useSession } from "@/hooks/auth";
 import SidebarLink, { type NavigationItem } from "./sidebar-link-client";
-import {
-  UserSection,
-  AddGameButton,
-  GameAssistantButton,
-} from "./sidebar-client";
+import { UserSection, AddGameButton, GameAssistantButton } from "./sidebar-client";
 
 const Sidebar = () => {
   const { user } = useSession();

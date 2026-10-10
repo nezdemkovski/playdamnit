@@ -76,7 +76,7 @@ export const session = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     impersonatedBy: text("impersonated_by"),
   },
-  (table) => [index("session_userId_idx").on(table.userId)]
+  (table) => [index("session_userId_idx").on(table.userId)],
 );
 
 export const account = pgTable(
@@ -100,7 +100,7 @@ export const account = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("account_userId_idx").on(table.userId)]
+  (table) => [index("account_userId_idx").on(table.userId)],
 );
 
 export const verification = pgTable(
@@ -116,7 +116,7 @@ export const verification = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)]
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
 export const passkey = pgTable(
@@ -139,7 +139,7 @@ export const passkey = pgTable(
   (table) => [
     index("passkey_userId_idx").on(table.userId),
     index("passkey_credentialID_idx").on(table.credentialID),
-  ]
+  ],
 );
 
 export const apikey = pgTable(
@@ -175,7 +175,7 @@ export const apikey = pgTable(
     index("apikey_configId_idx").on(table.configId),
     index("apikey_referenceId_idx").on(table.referenceId),
     index("apikey_key_idx").on(table.key),
-  ]
+  ],
 );
 
 export const USER_GAME_STATUSES = [
@@ -212,9 +212,7 @@ export const userGames = pgTable(
       .notNull()
       .references(() => game.id, { onDelete: "restrict" }),
     status: text("status", { enum: USER_GAME_STATUSES }).notNull(),
-    source: text("source", { enum: USER_GAME_SOURCES })
-      .notNull()
-      .default("manual"),
+    source: text("source", { enum: USER_GAME_SOURCES }).notNull().default("manual"),
     endedAt: timestamp("ended_at"),
     addedAt: timestamp("added_at").defaultNow().notNull(),
     rating: decimal("rating", { precision: 3, scale: 1 }),
@@ -226,7 +224,7 @@ export const userGames = pgTable(
   (table) => [
     unique("user_games_user_id_game_id_unique").on(table.userId, table.gameId),
     index("idx_user_games_game_id").on(table.gameId),
-  ]
+  ],
 );
 
 export const userFollows = pgTable(
@@ -242,13 +240,10 @@ export const userFollows = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    unique("user_follows_follower_id_following_id_unique").on(
-      table.followerId,
-      table.followingId
-    ),
+    unique("user_follows_follower_id_following_id_unique").on(table.followerId, table.followingId),
     index("idx_user_follows_following_id").on(table.followingId),
     check("user_follows_no_self_follow", sql`${table.followerId} <> ${table.followingId}`),
-  ]
+  ],
 );
 
 // Queries already searched in IGDB, so a miss in the local catalog doesn't hit IGDB on every request
@@ -266,7 +261,7 @@ export const platform = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
   },
-  (table) => [index("idx_platform_slug").on(table.slug)]
+  (table) => [index("idx_platform_slug").on(table.slug)],
 );
 
 export const genre = pgTable(
@@ -276,7 +271,7 @@ export const genre = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
   },
-  (table) => [index("idx_genre_slug").on(table.slug)]
+  (table) => [index("idx_genre_slug").on(table.slug)],
 );
 
 export const gameMode = pgTable(
@@ -286,7 +281,7 @@ export const gameMode = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
   },
-  (table) => [index("idx_game_mode_slug").on(table.slug)]
+  (table) => [index("idx_game_mode_slug").on(table.slug)],
 );
 
 export const type = pgTable(
@@ -295,7 +290,7 @@ export const type = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: text("type").notNull().unique(),
   },
-  (table) => [index("idx_type_type").on(table.type)]
+  (table) => [index("idx_type_type").on(table.type)],
 );
 
 export const websiteType = pgTable(
@@ -304,7 +299,7 @@ export const websiteType = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     type: text("type").notNull().unique(),
   },
-  (table) => [index("idx_website_type_type").on(table.type)]
+  (table) => [index("idx_website_type_type").on(table.type)],
 );
 
 export const game = pgTable(
@@ -328,7 +323,7 @@ export const game = pgTable(
     index("idx_game_slug").on(table.slug),
     index("idx_game_popular").on(table.isPopular),
     index("idx_game_rating").on(table.totalRating),
-  ]
+  ],
 );
 
 export const cover = pgTable(
@@ -346,7 +341,7 @@ export const cover = pgTable(
     width: integer("width"),
     height: integer("height"),
   },
-  (table) => [index("idx_cover_game_id").on(table.gameId)]
+  (table) => [index("idx_cover_game_id").on(table.gameId)],
 );
 
 export const screenshot = pgTable(
@@ -363,7 +358,7 @@ export const screenshot = pgTable(
     width: integer("width"),
     height: integer("height"),
   },
-  (table) => [index("idx_screenshot_game_id").on(table.gameId)]
+  (table) => [index("idx_screenshot_game_id").on(table.gameId)],
 );
 
 export const website = pgTable(
@@ -380,7 +375,7 @@ export const website = pgTable(
   (table) => [
     index("idx_website_game_id").on(table.gameId),
     index("idx_website_type_id").on(table.typeId),
-  ]
+  ],
 );
 
 export const gameToSimilarGame = pgTable(
@@ -398,7 +393,7 @@ export const gameToSimilarGame = pgTable(
     primaryKey({ columns: [table.gameId, table.similarGameId] }),
     index("idx_g2sg_game_id").on(table.gameId),
     index("idx_g2sg_similar_game_id").on(table.similarGameId),
-  ]
+  ],
 );
 
 export const gameToPlatform = pgTable(
@@ -415,7 +410,7 @@ export const gameToPlatform = pgTable(
     primaryKey({ columns: [table.gameId, table.platformId] }),
     index("idx_g2p_game_id").on(table.gameId),
     index("idx_g2p_platform_id").on(table.platformId),
-  ]
+  ],
 );
 
 export const gameToGenre = pgTable(
@@ -432,7 +427,7 @@ export const gameToGenre = pgTable(
     primaryKey({ columns: [table.gameId, table.genreId] }),
     index("idx_g2g_game_id").on(table.gameId),
     index("idx_g2g_genre_id").on(table.genreId),
-  ]
+  ],
 );
 
 export const gameToGameMode = pgTable(
@@ -449,7 +444,7 @@ export const gameToGameMode = pgTable(
     primaryKey({ columns: [table.gameId, table.gameModeId] }),
     index("idx_g2gm_game_id").on(table.gameId),
     index("idx_g2gm_game_mode_id").on(table.gameModeId),
-  ]
+  ],
 );
 
 export const gameToType = pgTable(
@@ -466,5 +461,5 @@ export const gameToType = pgTable(
     primaryKey({ columns: [table.gameId, table.typeId] }),
     index("idx_g2t_game_id").on(table.gameId),
     index("idx_g2t_type_id").on(table.typeId),
-  ]
+  ],
 );

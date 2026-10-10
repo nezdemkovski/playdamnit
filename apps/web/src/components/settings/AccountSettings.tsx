@@ -71,9 +71,7 @@ export function AccountSettings({ user }: { user: any }) {
 
       <div className="space-y-8">
         <div className="bg-playdamnit-dark/50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-playdamnit-light mb-4">
-            Sign Out
-          </h3>
+          <h3 className="text-lg font-semibold text-playdamnit-light mb-4">Sign Out</h3>
           <p className="text-playdamnit-light/60 mb-4">
             Sign out from your current session on this device
           </p>
@@ -88,12 +86,10 @@ export function AccountSettings({ user }: { user: any }) {
         </div>
 
         <div className="bg-playdamnit-dark/50 p-6 rounded-lg border-red-500/10">
-          <h3 className="text-lg font-semibold text-red-400 mb-2">
-            Danger Zone
-          </h3>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Danger Zone</h3>
           <p className="text-playdamnit-light/60 mb-6">
-            Once you delete your account, there is no going back. This action
-            permanently deletes your account, profile, and all associated data.
+            Once you delete your account, there is no going back. This action permanently deletes
+            your account, profile, and all associated data.
           </p>
 
           <Button
@@ -117,17 +113,14 @@ export function AccountSettings({ user }: { user: any }) {
               Delete Account
             </AlertDialogTitle>
             <AlertDialogDescription className="text-playdamnit-light/70">
-              This action cannot be undone. This will permanently delete your
-              account and remove all your data from our servers.
+              This action cannot be undone. This will permanently delete your account and remove all
+              your data from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="my-6 space-y-4">
             <div className="space-y-2">
-              <Label
-                htmlFor="confirm-password"
-                className="text-playdamnit-light/90"
-              >
+              <Label htmlFor="confirm-password" className="text-playdamnit-light/90">
                 Enter your password to confirm
               </Label>
               <Input
@@ -141,9 +134,7 @@ export function AccountSettings({ user }: { user: any }) {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-sm">
-                {error}
-              </div>
+              <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-sm">{error}</div>
             )}
           </div>
 

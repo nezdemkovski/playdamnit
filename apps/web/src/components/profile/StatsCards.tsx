@@ -34,12 +34,8 @@ export function StatsCards({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-playdamnit-light">
-            {totalPlaytime}h
-          </div>
-          <div className="text-xs text-playdamnit-light/40 mt-1">
-            Across {totalGames} games
-          </div>
+          <div className="text-2xl font-bold text-playdamnit-light">{totalPlaytime}h</div>
+          <div className="text-xs text-playdamnit-light/40 mt-1">Across {totalGames} games</div>
         </CardContent>
       </Card>
 
@@ -54,10 +50,7 @@ export function StatsCards({
           <div className="text-2xl font-bold text-playdamnit-light">
             {completionRate.toFixed(1)}%
           </div>
-          <Progress
-            value={completionRate}
-            className="mt-2 h-1.5 bg-playdamnit-dark"
-          />
+          <Progress value={completionRate} className="mt-2 h-1.5 bg-playdamnit-dark" />
         </CardContent>
       </Card>
 
@@ -91,9 +84,7 @@ export function StatsCards({
             {platformDistribution.slice(0, 3).map((item) => (
               <div key={item.platform} className="flex items-center gap-2">
                 <div className="flex-1 flex justify-between">
-                  <span className="text-playdamnit-light/70 truncate">
-                    {item.platform}
-                  </span>
+                  <span className="text-playdamnit-light/70 truncate">{item.platform}</span>
                   <span className="text-playdamnit-light">{item.count}</span>
                 </div>
                 <div className="w-20 h-1.5 bg-playdamnit-dark rounded-full overflow-hidden">

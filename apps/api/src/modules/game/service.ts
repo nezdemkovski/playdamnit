@@ -2,11 +2,7 @@ import { and, count, eq, exists, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
 import { game, gameToPlatform } from "@playdamnit/db/schema";
-import {
-  GAME_CARD_WITH,
-  GAME_DETAIL_WITH,
-  transformGameResponse,
-} from "@/utils/gameTransformers";
+import { GAME_CARD_WITH, GAME_DETAIL_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { NotFoundError } from "@/utils/errors";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
@@ -46,9 +42,9 @@ export abstract class GameService {
             .where(
               and(
                 eq(gameToPlatform.gameId, game.id),
-                eq(gameToPlatform.platformId, opts.platformId)
-              )
-            )
+                eq(gameToPlatform.platformId, opts.platformId),
+              ),
+            ),
         )
       : undefined;
 

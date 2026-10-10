@@ -31,8 +31,11 @@ const refreshStaleGames = async (boss: PgBoss) => {
     await boss.send(
       QUEUES.FETCH_BY_IDS,
       // Max depth: refreshing must not grow the catalog
-      { ids: ids.slice(i, i + FETCH_BATCH_SIZE), depth: SIMILAR_GAMES_MAX_DEPTH } satisfies FetchByIdsJob,
-      { retryLimit: 3, retryDelay: 60, retryBackoff: true }
+      {
+        ids: ids.slice(i, i + FETCH_BATCH_SIZE),
+        depth: SIMILAR_GAMES_MAX_DEPTH,
+      } satisfies FetchByIdsJob,
+      { retryLimit: 3, retryDelay: 60, retryBackoff: true },
     );
   }
 

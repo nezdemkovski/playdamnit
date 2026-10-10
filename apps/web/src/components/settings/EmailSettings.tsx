@@ -47,7 +47,7 @@ export function EmailSettings({ user }: { user: any }) {
       // });
 
       setSuccess(
-        "Verification email has been sent to your new email address. Please check your inbox to complete the email change."
+        "Verification email has been sent to your new email address. Please check your inbox to complete the email change.",
       );
       setIsChangingEmail(false);
       setNewEmail("");
@@ -75,16 +75,12 @@ export function EmailSettings({ user }: { user: any }) {
           <span className="inline-block w-1 h-6 bg-gradient-to-b from-playdamnit-purple to-playdamnit-cyan rounded-full mr-3"></span>
           Email Management
         </h2>
-        <p className="text-playdamnit-light/60">
-          Update your email address and email preferences
-        </p>
+        <p className="text-playdamnit-light/60">Update your email address and email preferences</p>
       </div>
 
       <div className="space-y-8">
         <div className="bg-playdamnit-dark/50 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-playdamnit-light mb-4">
-            Current Email
-          </h3>
+          <h3 className="text-lg font-semibold text-playdamnit-light mb-4">Current Email</h3>
 
           <div className="mb-2">
             <div className="flex items-center gap-2 bg-playdamnit-darker/50 py-3 px-4 rounded-lg border border-playdamnit-purple/10">
@@ -129,8 +125,7 @@ export function EmailSettings({ user }: { user: any }) {
 
               {sendVerificationEmail.isSuccess && (
                 <div className="mt-3 bg-green-500/10 text-green-400 p-2 rounded-md text-sm">
-                  Verification email sent! Please check your inbox and follow
-                  the instructions.
+                  Verification email sent! Please check your inbox and follow the instructions.
                 </div>
               )}
 
@@ -181,9 +176,7 @@ export function EmailSettings({ user }: { user: any }) {
               </div>
 
               {error && (
-                <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-sm">
-                  {error}
-                </div>
+                <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-sm">{error}</div>
               )}
 
               <div className="flex gap-3 pt-2">

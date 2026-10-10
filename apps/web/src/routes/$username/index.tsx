@@ -11,14 +11,9 @@ function UserProfilePage() {
   const { username } = Route.useParams();
   const { user: currentUser } = useSession();
 
-  const isOwnProfile =
-    currentUser?.username?.toLowerCase() === username.toLowerCase();
+  const isOwnProfile = currentUser?.username?.toLowerCase() === username.toLowerCase();
 
   return (
-    <ProfileClient
-      username={username}
-      isOwnProfile={isOwnProfile}
-      currentUser={currentUser}
-    />
+    <ProfileClient username={username} isOwnProfile={isOwnProfile} currentUser={currentUser} />
   );
 }

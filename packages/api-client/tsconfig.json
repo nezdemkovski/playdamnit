@@ -13,17 +13,8 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "*.ts",
-    "*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "*.js",
-    "*.d.ts"
-  ]
+  "include": ["*.ts", "*.tsx"],
+  "exclude": ["node_modules", "*.js", "*.d.ts"]
 }

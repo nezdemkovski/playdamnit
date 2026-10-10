@@ -23,9 +23,7 @@ const searchGamesTool = tool({
   inputSchema: z.object({
     query: z.string().max(100).describe("The search query for finding games"),
     rating: z.number().min(0).max(10).optional(),
-    status: z
-      .enum(["finished", "playing", "dropped", "want_to_play"])
-      .optional(),
+    status: z.enum(["finished", "playing", "dropped", "want_to_play"]).optional(),
     review: z.string().max(5000).optional(),
   }),
   execute: async (input) => {
@@ -48,43 +46,47 @@ If the user provides any comments or review about the game, extract this for the
 
 Be conversational and friendly. If the user doesn't mention a specific game, just chat normally.`;
 
-export const postAIChat = new Elysia().use(betterAuth).post("/chat/ai", {
-  auth: true,
-  body: t.Object({
-    messages: t.Array(
-      t.Object({
-        role: t.Union([t.Literal("user"), t.Literal("assistant")]),
-        content: t.Nullable(t.String({ maxLength: MAX_MESSAGE_LENGTH })),
-      }),
-      { minItems: 1, maxItems: MAX_MESSAGES }
-    ),
-  }),
-}, ({ body, user, request, server }) => {
-  const { openaiApiKey, openaiModel } = getConfig();
-  if (!openaiApiKey) {
-    throw new ServiceUnavailableError("AI chat is not configured");
-  }
+export const postAIChat = new Elysia().use(betterAuth).post(
+  "/chat/ai",
+  {
+    auth: true,
+    body: t.Object({
+      messages: t.Array(
+        t.Object({
+          role: t.Union([t.Literal("user"), t.Literal("assistant")]),
+          content: t.Nullable(t.String({ maxLength: MAX_MESSAGE_LENGTH })),
+        }),
+        { minItems: 1, maxItems: MAX_MESSAGES },
+      ),
+    }),
+  },
+  ({ body, user, request, server }) => {
+    const { openaiApiKey, openaiModel } = getConfig();
+    if (!openaiApiKey) {
+      throw new ServiceUnavailableError("AI chat is not configured");
+    }
 
-  chatLimiter.check(clientKey({ request, server }, user.id));
+    chatLimiter.check(clientKey({ request, server }, user.id));
 
-  // Only user/assistant turns come from the client; the system prompt is ours
-  const messages: ModelMessage[] = body.messages.map((message) =>
-    message.role === "user"
-      ? { role: "user", content: message.content ?? "" }
-      : { role: "assistant", content: message.content ?? "" }
-  );
+    // Only user/assistant turns come from the client; the system prompt is ours
+    const messages: ModelMessage[] = body.messages.map((message) =>
+      message.role === "user"
+        ? { role: "user", content: message.content ?? "" }
+        : { role: "assistant", content: message.content ?? "" },
+    );
 
-  const result = streamText({
-    model: openai(openaiModel),
-    system: systemPrompt,
-    messages,
-    tools: {
-      search_games: searchGamesTool,
-    },
-    onError: ({ error }) => {
-      logger.exception(error, { operation: "streamText", userId: user.id });
-    },
-  });
+    const result = streamText({
+      model: openai(openaiModel),
+      system: systemPrompt,
+      messages,
+      tools: {
+        search_games: searchGamesTool,
+      },
+      onError: ({ error }) => {
+        logger.exception(error, { operation: "streamText", userId: user.id });
+      },
+    });
 
-  return result.toTextStreamResponse();
-});
+    return result.toTextStreamResponse();
+  },
+);

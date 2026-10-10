@@ -47,9 +47,7 @@ export const UserSection = ({ user }: UserSectionProps) => {
           <div className="text-sm font-medium text-playdamnit-light truncate">
             {user.username || user.name || user.email}
           </div>
-          <div className="text-xs text-playdamnit-light/40 truncate">
-            {user.email}
-          </div>
+          <div className="text-xs text-playdamnit-light/40 truncate">{user.email}</div>
         </div>
       </div>
 
@@ -61,9 +59,7 @@ export const UserSection = ({ user }: UserSectionProps) => {
         className="w-full mt-2 text-playdamnit-light/60 hover:text-playdamnit-light hover:bg-playdamnit-purple/10 flex items-center gap-2 py-2"
       >
         <LogOut className="w-4 h-4" />
-        <span className="hidden md:block">
-          {signOut.isPending ? "Signing out..." : "Sign out"}
-        </span>
+        <span className="hidden md:block">{signOut.isPending ? "Signing out..." : "Sign out"}</span>
       </Button>
     </div>
   );

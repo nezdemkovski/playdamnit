@@ -1,6 +1,8 @@
 {
   "name": "@playdamnit/librarian",
   "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
@@ -8,19 +10,17 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@playdamnit/db": "workspace:*",
     "drizzle-orm": "1.0.0-rc.4",
     "pg": "^8.23.1",
     "pg-boss": "^12.37.1",
     "winston": "^3.19.0",
-    "winston-daily-rotate-file": "^5.0.0",
-    "@playdamnit/db": "workspace:*"
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
+    "@playdamnit/tsconfig": "workspace:*",
     "@types/bun": "^1.4.2",
     "@types/pg": "^8.23.1",
-    "typescript": "^7.0.2",
-    "@playdamnit/tsconfig": "workspace:*"
-  },
-  "private": true,
-  "type": "module"
+    "typescript": "^7.0.2"
+  }
 }

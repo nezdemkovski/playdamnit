@@ -7,15 +7,10 @@ import {
   ValidationError,
   status,
 } from "elysia";
-import { openapi } from '@elysia/openapi'
+import { openapi } from "@elysia/openapi";
 
 import { routes } from "@/routes";
-import logger, {
-  LogLevel,
-  initSentry,
-  isSentryEnabled,
-  flushSentry,
-} from "@/utils/enhancedLogger";
+import logger, { LogLevel, initSentry, isSentryEnabled, flushSentry } from "@/utils/enhancedLogger";
 import { auth } from "./lib/auth";
 import { getCors } from "@/utils/getCors";
 import { getConfig } from "@/config";
@@ -42,11 +37,9 @@ const validateEnvironment = () => {
   }
 
   if (missingVars.length > 0) {
-    logger.error(
-      `Missing required environment variables: ${missingVars.join(", ")}`
-    );
+    logger.error(`Missing required environment variables: ${missingVars.join(", ")}`);
     logger.system(
-      "Application startup aborted: Configure the missing environment variables and restart"
+      "Application startup aborted: Configure the missing environment variables and restart",
     );
     process.exit(1);
   }
@@ -85,7 +78,10 @@ const setupApp = async () => {
   await initNotifyListener();
 
   backfillMissingLibraryGames()
-    .then((count) => count && logger.system(`Requested ${count} library games missing from the catalog`))
+    .then(
+      (count) =>
+        count && logger.system(`Requested ${count} library games missing from the catalog`),
+    )
     .catch((error) => logger.exception(error, { source: "backfill-library-games" }));
 
   const app = new Elysia({ name: "playdamnit-api" })
@@ -157,11 +153,9 @@ const setupApp = async () => {
   const PORT = process.env.PORT || 3030;
 
   app.listen(PORT, () => {
+    logger.system(`🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`);
     logger.system(
-      `🚀 Server is running at ${app.server?.hostname}:${app.server?.port}`
-    );
-    logger.system(
-      `📚 OpenAPI documentation available at ${app.server?.hostname}:${app.server?.port}/openapi`
+      `📚 OpenAPI documentation available at ${app.server?.hostname}:${app.server?.port}/openapi`,
     );
   });
 

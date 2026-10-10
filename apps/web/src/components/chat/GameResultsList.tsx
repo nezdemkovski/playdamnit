@@ -10,11 +10,7 @@ interface GameResultsListProps {
   className?: string;
 }
 
-export default function GameResultsList({
-  games,
-  onSelectGame,
-  className,
-}: GameResultsListProps) {
+export default function GameResultsList({ games, onSelectGame, className }: GameResultsListProps) {
   const [selectedGameId, setSelectedGameId] = useState<number | null>(null);
 
   if (!games || games.length === 0) return null;
@@ -50,7 +46,7 @@ export default function GameResultsList({
                   "flex items-center gap-3 p-2 rounded-lg border transition-all duration-200",
                   selectedGameId === game.id
                     ? "border-playdamnit-cyan bg-playdamnit-purple/10"
-                    : "border-playdamnit-purple/10 hover:bg-playdamnit-purple/5"
+                    : "border-playdamnit-purple/10 hover:bg-playdamnit-purple/5",
                 )}
               >
                 {/* Game cover */}
@@ -82,7 +78,7 @@ export default function GameResultsList({
                     "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
                     selectedGameId === game.id
                       ? "bg-playdamnit-cyan text-playdamnit-dark"
-                      : "bg-playdamnit-purple/30 text-playdamnit-cyan hover:bg-playdamnit-purple hover:scale-110"
+                      : "bg-playdamnit-purple/30 text-playdamnit-cyan hover:bg-playdamnit-purple hover:scale-110",
                   )}
                   aria-label={`Select ${game.name}`}
                 >

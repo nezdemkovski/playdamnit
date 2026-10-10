@@ -44,7 +44,7 @@ export const createRateLimiter = (opts: {
       if (window.count > opts.limit) {
         throw new TooManyRequestsError(
           opts.message ?? "Too many requests, slow down",
-          Math.ceil((window.resetAt - now) / 1000)
+          Math.ceil((window.resetAt - now) / 1000),
         );
       }
     },
@@ -59,7 +59,7 @@ const trustProxy = process.env.TRUST_PROXY === "true";
  */
 export const clientKey = (
   ctx: { request: Request; server: Server<unknown> | null },
-  userId?: string
+  userId?: string,
 ): string => {
   if (userId) return `user:${userId}`;
 

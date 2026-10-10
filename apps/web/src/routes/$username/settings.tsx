@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Shield,
-  User,
-  Bell,
-  Gamepad2,
-  CreditCard,
-  Key,
-  Mail,
-  Trash2,
-} from "lucide-react";
+import { Shield, User, Bell, Gamepad2, CreditCard, Key, Mail, Trash2 } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { UserSettingsForm } from "@/components/settings/user-settings-form";
@@ -70,19 +61,11 @@ function SettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-8 text-center text-playdamnit-light/60">
-        Loading settings...
-      </div>
-    );
+    return <div className="p-8 text-center text-playdamnit-light/60">Loading settings...</div>;
   }
 
   if (error || !user) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Failed to load settings.
-      </div>
-    );
+    return <div className="p-8 text-center text-red-500">Failed to load settings.</div>;
   }
 
   const initialData = {
@@ -118,9 +101,7 @@ function SettingsPage() {
           ))}
         </div>
 
-        {activeTab === "Profile" && (
-          <UserSettingsForm initialData={initialData} />
-        )}
+        {activeTab === "Profile" && <UserSettingsForm initialData={initialData} />}
         {activeTab === "Email" && <EmailSettings user={user} />}
         {activeTab === "Passkeys" && <PasskeySettings user={user} />}
         {activeTab === "Account" && <AccountSettings user={user} />}
@@ -129,9 +110,7 @@ function SettingsPage() {
           activeTab !== "Email" &&
           activeTab !== "Account" && (
             <div className="bg-playdamnit-dark/30 border border-playdamnit-purple/10 rounded-xl p-6 md:p-8 text-center">
-              <h2 className="text-xl font-semibold text-playdamnit-light/70 mb-2">
-                Coming Soon
-              </h2>
+              <h2 className="text-xl font-semibold text-playdamnit-light/70 mb-2">Coming Soon</h2>
               <p className="text-playdamnit-light/50">
                 This feature is currently under development.
               </p>

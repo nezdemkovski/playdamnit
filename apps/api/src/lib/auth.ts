@@ -2,9 +2,17 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username, admin, openAPI } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
-import { passkey } from "@better-auth/passkey"
+import { passkey } from "@better-auth/passkey";
 
-import { db, user, session, account, verification, passkey as passkeyTable, apikey } from "@/db/postgres";
+import {
+  db,
+  user,
+  session,
+  account,
+  verification,
+  passkey as passkeyTable,
+  apikey,
+} from "@/db/postgres";
 import { getConfig } from "@/config";
 import {
   resetPasswordEmailTemplate,

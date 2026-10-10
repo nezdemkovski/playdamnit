@@ -11,11 +11,7 @@ interface ProfileTabsProps {
   onTabChange: (tabName: string) => void;
 }
 
-export function ProfileTabs({
-  tabs,
-  activeTab,
-  onTabChange,
-}: ProfileTabsProps) {
+export function ProfileTabs({ tabs, activeTab, onTabChange }: ProfileTabsProps) {
   return (
     <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide">
       {tabs.map((tab) => (

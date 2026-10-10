@@ -15,7 +15,7 @@ const JOB_OPTIONS = { retryLimit: 3, retryDelay: 5, retryBackoff: true };
 const enqueueAndWait = async <T extends object>(
   queue: string,
   data: T,
-  timeoutMs?: number
+  timeoutMs?: number,
 ): Promise<NotifyResult> => {
   const requestId = crypto.randomUUID();
   const notified = waitForNotify(requestId, timeoutMs);
@@ -27,11 +27,7 @@ const enqueueAndWait = async <T extends object>(
 };
 
 export const requestIgdbSearch = (query: string, limit: number, timeoutMs?: number) =>
-  enqueueAndWait<Omit<SearchIgdbJob, "requestId">>(
-    QUEUES.SEARCH_IGDB,
-    { query, limit },
-    timeoutMs
-  );
+  enqueueAndWait<Omit<SearchIgdbJob, "requestId">>(QUEUES.SEARCH_IGDB, { query, limit }, timeoutMs);
 
 /**
  * Make sure the given IGDB ids exist in the local catalog, fetching missing ones
@@ -39,19 +35,16 @@ export const requestIgdbSearch = (query: string, limit: number, timeoutMs?: numb
  */
 export const ensureGamesInCatalog = async (
   ids: number[],
-  timeoutMs?: number
+  timeoutMs?: number,
 ): Promise<{ available: Set<number>; fetched: number[] }> => {
   const uniqueIds = [...new Set(ids)];
   if (uniqueIds.length === 0) return { available: new Set(), fetched: [] };
 
   const findExisting = async (candidates: number[]) =>
     new Set(
-      (
-        await db
-          .select({ id: game.id })
-          .from(game)
-          .where(inArray(game.id, candidates))
-      ).map((row) => row.id)
+      (await db.select({ id: game.id }).from(game).where(inArray(game.id, candidates))).map(
+        (row) => row.id,
+      ),
     );
 
   const available = await findExisting(uniqueIds);
@@ -62,7 +55,7 @@ export const ensureGamesInCatalog = async (
   await enqueueAndWait<Omit<FetchByIdsJob, "requestId">>(
     QUEUES.FETCH_BY_IDS,
     { ids: missing, depth: 0 },
-    timeoutMs
+    timeoutMs,
   );
 
   const fetched = [...(await findExisting(missing))];

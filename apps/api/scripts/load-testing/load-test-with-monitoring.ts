@@ -233,9 +233,7 @@ let db: Database;
 async function makeRequest(gameName: string): Promise<void> {
   const startTime = performance.now();
   try {
-    const searchUrl = `${BASE_URL}/games/search?q=${encodeURIComponent(
-      gameName
-    )}`;
+    const searchUrl = `${BASE_URL}/games/search?q=${encodeURIComponent(gameName)}`;
     const response = await fetch(searchUrl, {
       // Add timeout to prevent hanging requests
       signal: AbortSignal.timeout(10000), // 10 second timeout
@@ -362,9 +360,7 @@ async function getRedisQueueStats(): Promise<{
     }
 
     const queueLength = await redisClient.llen("queue:sqlite_write");
-    const processingLength = await redisClient.llen(
-      "queue:sqlite_write:processing"
-    );
+    const processingLength = await redisClient.llen("queue:sqlite_write:processing");
 
     // Get all keys for search locks
     const searchLocks = await redisClient.keys("search_processing:*");
@@ -410,18 +406,14 @@ function getSQLiteStats(): Promise<{
     const gameCount = db.query("SELECT COUNT(*) as count FROM game").get() as {
       count: number;
     };
-    const coverCount = db
-      .query("SELECT COUNT(*) as count FROM cover")
-      .get() as { count: number };
-    const screenshotCount = db
-      .query("SELECT COUNT(*) as count FROM screenshot")
-      .get() as { count: number };
-    const platformCount = db
-      .query("SELECT COUNT(*) as count FROM platform")
-      .get() as { count: number };
-    const genreCount = db
-      .query("SELECT COUNT(*) as count FROM genre")
-      .get() as { count: number };
+    const coverCount = db.query("SELECT COUNT(*) as count FROM cover").get() as { count: number };
+    const screenshotCount = db.query("SELECT COUNT(*) as count FROM screenshot").get() as {
+      count: number;
+    };
+    const platformCount = db.query("SELECT COUNT(*) as count FROM platform").get() as {
+      count: number;
+    };
+    const genreCount = db.query("SELECT COUNT(*) as count FROM genre").get() as { count: number };
 
     return Promise.resolve({
       gameCount: gameCount.count,
@@ -474,12 +466,12 @@ async function startMonitoring(): Promise<any> {
     console.log(
       `Requests/sec (last second): ${
         requestsPerSecondHistory[requestsPerSecondHistory.length - 1] || 0
-      }`
+      }`,
     );
     console.log(
       `Avg Response Time (last second): ${
         responseTimeHistory[responseTimeHistory.length - 1]?.toFixed(2) || 0
-      } ms`
+      } ms`,
     );
     console.log("Redis Queue Length:", redisStats.queueLength);
     console.log("Redis Processing Length:", redisStats.processingLength);
@@ -506,11 +498,9 @@ async function stopMonitoring(intervalId: any): Promise<void> {
 // Main function to run the load test
 async function runLoadTest(): Promise<void> {
   console.log(
-    `Starting load test: ${REQUESTS_PER_SECOND} requests/sec for ${TEST_DURATION_SECONDS} seconds`
+    `Starting load test: ${REQUESTS_PER_SECOND} requests/sec for ${TEST_DURATION_SECONDS} seconds`,
   );
-  console.log(
-    `Total requests to be sent: ${REQUESTS_PER_SECOND * TEST_DURATION_SECONDS}`
-  );
+  console.log(`Total requests to be sent: ${REQUESTS_PER_SECOND * TEST_DURATION_SECONDS}`);
 
   // Start monitoring
   const monitoringInterval = await startMonitoring();
@@ -550,9 +540,7 @@ async function runLoadTest(): Promise<void> {
 
     // Print progress
     console.log(
-      `Second ${
-        second + 1
-      }/${TEST_DURATION_SECONDS} completed. Requests sent: ${totalRequests}`
+      `Second ${second + 1}/${TEST_DURATION_SECONDS} completed. Requests sent: ${totalRequests}`,
     );
   }
 
@@ -572,14 +560,8 @@ async function runLoadTest(): Promise<void> {
   console.log(`Total requests: ${totalRequests}`);
   console.log(`Successful requests: ${successfulRequests}`);
   console.log(`Failed requests: ${failedRequests}`);
-  console.log(
-    `Requests per second: ${(totalRequests / totalTimeSeconds).toFixed(2)}`
-  );
-  console.log(
-    `Average response time: ${(totalResponseTime / totalRequests).toFixed(
-      2
-    )} ms`
-  );
+  console.log(`Requests per second: ${(totalRequests / totalTimeSeconds).toFixed(2)}`);
+  console.log(`Average response time: ${(totalResponseTime / totalRequests).toFixed(2)} ms`);
   console.log(`Min response time: ${minResponseTime.toFixed(2)} ms`);
   console.log(`Max response time: ${maxResponseTime.toFixed(2)} ms`);
 
