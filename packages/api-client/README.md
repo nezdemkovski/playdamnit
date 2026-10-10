@@ -87,8 +87,8 @@ function UserProfile() {
 
 ## Generated from
 
-This package is automatically generated from the OpenAPI specification at `spec.yaml` in the backend repository.
+This package is automatically generated from the OpenAPI specification in `packages/api-client/spec.yaml` of the [playdamnit monorepo](https://github.com/nezdemkovski/playdamnit).
 
 ## Support
 
-For issues related to the API client, please check the main repository at [github.com/playdamnit/backend](github.com/playdamnit/backend).
+For issues related to the API client, please check the main repository at [github.com/nezdemkovski/playdamnit](https://github.com/nezdemkovski/playdamnit).
