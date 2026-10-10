@@ -4,6 +4,8 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { PgBoss } from "pg-boss";
 import { Client } from "pg";
+import { createAgentUIStreamResponse } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -113,5 +115,85 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
 
     const library = await mod.UserGameService.getUserGames("u1");
     expect(library.meta.total).toBe(30);
+  }, 30_000);
+  test("the chat agent searches, streams full cards to the UI and a compact list to the model", async () => {
+    // A DLC next to the main game, to exercise the "games only" filter
+    await insertGame(900002, "Zzyzx Quest Expansion");
+    const {
+      rows: [dlc],
+    } = await pg.query(
+      `insert into type (type) values ('DLC') on conflict (type) do update set type = excluded.type returning id`,
+    );
+    await pg.query(`insert into game_to_type (game_id, type_id) values (900002, $1)`, [dlc.id]);
+
+    const usage = {
+      inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+      outputTokens: { total: 1, text: 1, reasoning: undefined },
+    };
+    const model = new MockLanguageModelV4({
+      doStream: [
+        {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({
+                type: "tool-call",
+                toolCallId: "call-1",
+                toolName: "search_games",
+                input: JSON.stringify({ query: "Zzyzx", rating: 8, status: "finished" }),
+              });
+              controller.enqueue({
+                type: "finish",
+                finishReason: { unified: "tool-calls", raw: undefined },
+                usage,
+              });
+              controller.close();
+            },
+          }),
+        },
+        {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: "text-start", id: "t1" });
+              controller.enqueue({ type: "text-delta", id: "t1", delta: "Found Zzyzx Quest!" });
+              controller.enqueue({ type: "text-end", id: "t1" });
+              controller.enqueue({
+                type: "finish",
+                finishReason: { unified: "stop", raw: undefined },
+                usage,
+              });
+              controller.close();
+            },
+          }),
+        },
+      ],
+    });
+
+    const { createChatAgent } = await import("@/modules/chat/agent");
+    const response = await createAgentUIStreamResponse({
+      agent: createChatAgent(model),
+      uiMessages: [
+        { id: "m1", role: "user", parts: [{ type: "text", text: "Finished Zzyzx, 8/10" }] },
+      ],
+      options: { showOnlyGames: true },
+    });
+
+    // SSE: one JSON UI message chunk per `data:` line
+    const chunks = (await response.text())
+      .split("\n")
+      .filter((line) => line.startsWith("data: {"))
+      .map((line) => JSON.parse(line.slice("data: ".length)));
+
+    const toolOutput = chunks.find((c) => c.type === "tool-output-available");
+    expect(toolOutput.output.results.map((g: { name: string }) => g.name)).toEqual(["Zzyzx Quest"]);
+    expect(toolOutput.output.userRating).toBe(8);
+    expect(toolOutput.output.userStatus).toBe("finished");
+    expect(chunks.some((c) => c.type === "text-delta" && c.delta === "Found Zzyzx Quest!")).toBe(
+      true,
+    );
+
+    // The second step saw the compact tool result, not the full cards
+    const toolMessage = model.doStreamCalls[1].prompt.find((m) => m.role === "tool");
+    expect(JSON.stringify(toolMessage)).toContain('"name":"Zzyzx Quest"');
+    expect(JSON.stringify(toolMessage)).not.toContain("platforms");
   }, 30_000);
 });

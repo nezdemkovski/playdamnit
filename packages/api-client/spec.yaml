@@ -94,22 +94,6 @@ components:
       required:
         - error
 
-    BaseMessage:
-      type: object
-      properties:
-        role:
-          type: string
-          enum:
-            - user
-            - assistant
-            - system
-        content:
-          type: string
-          nullable: true
-      required:
-        - role
-        - content
-
     ChatRole:
       type: string
       enum:
@@ -130,23 +114,6 @@ components:
       required:
         - message
         - id
-
-    FunctionMessage:
-      type: object
-      properties:
-        role:
-          type: string
-          enum:
-            - function
-        name:
-          type: string
-        content:
-          type: string
-          nullable: true
-      required:
-        - role
-        - name
-        - content
 
     GameCover:
       type: object
@@ -334,11 +301,6 @@ components:
         - id
         - url
 
-    Message:
-      anyOf:
-        - $ref: "#/components/schemas/BaseMessage"
-        - $ref: "#/components/schemas/FunctionMessage"
-
     Meta:
       type: object
       properties:
@@ -352,52 +314,6 @@ components:
         - total
         - limit
         - offset
-
-    OpenAIChatRequest:
-      type: object
-      properties:
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/Message"
-        showOnlyGames:
-          type: boolean
-          default: true
-      required:
-        - messages
-
-    OpenAIChatResponse:
-      type: object
-      properties:
-        message:
-          type: object
-          properties:
-            role:
-              type: string
-              enum:
-                - assistant
-            content:
-              type: string
-            gameData:
-              $ref: "#/components/schemas/Game"
-            gameResults:
-              type: array
-              items:
-                $ref: "#/components/schemas/Game"
-            userRating:
-              type: number
-            userStatus:
-              type: string
-              nullable: true
-            userReview:
-              type: string
-              nullable: true
-          required:
-            - role
-            - content
-            - gameData
-      required:
-        - message
 
     StatusEnum:
       type: string
@@ -607,27 +523,42 @@ components:
 
     ChatRequest:
       type: object
+      description: >-
+        Chat history in the AI SDK UI message format (what useChat sends). Only "user" and
+        "assistant" messages are accepted; the response is an AI SDK UI message stream (SSE).
       properties:
         messages:
           type: array
+          minItems: 1
+          maxItems: 30
           items:
             type: object
             properties:
+              id:
+                type: string
               role:
                 type: string
                 enum:
-                  - system
                   - user
                   - assistant
-                  - tool
-              content:
-                type: string
-                nullable: true
-              name:
-                type: string
+              parts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                  required:
+                    - type
+                  additionalProperties: true
             required:
+              - id
               - role
-              - content
+              - parts
+        showOnlyGames:
+          type: boolean
+          default: true
+          description: Only return main games, remakes, remasters and expanded games from searches
       required:
         - messages
 

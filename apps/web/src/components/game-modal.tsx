@@ -2,7 +2,7 @@ import type React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Star, Edit3 } from "lucide-react";
 import { Game, UserGameWithUserData } from "@playdamnit/api-client";
-import GameForm from "./game-form";
+import GameForm, { type GameFormInitialValues } from "./game-form";
 
 type GameModalMode = "add" | "update";
 type GameData = Game | UserGameWithUserData;
@@ -13,6 +13,7 @@ interface GameModalProps {
   onSuccess: () => void;
   mode: GameModalMode;
   game: GameData;
+  initialValues?: GameFormInitialValues;
   isEmbedded?: boolean;
   onBackToSearch?: () => void;
 }
@@ -23,6 +24,7 @@ export default function GameModal({
   onSuccess,
   mode,
   game,
+  initialValues,
   isEmbedded = false,
   onBackToSearch,
 }: GameModalProps) {
@@ -30,6 +32,7 @@ export default function GameModal({
     <GameForm
       mode={mode}
       game={game}
+      initialValues={initialValues}
       onSuccess={onSuccess}
       onCancel={onClose}
       onBackToSearch={onBackToSearch}

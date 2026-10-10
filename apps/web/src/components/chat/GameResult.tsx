@@ -162,14 +162,22 @@ export default function GameResult({ game, className }: GameResultProps) {
         </div>
       </motion.div>
 
-      <GameModal
-        isOpen={isAddModalOpen}
-        onClose={handleCloseAddModal}
-        onSuccess={handleSuccess}
-        mode="add"
-        game={game}
-        isEmbedded={true}
-      />
+      {/* Embedded mode renders the form inline, so only mount it once "+" was clicked */}
+      {isAddModalOpen && (
+        <GameModal
+          isOpen={isAddModalOpen}
+          onClose={handleCloseAddModal}
+          onSuccess={handleSuccess}
+          mode="add"
+          game={game}
+          initialValues={{
+            status: game.userStatus,
+            rating: game.userRating,
+            review: game.userReview,
+          }}
+          isEmbedded={true}
+        />
+      )}
     </>
   );
 }

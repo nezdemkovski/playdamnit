@@ -1,13 +1,12 @@
-import { Elysia, t } from "elysia";
-import { streamText, tool, type ModelMessage } from "ai";
+import { createAgentUIStreamResponse } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
+import { Elysia, t } from "elysia";
 
-import { searchGamesWithCache } from "@/utils/searchGames";
-import { betterAuth } from "@/lib/betterAuth";
 import { getConfig } from "@/config";
+import { betterAuth } from "@/lib/betterAuth";
+import { createChatAgent } from "@/modules/chat/agent";
 import { createLogger } from "@/utils/enhancedLogger";
-import { ServiceUnavailableError } from "@/utils/errors";
+import { BadRequestError, ServiceUnavailableError } from "@/utils/errors";
 import { clientKey, createRateLimiter } from "@/utils/rateLimit";
 
 const logger = createLogger("ai-chat");
@@ -18,46 +17,25 @@ const MAX_MESSAGE_LENGTH = 4000;
 // Every message costs an LLM call and may enqueue IGDB searches
 const chatLimiter = createRateLimiter({ limit: 20, windowMs: 10 * 60_000 });
 
-const searchGamesTool = tool({
-  description: "Search for games by name or description",
-  inputSchema: z.object({
-    query: z.string().max(100).describe("The search query for finding games"),
-    rating: z.number().min(0).max(10).optional(),
-    status: z.enum(["finished", "playing", "dropped", "want_to_play"]).optional(),
-    review: z.string().max(5000).optional(),
-  }),
-  execute: async (input) => {
-    const searchGames = await searchGamesWithCache(input.query, 10);
-
-    return {
-      results: searchGames.results,
-      userRating: input.rating,
-      userStatus: input.status,
-      userReview: input.review,
-    };
-  },
-});
-
-const systemPrompt = `You are a helpful gaming assistant that helps users track games they've played. 
-When a user mentions a game they've played, use the search_games tool to find the game.
-If the user mentions a rating (e.g., "I give it 8/10"), extract this as a number between 0-10 for the rating parameter.
-If the user mentions a status (e.g., "finished", "playing", "dropped", "want to play"), extract this for the status parameter.
-If the user provides any comments or review about the game, extract this for the review parameter.
-
-Be conversational and friendly. If the user doesn't mention a specific game, just chat normally.`;
-
 export const postAIChat = new Elysia().use(betterAuth).post(
   "/chat/ai",
   {
     auth: true,
+    // Shape of useChat's UI messages; createAgentUIStreamResponse validates the parts in depth
     body: t.Object({
       messages: t.Array(
-        t.Object({
-          role: t.Union([t.Literal("user"), t.Literal("assistant")]),
-          content: t.Nullable(t.String({ maxLength: MAX_MESSAGE_LENGTH })),
-        }),
+        t.Object(
+          {
+            id: t.String(),
+            // No "system": the instructions are ours
+            role: t.Union([t.Literal("user"), t.Literal("assistant")]),
+            parts: t.Array(t.Object({ type: t.String() }, { additionalProperties: true })),
+          },
+          { additionalProperties: true },
+        ),
         { minItems: 1, maxItems: MAX_MESSAGES },
       ),
+      showOnlyGames: t.Optional(t.Boolean()),
     }),
   },
   ({ body, user, request, server }) => {
@@ -68,25 +46,23 @@ export const postAIChat = new Elysia().use(betterAuth).post(
 
     chatLimiter.check(clientKey({ request, server }, user.id));
 
-    // Only user/assistant turns come from the client; the system prompt is ours
-    const messages: ModelMessage[] = body.messages.map((message) =>
-      message.role === "user"
-        ? { role: "user", content: message.content ?? "" }
-        : { role: "assistant", content: message.content ?? "" },
-    );
+    for (const message of body.messages) {
+      for (const part of message.parts) {
+        const text = (part as { text?: unknown }).text;
+        if (part.type === "text" && typeof text === "string" && text.length > MAX_MESSAGE_LENGTH) {
+          throw new BadRequestError(`Messages must be at most ${MAX_MESSAGE_LENGTH} characters`);
+        }
+      }
+    }
 
-    const result = streamText({
-      model: openai(openaiModel),
-      system: systemPrompt,
-      messages,
-      tools: {
-        search_games: searchGamesTool,
-      },
-      onError: ({ error }) => {
-        logger.exception(error, { operation: "streamText", userId: user.id });
+    return createAgentUIStreamResponse({
+      agent: createChatAgent(openai(openaiModel)),
+      uiMessages: body.messages,
+      options: { showOnlyGames: body.showOnlyGames ?? true },
+      onError: (error) => {
+        logger.exception(error, { operation: "chat", userId: user.id });
+        return "The assistant ran into a problem. Please try again.";
       },
     });
-
-    return result.toTextStreamResponse();
   },
 );

@@ -21,9 +21,26 @@ import { useQueryClient } from "@tanstack/react-query";
 type GameFormMode = "add" | "update";
 type GameData = Game | UserGameWithUserData;
 
+type FormStatus = "Finished" | "Playing" | "Dropped" | "Want";
+
+const STATUS_FROM_API: Record<string, FormStatus> = {
+  finished: "Finished",
+  playing: "Playing",
+  dropped: "Dropped",
+  want_to_play: "Want",
+};
+
+/** Values to start an "add" form with, e.g. what the AI assistant extracted from the chat */
+export interface GameFormInitialValues {
+  status?: string;
+  rating?: number;
+  review?: string;
+}
+
 interface GameFormProps {
   mode: GameFormMode;
   game: GameData;
+  initialValues?: GameFormInitialValues;
   onSuccess: () => void;
   onCancel: () => void;
   onBackToSearch?: () => void;
@@ -32,13 +49,16 @@ interface GameFormProps {
 export default function GameForm({
   mode,
   game,
+  initialValues,
   onSuccess,
   onCancel,
   onBackToSearch,
 }: GameFormProps) {
-  const [status, setStatus] = useState<"Finished" | "Playing" | "Dropped" | "Want">("Want");
-  const [rating, setRating] = useState<number>(0);
-  const [review, setReview] = useState("");
+  const [status, setStatus] = useState<FormStatus>(
+    (initialValues?.status && STATUS_FROM_API[initialValues.status]) || "Want",
+  );
+  const [rating, setRating] = useState<number>(initialValues?.rating ?? 0);
+  const [review, setReview] = useState(initialValues?.review ?? "");
   const [endedAt, setEndedAt] = useState<string>("");
   const { data: me } = useGetApiMe();
   const queryClient = useQueryClient();
@@ -55,13 +75,7 @@ export default function GameForm({
 
       // Try to extract status from game data if available
       if (userGame.userGameData?.status) {
-        const statusMap: Record<string, "Finished" | "Playing" | "Dropped" | "Want"> = {
-          finished: "Finished",
-          playing: "Playing",
-          dropped: "Dropped",
-          want_to_play: "Want",
-        };
-        setStatus(statusMap[userGame.userGameData.status] || "Want");
+        setStatus(STATUS_FROM_API[userGame.userGameData.status] || "Want");
       }
 
       // Set rating if available

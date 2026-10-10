@@ -1,43 +1,76 @@
-import { useRef, useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { Bot, User, Send, Loader2, Filter } from "lucide-react";
+import { useChat } from "@ai-sdk/react";
+import type { Game } from "@playdamnit/api-client";
+import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
+import { Bot, Filter, Loader2, Send, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useChat } from "@ai-sdk/react";
+import { getConfig } from "@/config";
+import type { ChatUIMessage, SearchGamesOutput } from "@/lib/chat";
+import { cn } from "@/lib/utils";
 import GameResult from "./chat/GameResult";
 import GameResultsList from "./chat/GameResultsList";
-import { Game } from "@playdamnit/api-client";
-import { getConfig } from "@/config";
 
 interface AIChatModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+// The user's rating/status/review extracted by the assistant, attached to a game card
+const withUserData = (game: Game, output: SearchGamesOutput) => ({
+  ...game,
+  userRating: output.userRating,
+  userStatus: output.userStatus,
+  userReview: output.userReview,
+});
+
+function SearchResults({ output }: { output: SearchGamesOutput }) {
+  const [selected, setSelected] = useState<Game | null>(null);
+
+  if (output.results.length === 0) return null;
+
+  if (output.results.length === 1 || selected) {
+    return <GameResult game={withUserData(selected ?? output.results[0], output)} />;
+  }
+
+  return <GameResultsList games={output.results} onSelectGame={setSelected} />;
+}
+
 export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showOnlyGames, setShowOnlyGames] = useState(true);
+  const [input, setInput] = useState("");
 
-  const { messages, input, handleInputChange, handleSubmit, status, error } = useChat({
-    api: `${getConfig().backendUrl}/chat/ai`,
-    fetch: (input, init) =>
-      fetch(input, {
-        ...init,
+  // Read at request time, so toggling applies to the next message
+  const showOnlyGamesRef = useRef(showOnlyGames);
+  showOnlyGamesRef.current = showOnlyGames;
+
+  const [transport] = useState(
+    () =>
+      new DefaultChatTransport<ChatUIMessage>({
+        api: `${getConfig().backendUrl}/chat/ai`,
         credentials: "include",
+        body: () => ({ showOnlyGames: showOnlyGamesRef.current }),
       }),
-  });
+  );
+
+  const { messages, sendMessage, status, error } = useChat<ChatUIMessage>({ transport });
+
+  const isBusy = status === "submitted" || status === "streaming";
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleGameSelection = (messageId: string, game: Game) => {
-    // TODO: add additional logic here
-    console.log("Selected game:", game);
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = input.trim();
+    if (!text || isBusy) return;
+    sendMessage({ text });
+    setInput("");
   };
 
   return (
@@ -100,94 +133,68 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {message.role === "user" || message.role === "assistant" ? (
-                    <div
-                      className={cn(
-                        "flex items-start gap-3 p-3 rounded-lg",
-                        message.role === "user"
-                          ? "bg-playdamnit-purple/10"
-                          : "bg-playdamnit-dark/30",
+                  <div
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg",
+                      message.role === "user" ? "bg-playdamnit-purple/10" : "bg-playdamnit-dark/30",
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-playdamnit-purple/20">
+                      {message.role === "user" ? (
+                        <User className="w-4 h-4 text-playdamnit-light" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-playdamnit-cyan" />
                       )}
-                    >
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center bg-playdamnit-purple/20">
-                        {message.role === "user" ? (
-                          <User className="w-4 h-4 text-playdamnit-light" />
-                        ) : (
-                          <Bot className="w-4 h-4 text-playdamnit-cyan" />
-                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium mb-1">
+                        {message.role === "user" ? "You" : "Assistant"}
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium mb-1">
-                          {message.role === "user" ? "You" : "Assistant"}
-                        </div>
-                        <div className="text-sm whitespace-pre-wrap">
-                          {message.parts.map((part, index) => {
-                            switch (part.type) {
-                              case "text":
-                                return <p key={index}>{part.text}</p>;
+                      <div className="text-sm whitespace-pre-wrap space-y-2">
+                        {message.parts.map((part, index) => {
+                          switch (part.type) {
+                            case "text":
+                              return <p key={index}>{part.text}</p>;
 
-                              case "tool-invocation": {
-                                const { toolInvocation: tool } = part;
-
-                                // one result → GameResult
-                                if (tool.state === "result") {
-                                  const result = tool.result;
-                                  if (result?.results?.length === 1) {
-                                    return (
-                                      <div key={index} className="mt-2 ml-11">
-                                        <GameResult game={result.results[0]} />
-                                      </div>
-                                    );
-                                  }
-
-                                  // few results → GameResultsList
-                                  if (result?.results?.length > 1) {
-                                    return (
-                                      <div key={index} className="mt-2 ml-11">
-                                        <GameResultsList
-                                          games={result.results}
-                                          onSelectGame={(game) => {
-                                            handleGameSelection(message.id, game);
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  }
-
-                                  // single object without an array (e.g. selected game) → GameResult
-                                  if (result?.id) {
-                                    return (
-                                      <div key={index} className="mt-2 ml-11">
-                                        <GameResult game={result} />
-                                      </div>
-                                    );
-                                  }
-                                }
-
-                                return (
-                                  <p
-                                    key={index}
-                                    className="text-sm italic text-playdamnit-light ml-11"
-                                  >
-                                    Calling tool: {tool.toolName}...
-                                  </p>
-                                );
+                            case "tool-search_games":
+                              switch (part.state) {
+                                case "input-streaming":
+                                case "input-available":
+                                  return (
+                                    <p
+                                      key={part.toolCallId}
+                                      className="text-sm italic text-playdamnit-light/70"
+                                    >
+                                      Searching for {part.input?.query ?? "games"}...
+                                    </p>
+                                  );
+                                case "output-available":
+                                  return (
+                                    <SearchResults key={part.toolCallId} output={part.output} />
+                                  );
+                                case "output-error":
+                                  return (
+                                    <p key={part.toolCallId} className="text-sm text-red-400">
+                                      Search failed: {part.errorText}
+                                    </p>
+                                  );
+                                default:
+                                  return null;
                               }
 
-                              default:
-                                return null;
-                            }
-                          })}
-                        </div>
+                            default:
+                              return null;
+                          }
+                        })}
                       </div>
                     </div>
-                  ) : null}
+                  </div>
                 </motion.div>
               </AnimatePresence>
             ))
           )}
 
-          {status === "streaming" && (
+          {isBusy && (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-6 h-6 text-playdamnit-cyan animate-spin" />
             </div>
@@ -207,14 +214,16 @@ export default function AIChatModal({ isOpen, onClose }: AIChatModalProps) {
             <input
               type="text"
               value={input}
-              onChange={handleInputChange}
+              onChange={(event) => setInput(event.target.value)}
               placeholder="Tell me about a game you've played..."
               className="w-full bg-playdamnit-dark border border-playdamnit-purple/20 rounded-full py-3 px-4 pr-12 text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-playdamnit-purple"
-              disabled={status === "streaming"}
+              disabled={isBusy}
+              maxLength={4000}
             />
             <button
               type="submit"
-              disabled={!input.trim() || status === "streaming"}
+              aria-label="Send message"
+              disabled={!input.trim() || isBusy}
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center",
                 input.trim()
