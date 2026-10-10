@@ -18,9 +18,8 @@ bun run start
 
 ### Database Management
 
-The project uses **dual databases**: SQLite for game data, PostgreSQL for user data.
+All data lives in a single **PostgreSQL** database. Drizzle ORM manages migrations.
 
-**PostgreSQL (User Database):**
 ```bash
 # Generate schema from Better Auth
 bun run db:pg:generate:authschema
@@ -28,26 +27,12 @@ bun run db:pg:generate:authschema
 # Generate migrations
 bun run db:pg:generate
 
-# Apply migrations
+# Apply migrations (drizzle-kit, dev) / runtime migrator (used by the Docker entrypoint)
 bun run db:pg:migrate
+bun run db:pg:migrate:runtime
 
 # Open Drizzle Studio
 bun run db:pg:studio
-```
-
-**SQLite (Game Database):**
-```bash
-# Generate migrations
-bun run db:sqlite:generate
-
-# Apply migrations
-bun run db:sqlite:migrate
-
-# Seed the database
-bun run db:sqlite:seed
-
-# Open Drizzle Studio
-bun run db:sqlite:studio
 ```
 
 ### API Client Generation
@@ -92,25 +77,59 @@ Run this script to update project documentation:
 - **Elysia** web framework with Bun runtime
 - Entry point: `src/index.ts`
 - Port: 3030 (configurable via `PORT` env var)
-- Swagger docs at `/swagger`
+- OpenAPI docs at `/openapi`
 
-### Dual Database System
+### Database
 
-**Why Two Databases:**
-- **SQLite** (`games.db`): Game catalog data - read-heavy, high performance with WAL mode
-- **PostgreSQL**: User accounts, sessions, game libraries - relational integrity for user data
+Single **PostgreSQL** database for everything — game catalog, user accounts, sessions, and the job queue.
 
-**SQLite Optimizations:**
-The game database uses aggressive performance tuning:
-- WAL mode for concurrent reads during writes
-- 512MB memory-mapped I/O
-- 20MB page cache
-- Temp tables in memory
+- **Drizzle ORM 1.0 (RC)** (`db/postgres/index.ts`) for all queries
+  - Tables: `db/postgres/schema.ts`; relations: `db/postgres/relations.ts` (`defineRelations`, RQB v2). The client is built with `drizzle(url, { relations })`.
+  - Relational queries use the v2 object syntax: `where: { id: 1 }`, `where: { platforms: { id } }`, `where: { RAW: (t) => sql\`...\` }`, `orderBy: { addedAt: "desc" }` or `orderBy: (t) => [...]`. Inside `RAW`/`orderBy` callbacks use the table passed in, not the imported table (RQB aliases it).
+  - Many-to-many relations go `through` the junction tables, so `with: { platforms: true }` returns platform rows directly.
+  - Migrations live in `db/postgres/migrations/<timestamp>_<name>/{migration.sql,snapshot.json}` (drizzle-kit v1 format, no journal). For renames `drizzle-kit generate` asks for `--hints` instead of prompting.
+- **pg-boss** runs inside the same PostgreSQL instance (manages its own `pgboss` schema)
+- Never touch the `pgboss` schema manually
 
-**Database Clients:**
-- Both use Drizzle ORM
-- SQLite: `db/sqlite/index.ts`
-- PostgreSQL: `db/postgres/index.ts`
+### Services
+
+**Backend** (`backend/`) — Elysia HTTP API:
+- Queries game catalog from PostgreSQL
+- Enqueues pg-boss jobs when games are missing (`search-igdb`, `fetch-by-ids`)
+- Holds open HTTP requests via `LISTEN game_catalog_updated` (NOTIFY from librarian), max 10s (30s for imports)
+- **Never calls IGDB directly**
+
+**Librarian** (`librarian/`) — headless background worker:
+- Registers `search-igdb`, `fetch-by-ids`, `process-similar-games`, `refresh-stale-games` pg-boss workers
+- Sole owner of all IGDB logic
+- Writes game data to PostgreSQL, then sends `NOTIFY game_catalog_updated`
+- Run locally: `bun run dev` in `librarian/`
+
+### Job Queue (pg-boss)
+
+pg-boss is a PostgreSQL-backed job queue — no separate queue service needed.
+
+Queue names, payloads and the NOTIFY channel are defined once in `db/postgres/jobs.ts` (the librarian re-exports it). Both services call `createQueue()` for every queue on startup — pg-boss >= 10 refuses to send to or work on a queue that doesn't exist. Work handlers receive an **array** of jobs.
+
+| Job name | Producer | Consumer | Notes |
+|---|---|---|---|
+| `search-igdb` | Backend | Librarian | Search IGDB by query string |
+| `fetch-by-ids` | Backend / Librarian | Librarian | Fetch specific IGDB game IDs (batches of 500); `depth` tracks similar-games hops |
+| `process-similar-games` | Librarian | Librarian | Link similar games; fetch missing ones while `depth < SIMILAR_GAMES_MAX_DEPTH` (default 1) |
+| `refresh-stale-games` | pg-boss cron (04:00) | Librarian | Re-fetch games not updated for 30 days |
+
+Workers are registered in `librarian/src/workers/`. Backend enqueues through `src/utils/catalogRequests.ts`, which registers the NOTIFY wait *before* sending. The librarian NOTIFYs `{ requestId, ok }` on success and on failure (then rethrows so pg-boss retries); IGDB errors are never swallowed.
+
+**Deduplication:** concurrent identical searches share one promise in-process; across instances, `igdb_search_log` is claimed atomically so one query hits IGDB at most once per 7 days (1 minute with `fresh=1`).
+
+### Search Flow
+
+1. Backend queries PostgreSQL with escaped ILIKE + the pg_trgm `%` operator (uses the GIN index)
+2. On the first page, if fewer than 3 substring matches exist and the query wasn't searched in IGDB within 7 days:
+   - enqueue `search-igdb`, wait for NOTIFY (max 10s), then query PG (source: `igdb`)
+3. Otherwise return local results (source: `database`)
+
+List endpoints return a light "card" projection (`GAME_CARD_WITH`); screenshots, websites and similar games are only loaded by `GET /api/games/:id`.
 
 ### File-Based Routing
 
@@ -135,41 +154,18 @@ routes/
 
 Each route file exports an Elysia instance. They're composed in `index.ts` using `.use()`. Use Elysia's `macro({ auth: true })` for protected routes.
 
-### Redis Queue System (Critical)
+Use `t.Union([t.Literal(...)])` for enums, not `t.UnionEnum`: inside `t.Optional`, Elysia 1.4.30 fills a missing `UnionEnum` with its first value.
 
-**Purpose:** Decouple expensive operations from API responses.
-
-**Two Main Queues:**
-
-1. **SQLite Write Queue** (`sqlite_write`)
-   - Worker: `src/utils/redis/sqliteWriter.ts`
-   - Job types: `INSERT_GAME`, `INSERT_GAMES_BATCH`, `UPDATE_GAME`
-   - Handles transactional writes with relationships (platforms, genres, modes)
-   - Automatically started as background worker in `src/index.ts`
-
-2. **Similar Games Queue** (`similar_games`)
-   - Worker: `src/utils/redis/similarGamesQueue.ts`
-   - Asynchronously builds game similarity relationships
-   - Fetches missing games from IGDB in batches
-   - Only processes when system load is low (main queue < threshold)
-   - See `SIMILAR_GAMES_SYSTEM.md` for detailed flow
-
-**Queue Infrastructure:**
-- Base class: `src/utils/redis/redisQueue.ts`
-- Job statuses: `pending`, `processing`, `completed`, `failed`
-- Auto-retry up to 3 attempts
-- Workers poll every 1 second
-
-**Important:** When adding games to the database, always enqueue them through the write queue - never write directly from route handlers.
+Routes stay thin: business logic lives in `src/modules/*/service.ts`, request schemas shared between routes in `src/modules/*/model.ts`. Services **throw** `AppError` subclasses (`src/utils/errors.ts`); the global `onError` in `src/index.ts` maps them to `{ error, message }` with the right status. Rate limits (`src/utils/rateLimit.ts`, in-memory per instance) guard search, import and AI chat.
 
 ### IGDB API Integration
 
-**Location:** `src/utils/igdb/`
+**Location:** `librarian/src/utils/igdb/`
 
 **Token Management:**
-- OAuth tokens cached in Redis (24-hour TTL)
-- Auto-refresh before expiration
-- Requires `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`
+- OAuth tokens cached in-process in librarian (expires 5 min early)
+- Each librarian instance manages its own token independently
+- Requires `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` (librarian env only)
 
 **Key Functions:**
 - `searchIGDB()`: Full-text search with filters
@@ -177,7 +173,7 @@ Each route file exports an Elysia instance. They're composed in `index.ts` using
 - Transformers convert IGDB responses to internal schema
 
 **Rate Limiting:**
-Always batch requests when fetching multiple games. The similar games worker demonstrates best practices.
+`igdbRequest()` spaces requests ≥260ms apart (IGDB allows 4/s). Search strings are escaped for Apicalypse (`escapeApicalypseString`).
 
 ### Authentication (Better Auth)
 
@@ -190,8 +186,9 @@ Always batch requests when fetching multiple games. The similar games worker dem
 - Admin plugin for user management
 
 **Database:**
-- Uses PostgreSQL with Drizzle adapter
-- Auto-generates schema: `bun run db:pg:generate:authschema`
+- Uses PostgreSQL with the Drizzle adapter. The auth tables are passed to `drizzleAdapter(db, { schema })` explicitly — with Drizzle v1 the client no longer carries a schema and Better Auth reports "Drizzle schema mismatch" without it.
+- The API key plugin is `@better-auth/api-key` (keys belong to `referenceId`, grouped by `configId`).
+- The Better Auth CLI can't load `src/lib/auth.ts` (it runs under Node; the db driver is `bun-sql`), so keep the auth tables in `schema.ts` in sync with Better Auth by hand when upgrading it.
 
 **Route Protection:**
 Use Elysia's macro system:
@@ -200,23 +197,6 @@ app.get('/protected', () => { ... }, { auth: true })
 ```
 
 The macro injects `user` and `session` into the route context.
-
-### Search & Caching Strategy
-
-**Search Flow** (`src/utils/searchGames.ts`):
-1. Check Redis cache (24-hour TTL)
-2. Query local SQLite database
-3. If not found, search IGDB API
-4. Enqueue games for batch insert
-5. Return cached results immediately
-
-**Cache Keys:**
-- Search results: `search:games:{query}:{limit}:{offset}`
-- IGDB tokens: `igdb:access_token`
-- Similar game relationships: `similar_games:relationships`
-
-**Lock Mechanism:**
-Concurrent identical searches are deduplicated using Redis locks to prevent redundant IGDB API calls.
 
 ### Logging & Error Tracking
 
@@ -241,83 +221,67 @@ Concurrent identical searches are deduplicated using Redis locks to prevent redu
 
 ### Adding a New Database Table
 
-**SQLite:**
-1. Define schema in `db/sqlite/schema/index.ts`
-2. Generate migration: `bun run db:sqlite:generate`
-3. Apply migration: `bun run db:sqlite:migrate`
-
-**PostgreSQL:**
 1. Define schema in `db/postgres/schema.ts`
 2. Generate migration: `bun run db:pg:generate`
 3. Apply migration: `bun run db:pg:migrate`
-
-### Queuing Background Jobs
-
-1. Define job type in `src/utils/redis/sqliteWriter.ts` or create new worker
-2. Add to worker's `switch` statement
-3. Enqueue from route: `await queue.enqueue(jobType, jobData)`
+4. If the table is part of the game catalog, also update `librarian/db/postgres/schema.ts` manually (see Schema Sync below)
 
 ### IGDB Data Import Flow
 
 ```
 User Request → searchGamesWithCache()
-  ├─ Check Redis cache
-  ├─ Query local SQLite
-  └─ IGDB API (if not found)
+  ├─ Query local PostgreSQL (ILIKE + similarity)
+  └─ If no results: boss.send('search-igdb', ...)
        ↓
-  Transform IGDB response
+  waitForNotify(requestId) — max 10s
        ↓
-  Enqueue INSERT_GAMES_BATCH
+Librarian igdbWorker (pg-boss)
+  ├─ searchIGDB()
+  ├─ Transform IGDB response
+  ├─ writeGamesBatch() → INSERT into PG
+  ├─ NOTIFY game_catalog_updated
+  └─ boss.send('process-similar-games', ...)
        ↓
-SQLite Write Worker (background)
-  ├─ Deduplicate
-  ├─ Transactional insert
-  ├─ Create relationships
-  └─ Queue similar games
+Librarian similarGamesWorker (pg-boss)
+  ├─ Check which similar IDs already exist
+  ├─ boss.send('fetch-by-ids', { missingIds })
+  └─ Insert bidirectional rows in game_to_similar_game
        ↓
-Similar Games Worker (60s interval)
-  ├─ Check system load
-  ├─ Fetch missing similar games
-  └─ Create bidirectional relationships
+Similar Games cascade grows catalog over time
 ```
 
 ### User Game Import (CSV/JSON)
 
-The import endpoint (`user/[username]/games/import.ts`) demonstrates:
-- File parsing validation
-- Checking for missing games in local database
-- Fetching missing games from IGDB with `fetchAndSaveGamesFromIGDB()`
-- Polling until games are available (queue processing delay)
-- Batch insert into user's library
+`UserGameService.importUserGames` validates rows, fetches missing games with one `fetch-by-ids` job (`ensureGamesInCatalog`), then writes everything in one transaction with `ON CONFLICT` on `(user_id, game_id)`. CSV parsing/export lives in `src/modules/userGame/csv.ts` (RFC 4180, formula-escaped export).
 
-**Important:** The import uses a polling strategy with retries because the queue is async. Always account for queue processing time when reading recently enqueued data.
+## Shared Schema
+
+`backend/db/postgres/schema.ts` (plus `relations.ts`) is the only schema. `librarian/db/postgres/{schema,relations,jobs}.ts` just re-export the backend files, so the librarian's Docker build context is the repo root. Migrations are only run from the backend (the Docker entrypoint runs them on start).
 
 ## Environment Variables
 
 Required:
 ```bash
-# Databases
+# Database (used by both backend and librarian)
 POSTGRES_URL=postgresql://user:pass@host:5432/db
-SQLITE_DATABASE_URL=./games.db  # Relative to project root
 
-# Redis (Required)
-REDIS_URL=redis://localhost:6379
-
-# Authentication
+# Authentication (backend only, required in production)
 BETTER_AUTH_SECRET=random-secret-min-32-chars
-JWT_SECRET=another-random-secret
 
-# IGDB API
+# Email Service (backend only, required in production: sign-up needs email verification)
+RESEND_API_KEY=re_xxxx
+
+# IGDB API (librarian only)
 TWITCH_CLIENT_ID=your-client-id
 TWITCH_CLIENT_SECRET=your-client-secret
-
-# Email Service
-RESEND_API_KEY=re_xxxx
 ```
 
 Optional:
 ```bash
-OPENAI_API_KEY=sk-xxx           # For AI chat feature
+OPENAI_API_KEY=sk-xxx           # For AI chat feature (503 when unset)
+OPENAI_MODEL=gpt-4o             # Model for AI chat
+TRUST_PROXY=false               # Use X-Forwarded-For for rate limiting
+SIMILAR_GAMES_MAX_DEPTH=1       # Librarian: similar-games crawl depth
 SENTRY_DSN=https://xxx          # Error tracking
 TRUSTED_ORIGINS=https://app.playdamnit.com,https://playdamnit.com
 PORT=3030                       # Default port
@@ -326,37 +290,18 @@ LOG_LEVEL=info                  # Logging verbosity
 
 # Docker only
 RUN_MIGRATIONS=true             # Auto-run migrations
-RUN_SEED=false                  # Auto-seed database
 ```
 
 ## Common Development Scenarios
 
 ### Adding a New Game Field
 
-1. Update SQLite schema: `db/sqlite/schema/index.ts`
-2. Generate migration: `bun run db:sqlite:generate`
-3. Update IGDB transformer: `src/utils/igdb/transformers.ts`
-4. Update game type in `spec.yaml` for API client
-5. Regenerate API client: `bun run orval:generate`
-
-### Adding a New Queue Worker
-
-1. Create worker file in `src/utils/redis/`
-2. Extend `RedisQueue` class
-3. Define job types and handler
-4. Start worker in `src/index.ts` with `startWorkerInBackground()`
-
-### Debugging Queue Issues
-
-Check queue status:
-```typescript
-// In any file with Redis access
-const pending = await redis.llen('sqlite_write:jobs');
-const completed = await redis.scard('sqlite_write:completed');
-const failed = await redis.smembers('sqlite_write:failed');
-```
-
-Worker logs are in `combined-*.log` with job IDs.
+1. Update schema: `db/postgres/schema.ts`
+2. Generate migration: `bun run db:pg:generate`
+3. Apply migration: `bun run db:pg:migrate`
+4. Update IGDB transformer: `librarian/src/utils/igdb/transformers.ts`
+5. Update game type in `spec.yaml` for API client
+6. Regenerate API client: `bun run orval:generate`
 
 ### Testing IGDB Integration
 
@@ -365,18 +310,25 @@ The IGDB API has rate limits. Use the local database first:
 // Always check local first
 const localGames = await db.select()...;
 if (localGames.length === 0) {
-  // Then query IGDB
-  const igdbGames = await searchIGDB(...);
+  // Then delegate to librarian via pg-boss
 }
 ```
 
 ## Performance Considerations
 
-1. **Database Queries:** Use Drizzle's `with` for eager loading relationships instead of N+1 queries
-2. **IGDB Batching:** Fetch up to 100 games per request (IGDB limit is 500, but 100 is safer)
-3. **Redis Cache:** Always cache expensive IGDB searches (24-hour TTL is standard)
-4. **Queue Load:** The similar games worker checks main queue length before processing
-5. **SQLite Transactions:** All multi-row writes use transactions in the queue worker
+1. **Database Queries:** Use Drizzle's `with` for eager loading; lists use `GAME_CARD_WITH`, never the full graph
+2. **IGDB Batching:** `fetchIGDBByIds` sends up to 500 ids per request with an explicit `limit` (IGDB's default is 10)
+3. **Search:** GIN trigram index on `game.name`; use the `%` operator rather than `similarity() >` in WHERE so the index applies
+4. **Deduplication:** In-process `Map` per instance plus the `igdb_search_log` claim across instances
+
+## Testing
+
+```bash
+bun test                                                     # unit tests
+TEST_POSTGRES_URL=postgres://.../playdamnit_test bun test    # + integration tests (disposable DB, gets truncated)
+```
+
+`tests/setup.ts` overrides `POSTGRES_URL` so tests never touch the database from `.env`.
 
 ## CI/CD
 
