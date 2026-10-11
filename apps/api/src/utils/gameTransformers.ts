@@ -103,7 +103,7 @@ interface GameDetailRelations {
   } | null;
 }
 
-export interface RelatedGame {
+interface RelatedGame {
   id: number;
   name: string;
   slug: string;

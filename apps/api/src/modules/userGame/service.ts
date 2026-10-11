@@ -12,11 +12,11 @@ import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/util
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 
-export const MAX_IMPORT_GAMES = 1000;
+const MAX_IMPORT_GAMES = 1000;
 const IMPORT_FETCH_TIMEOUT_MS = 30_000;
 const INSERT_CHUNK_SIZE = 500;
 
-export interface UserGameInput {
+interface UserGameInput {
   status: UserGameStatus;
   rating?: number | null;
   review?: string | null;

@@ -77,18 +77,6 @@ export class TooManyRequestsError extends AppError {
 }
 
 /**
- * 500 Internal Server Error
- */
-export class InternalServerError extends AppError {
-  readonly statusCode = 500;
-  readonly errorType = "Internal Server Error";
-
-  constructor(message: string = "Internal server error") {
-    super(message);
-  }
-}
-
-/**
  * 503 Service Unavailable error
  */
 export class ServiceUnavailableError extends AppError {

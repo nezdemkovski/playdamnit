@@ -17,7 +17,7 @@ const logger = createLogger("igdb-worker");
 // Workers poll for new jobs; a user (import, add by id) may be waiting on this queue
 const INTERACTIVE_POLLING = { pollingIntervalSeconds: 0.5 };
 
-export const sendNotify = async (requestId: string, ok: boolean): Promise<void> => {
+const sendNotify = async (requestId: string, ok: boolean): Promise<void> => {
   try {
     const payload: CatalogUpdatedPayload = { requestId, ok };
     await db.execute(sql`select pg_notify(${NOTIFY_CHANNEL}, ${JSON.stringify(payload)})`);

@@ -31,10 +31,10 @@ export const WEBHOOK_ENTITIES = [
 ] as const;
 export const WEBHOOK_METHODS = ["create", "update", "delete"] as const;
 
-export type WebhookEntity = (typeof WEBHOOK_ENTITIES)[number];
-export type WebhookMethod = (typeof WEBHOOK_METHODS)[number];
+type WebhookEntity = (typeof WEBHOOK_ENTITIES)[number];
+type WebhookMethod = (typeof WEBHOOK_METHODS)[number];
 
-export const DELETED_REASON = "deleted";
+const DELETED_REASON = "deleted";
 
 /** Constant-time comparison of the X-Secret header with the configured secret. */
 export const secretMatches = (given: string | null, expected: string): boolean => {
@@ -62,7 +62,7 @@ const asId = (value: unknown): number | null =>
   typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
 
 /** The game an event is about, or null when it can't be told (then the delta sync covers it). */
-export const resolveGameId = async (
+const resolveGameId = async (
   entity: WebhookEntity,
   payload: Record<string, unknown>,
 ): Promise<number | null> => {

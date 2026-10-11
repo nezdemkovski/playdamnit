@@ -159,7 +159,7 @@ const lastRunAt = async () => {
  * Mirror IGDB's lookup endpoints. Small ones fit in a request; companies and collections take a
  * few hundred. Writes are upserts by IGDB id, so renames land and nothing is ever deleted.
  */
-export const syncLookups = async (opts: { force?: boolean } = {}) => {
+const syncLookups = async (opts: { force?: boolean } = {}) => {
   const previous = await lastRunAt();
   if (!opts.force && previous && Date.now() - previous.getTime() < MIN_INTERVAL_MS) {
     logger.info(`sync-lookups skipped: last run at ${previous.toISOString()}`);

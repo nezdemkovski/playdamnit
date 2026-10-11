@@ -11,7 +11,7 @@ const MAIN_GAME_TYPES = [0, 8, 9];
 
 // IGDB allows 4 requests/second and 8 open requests per client
 const MIN_REQUEST_INTERVAL_MS = 260;
-export const MAX_IDS_PER_REQUEST = 500;
+const MAX_IDS_PER_REQUEST = 500;
 
 // The whole game document with every relation we store expanded one level (two for the
 // company and cover sub-objects). `*` covers the scalar fields and plain reference ids
@@ -22,7 +22,7 @@ export const GAME_FIELDS = `
          game_localizations.*, game_localizations.cover.*, release_dates.*,
          genres.*, platforms.*, game_modes.*, themes.*, collections.*, game_type.*, keywords.*;`;
 
-export class IGDBError extends Error {
+class IGDBError extends Error {
   constructor(
     message: string,
     readonly status?: number,

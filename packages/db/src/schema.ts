@@ -15,24 +15,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export enum GameTypeEnum {
-  MAIN_GAME = 0,
-  DLC = 1,
-  EXPANSION = 2,
-  BUNDLE = 3,
-  STANDALONE_EXPANSION = 4,
-  MOD = 5,
-  EPISODE = 6,
-  SEASON = 7,
-  REMAKE = 8,
-  REMASTER = 9,
-  EXPANDED_GAME = 10,
-  PORT = 11,
-  FORK = 12,
-  PACK = 13,
-  UPDATE = 14,
-}
-
 export enum ImageSourceEnum {
   IGDB = "igdb",
   LOCAL = "local",
@@ -297,7 +279,7 @@ export const theme = pgTable(
   (table) => [index("idx_theme_slug").on(table.slug)],
 );
 
-// IGDB game types ("Main Game", "DLC", ...); ids match GameTypeEnum
+// IGDB game types by IGDB id (0 = Main Game, 1 = DLC, 8 = Remake, 9 = Remaster, ...)
 export const type = pgTable(
   "type",
   {
@@ -359,7 +341,7 @@ export const game = pgTable(
     totalRatingCount: integer("total_rating_count"),
     // IGDB date precision for first_release_date ("YYYYMMMMDD", "YYYYMMMM", "YYYY", ...)
     firstReleaseDatePrecision: text("first_release_date_precision"),
-    // IGDB game_type id (GameTypeEnum), see the `type` table for names
+    // IGDB game_type id, see the `type` table for names
     gameType: integer("game_type"),
     // DLC/expansions point at their parent; editions point at the game they are a version of
     parentGameId: integer("parent_game_id"),

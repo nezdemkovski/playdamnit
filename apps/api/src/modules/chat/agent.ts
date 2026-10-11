@@ -1,4 +1,4 @@
-import { isStepCount, tool, ToolLoopAgent, type InferAgentUIMessage, type LanguageModel } from "ai";
+import { isStepCount, tool, ToolLoopAgent, type LanguageModel } from "ai";
 import { z } from "zod";
 
 import { searchGames } from "@/utils/searchGames";
@@ -70,5 +70,3 @@ export const createChatAgent = (model: LanguageModel) =>
     // Search, then answer; a few extra steps for re-searching with another spelling
     stopWhen: isStepCount(4),
   });
-
-export type ChatAgentUIMessage = InferAgentUIMessage<ReturnType<typeof createChatAgent>>;

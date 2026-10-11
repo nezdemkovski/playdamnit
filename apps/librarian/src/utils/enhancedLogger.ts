@@ -4,7 +4,7 @@ import "winston-daily-rotate-file";
 
 const { combine, timestamp, printf, colorize, json } = format;
 
-export enum LogLevel {
+enum LogLevel {
   ERROR = "error",
   WARN = "warn",
   INFO = "info",
@@ -50,7 +50,7 @@ const winstonLogger = winston.createLogger({
   ],
 });
 
-export interface EnhancedLogger {
+interface EnhancedLogger {
   error: (message: string, meta?: Record<string, any>) => void;
   warn: (message: string, meta?: Record<string, any>) => void;
   info: (message: string, meta?: Record<string, any>) => void;

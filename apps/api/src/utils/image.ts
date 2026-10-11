@@ -13,32 +13,15 @@ export enum IgdbImageSize {
   FULL_HD = "1080p", // 1920x1080
 }
 
-export const getIgdbImageUrl = (
-  hash: string,
-  size: IgdbImageSize = IgdbImageSize.COVER_BIG,
-): string => {
-  if (!hash) return "";
-  return `https://images.igdb.com/igdb/image/upload/t_${size}/${hash}.jpg`;
-};
+const getIgdbImageUrl = (hash: string, size: IgdbImageSize): string =>
+  `https://images.igdb.com/igdb/image/upload/t_${size}/${hash}.jpg`;
 
+/** URL of a catalog image. Only IGDB-hosted images exist today. */
 export const getImageUrl = (
   source: string,
   hash: string,
   size: IgdbImageSize = IgdbImageSize.COVER_BIG,
 ): string => {
-  if (!hash) return "";
-
-  if (source === ImageSourceEnum.IGDB) {
-    return getIgdbImageUrl(hash, size);
-  } else if (source === ImageSourceEnum.LOCAL) {
-    // TODO: Replace with S3 URL structure
-    return `https://your-s3-bucket.s3.amazonaws.com/images/${hash}.jpg`;
-  }
-
-  return "";
-};
-
-export const isExternalUrl = (url: string | null | undefined): boolean => {
-  if (!url) return false;
-  return url.startsWith("http://") || url.startsWith("https://");
+  if (!hash || source !== ImageSourceEnum.IGDB) return "";
+  return getIgdbImageUrl(hash, size);
 };

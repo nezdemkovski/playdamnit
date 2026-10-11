@@ -7,7 +7,7 @@ import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/util
 export const MAX_QUERY_LENGTH = 100;
 export const MAX_SEARCH_LIMIT = 50;
 
-export interface SearchOptions {
+interface SearchOptions {
   limit?: number;
   offset?: number;
   // Editions (`version_parent` set) are folded into their parent and hidden by default
@@ -16,7 +16,7 @@ export interface SearchOptions {
   gameTypes?: number[];
 }
 
-export interface SearchResult {
+interface SearchResult {
   results: ReturnType<typeof transformGameResponse>[];
   meta: {
     total: number;

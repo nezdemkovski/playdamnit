@@ -21,7 +21,7 @@ import { ImageSourceEnum } from "@playdamnit/db/schema";
 import type { IGDBGameResponse, IGDBNamed, IGDBTyped } from "../utils/igdb/types";
 
 // Games rated by at least this many IGDB users count as popular (used for search ranking)
-export const POPULAR_RATING_COUNT = 100;
+const POPULAR_RATING_COUNT = 100;
 
 // IGDB date_formats ids → how precise first_release_date is
 const DATE_PRECISION: Record<number, string> = {
@@ -35,10 +35,8 @@ const DATE_PRECISION: Record<number, string> = {
   7: "tbd",
 };
 
-export type GameRow = typeof game.$inferInsert;
-export type NamedRow = IGDBNamed;
-export type PlatformRow = typeof platform.$inferInsert;
-export type TypedRow = IGDBTyped;
+type GameRow = typeof game.$inferInsert;
+type PlatformRow = typeof platform.$inferInsert;
 
 export interface DerivedGame {
   game: GameRow;

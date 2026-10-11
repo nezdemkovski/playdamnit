@@ -18,10 +18,10 @@ interface IGDBWebhook {
   secret?: string;
 }
 
-export const webhookUrl = (baseUrl: string, entity: string, method: string) =>
+const webhookUrl = (baseUrl: string, entity: string, method: string) =>
   `${baseUrl.replace(/\/+$/, "")}/api/webhooks/igdb/${entity}/${method}`;
 
-export const listWebhooks = async (): Promise<IGDBWebhook[]> =>
+const listWebhooks = async (): Promise<IGDBWebhook[]> =>
   (await igdbFetch("GET", "webhooks")).json() as Promise<IGDBWebhook[]>;
 
 /**

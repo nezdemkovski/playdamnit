@@ -10,7 +10,7 @@ interface Window {
   resetAt: number;
 }
 
-export interface RateLimiter {
+interface RateLimiter {
   check(key: string): void;
 }
 

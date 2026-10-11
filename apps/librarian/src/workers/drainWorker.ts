@@ -61,7 +61,7 @@ const drainRound = async (): Promise<{ claimed: number; written: number; flagged
     return { claimed: rows.length, written, flagged: gone.length };
   });
 
-export const drainDirty = async () => {
+const drainDirty = async () => {
   const total = { claimed: 0, written: 0, flagged: 0 };
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const result = await drainRound();

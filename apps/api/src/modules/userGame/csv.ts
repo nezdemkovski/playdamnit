@@ -54,7 +54,7 @@ export const parseCSV = (content: string): Record<string, string>[] => {
     );
 };
 
-export const escapeCsvField = (field: unknown): string => {
+const escapeCsvField = (field: unknown): string => {
   if (field === null || field === undefined) return "";
   let str = String(field);
 

@@ -122,7 +122,7 @@ const setupGlobalErrorHandlers = () => {
   });
 };
 
-export interface EnhancedLogger {
+interface EnhancedLogger {
   error: (message: string, meta?: Record<string, any>) => void;
   warn: (message: string, meta?: Record<string, any>) => void;
   info: (message: string, meta?: Record<string, any>) => void;
