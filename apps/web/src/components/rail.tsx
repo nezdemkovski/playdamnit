@@ -1,9 +1,5 @@
-import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { cn } from "cn";
 import { Children, isValidElement, useCallback, useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import { Button } from "@/components/ui/button";
 
 interface RailProps {
   children: React.ReactNode;
@@ -16,30 +12,33 @@ interface RailProps {
 
 /** A pointer that moved further than this is a drag, and the click at its end is swallowed */
 const DRAG_SLOP = 5;
+/** Width of the fade on an edge that has more content behind it */
+const FADE = "48px";
 
-const ARROW =
-  "absolute top-1/2 z-10 hidden size-9 -translate-y-1/2 border-border bg-background/90 text-foreground backdrop-blur hover:bg-card md:inline-flex";
+/** A mask that fades out the edges with more content behind them */
+const edgeMask = (left: boolean, right: boolean) =>
+  left || right
+    ? `linear-gradient(to right, ${left ? "transparent" : "#000"} 0, #000 ${left ? FADE : "0px"}, #000 calc(100% - ${right ? FADE : "0px"}), ${right ? "transparent" : "#000"} 100%)`
+    : undefined;
 
 /**
  * A horizontal row of cards or media on the browser's own scrolling: touch swipe and trackpad
  * gestures as the system does them, stopping wherever they stop, and no rubber band past the
- * ends. Mouse users get drag-to-scroll and prev/next arrows that page by what is visible and
- * hide at the ends.
+ * ends. Mouse users get drag-to-scroll. An edge with more content behind it fades out.
  */
 export function Rail({ children, itemClassName, overhang = false, className }: RailProps) {
-  const { t } = useTranslation();
   const items = Children.toArray(children).filter(isValidElement);
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const swallowClick = useRef(false);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
+  const [edges, setEdges] = useState({ left: false, right: false });
 
   const update = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    setCanPrev(el.scrollLeft > 2);
-    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
   }, []);
 
   useEffect(() => {
@@ -51,16 +50,13 @@ export function Rail({ children, itemClassName, overhang = false, className }: R
     return () => observer.disconnect();
   }, [update, items.length]);
 
-  const page = (direction: 1 | -1) => {
-    const el = ref.current;
-    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.85, behavior: "smooth" });
-  };
-
+  const mask = edgeMask(edges.left, edges.right);
   return (
     <div className={cn("relative", className)}>
       <div
         ref={ref}
         onScroll={update}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || event.button !== 0 || !ref.current) return;
           drag.current = { x: event.clientX, left: ref.current.scrollLeft, moved: false };
@@ -105,28 +101,6 @@ export function Rail({ children, itemClassName, overhang = false, className }: R
           </div>
         ))}
       </div>
-      {canPrev && (
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t("rail.previous")}
-          onClick={() => page(-1)}
-          className={cn(ARROW, "left-2")}
-        >
-          <ArrowLeftIcon />
-        </Button>
-      )}
-      {canNext && (
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t("rail.next")}
-          onClick={() => page(1)}
-          className={cn(ARROW, "right-2")}
-        >
-          <ArrowRightIcon />
-        </Button>
-      )}
     </div>
   );
 }

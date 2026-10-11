@@ -702,9 +702,5 @@
     "label": "Media viewer",
     "gallery": "Screenshots and videos",
     "position": "{index} of {total}"
-  },
-  "rail": {
-    "previous": "Scroll back",
-    "next": "Scroll on"
   }
 }
