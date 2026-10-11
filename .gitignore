@@ -26,3 +26,4 @@ out
 
 # Local Claude Code settings
 **/.claude/settings.local.json
+apps/web/.tanstack/
