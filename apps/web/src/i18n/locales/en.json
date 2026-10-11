@@ -538,8 +538,7 @@
       "workingOnIt": "working on it",
       "respect": "respect",
       "average": "Average",
-      "rated": "{{count}} graded",
-      "distribution": "Grade distribution"
+      "rated": "{{count}} graded"
     },
     "evenings": {
       "title": "{{days}} days. {{green}} of them green.",

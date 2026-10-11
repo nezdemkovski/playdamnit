@@ -17,6 +17,7 @@ import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import { BadgeStrip, computeBadges } from "@/components/profile/badges";
+import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -127,12 +128,6 @@ function ProfileLayout() {
               </div>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <span>
-                <b>{user.counts.games}</b>{" "}
-                <span className="text-dimmed">
-                  {t("profile.counts.games", { count: user.counts.games })}
-                </span>
-              </span>
               <Link
                 to="/$username/friends"
                 params={{ username }}
@@ -172,6 +167,11 @@ function ProfileLayout() {
             )}
           </div>
         </div>
+        {library.data && library.data.results.length > 0 && (
+          <div className="mt-5 border-t border-border pt-4">
+            <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
+          </div>
+        )}
       </header>
 
       <nav className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b border-white/5">

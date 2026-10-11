@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { PrivateNotice } from "@/components/profile/private-notice";
-import { ProfileStats } from "@/components/profile/profile-stats";
 import { TierBoard } from "@/components/profile/tier-board";
 import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { Section } from "@/components/section";
@@ -43,8 +42,6 @@ function ProfileOverview() {
 
   return (
     <>
-      <ProfileStats entries={entries} own={isOwn} />
-
       {entries.length > 0 && (
         <Section
           title={t("profile.overview.tiers")}
@@ -64,7 +61,7 @@ function ProfileOverview() {
               </Button>
             ) : undefined
           }
-          className="mt-8"
+          className="mt-0"
         >
           <TierBoard entries={entries} arranging={isOwn && arranging} />
         </Section>
