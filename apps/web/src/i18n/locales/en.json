@@ -524,12 +524,7 @@
         "finished": "finished"
       },
       "dayLabel": "{{date}} · {{state}}",
-      "heatAria": "Days with activity over the last year",
-      "trendTitle": "Added vs finished · 12 months",
-      "trendAria": "Games added versus games finished per month",
-      "trendTip": "{{month}} · {{added}} added · {{finished}} finished",
-      "added": "Added",
-      "finished": "Finished"
+      "heatAria": "Days with activity over the last year"
     },
     "tiers": {
       "saving": "Saving…",
