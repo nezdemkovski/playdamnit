@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { Children, isValidElement } from "react";
 import { useTranslation } from "react-i18next";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 
 import {
   Carousel,
@@ -19,20 +20,27 @@ interface RailProps {
   className?: string;
 }
 
+// Created once: Embla re-initialises when the plugins array changes identity
+const WHEEL = [WheelGesturesPlugin()];
+
 const ARROW =
   "top-1/2 hidden size-9 -translate-y-1/2 border-border bg-background/90 text-foreground backdrop-blur hover:bg-card disabled:pointer-events-none disabled:opacity-0 md:inline-flex";
 
 /**
- * A horizontal row of cards or media (Embla through shadcn's Carousel): native-feeling swipe
- * on touch, drag and arrow buttons on desktop, arrow keys when focused. Pages by what is
- * visible; the arrows hide at the ends.
+ * A horizontal row of cards or media (Embla through shadcn's Carousel): swipe on touch, the
+ * trackpad and mouse drag on desktop, arrow buttons and arrow keys. Pages by what is visible
+ * and always settles on a card edge; the arrows hide at the ends.
  */
 export function Rail({ children, itemClassName, overhang = false, className }: RailProps) {
   const { t } = useTranslation();
   const items = Children.toArray(children).filter(isValidElement);
   return (
     <Carousel
-      opts={{ align: "start", slidesToScroll: "auto", containScroll: "trimSnaps", dragFree: true }}
+      // Snaps to the left edge of a card, also at the end (no half-cut card on the left, a gap
+      // on the right instead); no free drag that stops mid-card. The plugin adds horizontal
+      // trackpad and wheel swipes, which Embla does not handle on its own
+      opts={{ align: "start", slidesToScroll: "auto", containScroll: false }}
+      plugins={WHEEL}
       // Dragging the row must not select text or pick up an image or link as a drag ghost
       onDragStartCapture={(event) => event.preventDefault()}
       className={cn("select-none", overhang && "-mx-3 -mt-3", className)}
