@@ -201,7 +201,7 @@ What landed (2026-10-11):
   then returns 200. `games`/`delete` writes reason `deleted`. It never touches catalog tables.
 - Registration in the librarian on startup: `GET /v4/webhooks`, create the missing ones for
   `games`, `covers`, `screenshots`, `videos`, `websites`, `external_games`, `game_localizations`
-  and `involved_companies` × `create|update|delete` (24 hooks since 0.1.2), re-create any with
+  and `involved_companies` × `create|update|delete` (24 hooks since 0.1.3; `videos` registers on IGDB's `game_videos` endpoint), re-create any with
   `active: false` (IGDB deactivates webhooks whose URL stopped answering).
 - Drain: cron queue `drain-dirty`, every minute. Claims up to 500 ids with
   `delete … returning` + `for update skip locked`, does one `fetch-by-ids`, upserts through
