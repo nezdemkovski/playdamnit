@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useMyLibrary } from "@/hooks/library";
+import { gradeOf } from "@/lib/grade";
 
 const PAGE = 50;
 
@@ -97,7 +98,7 @@ function SearchPage() {
             <GameCard
               key={game.id}
               game={game}
-              rating={byGameId.get(game.id)?.userGameData.rating}
+              grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
             />
           ))}
         </div>

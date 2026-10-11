@@ -6,7 +6,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
+import { PillSize } from "@/lib/enums";
+import { gradeOf } from "@/lib/grade";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -90,7 +92,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <RatingValue value={review.rating} className="text-lg" />
+            <GradeBadge grade={gradeOf(review.rating)} size={PillSize.Md} />
             <StatusPill status={review.status} />
             {review.mastered && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-semibold text-warning">

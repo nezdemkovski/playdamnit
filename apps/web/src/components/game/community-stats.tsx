@@ -3,9 +3,10 @@ import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
 import { Histogram } from "@/components/charts/histogram";
+import { GradeBadge } from "@/components/game/rating";
+import { HistogramNoun, PillSize } from "@/lib/enums";
+import { gradeBuckets, gradeOf } from "@/lib/grade";
 import { STATUSES } from "@/lib/statuses";
-import { ratingColor } from "@/lib/format";
-import { HistogramNoun } from "@/lib/enums";
 
 /** What members did with the game: average, histogram and status counts */
 export function CommunityStats({
@@ -24,13 +25,12 @@ export function CommunityStats({
       <div className="flex items-end gap-4">
         <div>
           <div className="eyebrow">{t("community.rating")}</div>
-          <div
-            className={cn(
-              "num mt-1 text-3xl font-extrabold",
-              community.ratingAverage ? ratingColor(community.ratingAverage) : "text-dimmed",
+          <div className="mt-1">
+            {community.ratingAverage ? (
+              <GradeBadge grade={gradeOf(community.ratingAverage)} size={PillSize.Lg} />
+            ) : (
+              <span className="num text-3xl font-extrabold text-dimmed">–</span>
             )}
-          >
-            {community.ratingAverage?.toFixed(1) ?? "–"}
           </div>
           <div className="text-xs text-dimmed">
             {t("community.ratings", { count: community.ratingCount })}
@@ -38,8 +38,8 @@ export function CommunityStats({
         </div>
         <div className="min-w-0 flex-1">
           <Histogram
-            buckets={community.histogram}
-            highlight={mine ? Math.min(10, Math.max(1, Math.ceil(mine))) : null}
+            counts={gradeBuckets(community.histogram)}
+            highlight={gradeOf(mine)}
             height={56}
             ariaLabel={t("community.histogramLabel")}
             noun={HistogramNoun.Ratings}

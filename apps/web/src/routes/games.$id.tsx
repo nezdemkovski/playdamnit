@@ -27,7 +27,7 @@ import { GameCover } from "@/components/game/game-cover";
 import { GameLikeButton } from "@/components/game/like-button";
 import { LogGameButton } from "@/components/game/log-game-button";
 import { ManageListsButton } from "@/components/game/manage-lists-dialog";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Markdown } from "@/components/markdown";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
@@ -36,16 +36,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
-import {
-  compactNumber,
-  formatHours,
-  gameTypeName,
-  ratingColor,
-  releaseDate,
-  shortDate,
-} from "@/lib/format";
+import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
+import { gradeOf, gradeOfPercent } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -105,7 +99,7 @@ function GameDetail({ game }: { game: Game }) {
   const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
   const date = releaseDate(game.firstReleaseDate, game.firstReleaseDatePrecision);
-  const igdbRating = game.totalRating ? game.totalRating / 10 : null;
+  const igdbGrade = gradeOfPercent(game.totalRating);
   const stores = (game.externalGames ?? []).filter((e) => e.url);
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
@@ -138,8 +132,8 @@ function GameDetail({ game }: { game: Game }) {
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
               <Stat label={t("game.stats.igdb")}>
-                {igdbRating ? (
-                  <RatingValue value={igdbRating} className="text-2xl" />
+                {igdbGrade ? (
+                  <GradeBadge grade={igdbGrade} size={PillSize.Lg} />
                 ) : (
                   <span className="text-2xl font-bold text-dimmed">–</span>
                 )}
@@ -159,14 +153,11 @@ function GameDetail({ game }: { game: Game }) {
                 </Stat>
               ) : null}
               <Stat label={t("game.stats.members")}>
-                <span
-                  className={cn(
-                    "text-2xl font-bold",
-                    community.ratingAverage ? ratingColor(community.ratingAverage) : "",
-                  )}
-                >
-                  {community.ratingAverage?.toFixed(1) ?? community.total}
-                </span>
+                {community.ratingAverage ? (
+                  <GradeBadge grade={gradeOf(community.ratingAverage)} size={PillSize.Lg} />
+                ) : (
+                  <span className="num text-2xl font-bold">{community.total}</span>
+                )}
                 <span className="flex items-center gap-1 text-xs text-dimmed">
                   <UsersIcon className="size-3" />{" "}
                   {t("game.stats.inLists", { count: community.total })}
@@ -234,7 +225,7 @@ function GameDetail({ game }: { game: Game }) {
         <div className="panel mt-6 max-w-3xl p-5">
           <div className="mb-2 flex items-center gap-2 text-sm">
             <span className="font-semibold">{t("game.yourReview")}</span>
-            <RatingValue value={entry.rating} />
+            <GradeBadge grade={gradeOf(entry.rating)} />
             {entry.spoilers && (
               <span className="text-xs text-dimmed">{t("game.markedSpoilers")}</span>
             )}
@@ -384,7 +375,7 @@ function GameDetail({ game }: { game: Game }) {
           <GameRail>
             {related.map((r) => (
               <div key={r.id}>
-                <GameCard game={r} rating={byGameId.get(r.id)?.userGameData.rating} />
+                <GameCard game={r} grade={gradeOf(byGameId.get(r.id)?.userGameData.rating)} />
                 <div className="mt-2 line-clamp-2 text-xs font-semibold">{r.name}</div>
                 <div className="text-xs text-dimmed">
                   {[
@@ -409,7 +400,7 @@ function GameDetail({ game }: { game: Game }) {
           <GameRail>
             {game.similarGames.map((g) => (
               <div key={g.id}>
-                <GameCard game={g} rating={byGameId.get(g.id)?.userGameData.rating} />
+                <GameCard game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
                 <div className="mt-2 line-clamp-2 text-xs font-semibold">{g.name}</div>
               </div>
             ))}

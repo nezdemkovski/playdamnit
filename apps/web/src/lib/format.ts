@@ -44,13 +44,6 @@ export const shortDate = (iso: string | null | undefined): string | null =>
 export const relativeDate = (iso: string | null | undefined): string | null =>
   iso ? formatDistanceToNowStrict(new Date(iso), { addSuffix: true }) : null;
 
-export const formatRating = (rating: number | null | undefined): string | null =>
-  rating === null || rating === undefined || rating === 0 ? null : rating.toFixed(1);
-
-/** Colour class for a 0–10 rating, matching the reference design's three bands */
-export const ratingColor = (rating: number): string =>
-  rating >= 7 ? "text-rating-high" : rating >= 4 ? "text-rating-mid" : "text-rating-low";
-
 /** IGDB stores time-to-beat in seconds */
 export const formatHours = (seconds: number | null | undefined): string | null => {
   if (!seconds) return null;

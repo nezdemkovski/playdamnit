@@ -24,6 +24,7 @@ import { Route as UsernameJournalRouteImport } from './routes/$username.journal'
 import { Route as UsernameLikesRouteImport } from './routes/$username.likes'
 import { Route as UsernameListsRouteImport } from './routes/$username.lists'
 import { Route as UsernameReviewsRouteImport } from './routes/$username.reviews'
+import { Route as UsernameTiersRouteImport } from './routes/$username.tiers'
 import { Route as UsernameSettingsRouteImport } from './routes/$username_.settings'
 import { Route as GamesIdRouteImport } from './routes/games.$id'
 import { Route as ListsIdRouteImport } from './routes/lists.$id'
@@ -103,6 +104,11 @@ const UsernameReviewsRoute = UsernameReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => UsernameRoute,
 } as any)
+const UsernameTiersRoute = UsernameTiersRouteImport.update({
+  id: '/tiers',
+  path: '/tiers',
+  getParentRoute: () => UsernameRoute,
+} as any)
 const UsernameSettingsRoute = UsernameSettingsRouteImport.update({
   id: '/$username_/settings',
   path: '/$username/settings',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/$username/likes': typeof UsernameLikesRoute
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
+  '/$username/tiers': typeof UsernameTiersRoute
   '/$username/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/$username/likes': typeof UsernameLikesRoute
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
+  '/$username/tiers': typeof UsernameTiersRoute
   '/$username/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/$username/likes': typeof UsernameLikesRoute
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
+  '/$username/tiers': typeof UsernameTiersRoute
   '/$username_/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
     | '/$username/likes'
     | '/$username/lists'
     | '/$username/reviews'
+    | '/$username/tiers'
     | '/$username/settings'
     | '/games/$id'
     | '/lists/$id'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/$username/likes'
     | '/$username/lists'
     | '/$username/reviews'
+    | '/$username/tiers'
     | '/$username/settings'
     | '/games/$id'
     | '/lists/$id'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/$username/likes'
     | '/$username/lists'
     | '/$username/reviews'
+    | '/$username/tiers'
     | '/$username_/settings'
     | '/games/$id'
     | '/lists/$id'
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsernameReviewsRouteImport
       parentRoute: typeof UsernameRoute
     }
+    '/$username/tiers': {
+      id: '/$username/tiers'
+      path: '/tiers'
+      fullPath: '/$username/tiers'
+      preLoaderRoute: typeof UsernameTiersRouteImport
+      parentRoute: typeof UsernameRoute
+    }
     '/$username_/settings': {
       id: '/$username_/settings'
       path: '/$username/settings'
@@ -393,6 +412,7 @@ interface UsernameRouteChildren {
   UsernameLikesRoute: typeof UsernameLikesRoute
   UsernameListsRoute: typeof UsernameListsRoute
   UsernameReviewsRoute: typeof UsernameReviewsRoute
+  UsernameTiersRoute: typeof UsernameTiersRoute
   UsernameIndexRoute: typeof UsernameIndexRoute
 }
 
@@ -403,6 +423,7 @@ const UsernameRouteChildren: UsernameRouteChildren = {
   UsernameLikesRoute: UsernameLikesRoute,
   UsernameListsRoute: UsernameListsRoute,
   UsernameReviewsRoute: UsernameReviewsRoute,
+  UsernameTiersRoute: UsernameTiersRoute,
   UsernameIndexRoute: UsernameIndexRoute,
 }
 

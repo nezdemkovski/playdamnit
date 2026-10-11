@@ -17,7 +17,7 @@ import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
-import { RatingValue } from "@/components/game/rating";
+import { GradeBadge } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,8 +29,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
-import { IgdbSize } from "@/lib/enums";
+import { Grade, IgdbSize } from "@/lib/enums";
 import { ChartTab } from "@/lib/enums";
+import { gradeOf, gradeOfPercent } from "@/lib/grade";
 
 const TABS = [
   { value: ChartTab.Popular, icon: FlameIcon, sort: GetApiGamesSort.Popular },
@@ -195,7 +196,7 @@ function ChartsPage() {
                 rank={(search.page - 1) * PAGE + i + 1}
                 game={game}
                 tab={tab.value}
-                rating={byGameId.get(game.id)?.userGameData.rating}
+                grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
               />
             ))}
       </ol>
@@ -229,14 +230,14 @@ function ChartRow({
   rank,
   game,
   tab,
-  rating,
+  grade,
 }: {
   rank: number;
   game: Game;
   tab: ChartTab;
-  rating?: number | null;
+  grade?: Grade | null;
 }) {
-  const igdb = game.totalRating ? game.totalRating / 10 : null;
+  const igdb = gradeOfPercent(game.totalRating);
   return (
     <li className="panel flex items-center gap-3 p-2 pr-4 transition-colors hover:bg-white/[0.05]">
       <span className="w-8 text-center text-sm font-bold tabular-nums text-dimmed">{rank}</span>
@@ -270,11 +271,11 @@ function ChartRow({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-sm">
-        {rating ? <RatingValue value={rating} /> : null}
+        <GradeBadge grade={grade} />
         {tab !== ChartTab.Upcoming && igdb ? (
           <span className="flex items-center gap-1 text-dimmed">
             <StarIcon className="size-3.5" />
-            <RatingValue value={igdb} className="text-white" />
+            <GradeBadge grade={igdb} className="border-transparent bg-transparent text-white" />
             <span className="text-xs">({compactNumber(game.totalRatingCount ?? 0)})</span>
           </span>
         ) : null}

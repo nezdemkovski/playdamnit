@@ -503,7 +503,7 @@ components:
           type: number
         histogram:
           type: array
-          description: Ratings bucketed 1..10
+          description: Ratings bucketed by whole number (floor), 1..10
           items:
             type: number
         reviews:

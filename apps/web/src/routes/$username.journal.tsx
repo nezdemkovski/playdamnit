@@ -10,7 +10,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
+import { gradeOf } from "@/lib/grade";
 import { PrivateNotice } from "@/components/profile/private-notice";
 import {
   Select,
@@ -133,7 +134,7 @@ function ProfileJournal() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {item.mastered && <TrophyIcon className="size-4 text-warning" />}
-                  {item.rating ? <RatingValue value={item.rating} /> : null}
+                  <GradeBadge grade={gradeOf(item.rating)} />
                   {item.status && <StatusPill status={item.status} />}
                 </div>
               </li>

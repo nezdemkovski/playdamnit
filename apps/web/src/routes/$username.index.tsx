@@ -13,6 +13,7 @@ import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
+import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/$username/")({
   component: ProfileOverview,
@@ -69,7 +70,7 @@ function ProfileOverview() {
         >
           <GameRail>
             {playing.map((g) => (
-              <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
+              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
             ))}
           </GameRail>
         </Section>
@@ -93,7 +94,7 @@ function ProfileOverview() {
         >
           <GameRail>
             {recent.map((g) => (
-              <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
+              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
             ))}
           </GameRail>
         </Section>

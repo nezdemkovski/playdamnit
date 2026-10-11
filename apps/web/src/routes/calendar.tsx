@@ -17,13 +17,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
+import { gradeOf } from "@/lib/grade";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { format } from "@/i18n/date";
-import { DateFormat, IgdbSize } from "@/lib/enums";
+import { DateFormat, IgdbSize, PillSize } from "@/lib/enums";
 import { compactNumber, gameTypeName } from "@/lib/format";
 
 // The month's most popular releases are drawn; the rest are only counted
@@ -306,7 +307,7 @@ function CalendarPage() {
                   <div className="flex items-center gap-2">
                     {mine ? (
                       <>
-                        <RatingValue value={mine.rating} className="text-lg" />
+                        <GradeBadge grade={gradeOf(mine.rating)} size={PillSize.Md} />
                         <StatusPill status={mine.status} />
                       </>
                     ) : game.totalRatingCount ? (

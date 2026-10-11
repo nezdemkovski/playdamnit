@@ -3,33 +3,34 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 
 import { GameCover } from "./game-cover";
-import { RatingValue } from "./rating";
+import { GradeBadge } from "./rating";
+import type { Grade } from "@/lib/enums";
 import { releaseYear } from "@/lib/format";
 
 interface GameCardProps {
   game: Pick<Game, "id" | "name" | "cover" | "firstReleaseDate">;
-  /** The viewer's own rating, shown as a corner tag */
-  rating?: number | null;
+  /** The viewer's own grade, shown as a corner tile */
+  grade?: Grade | null;
   /** A red corner tag, e.g. days idle */
   tag?: string | null;
   className?: string;
 }
 
 /** Poster card for grids and rails: cover, hover overlay with the title and year */
-export function GameCard({ game, rating, tag, className }: GameCardProps) {
+export function GameCard({ game, grade, tag, className }: GameCardProps) {
   const year = releaseYear(game.firstReleaseDate);
   return (
     <Link
       to="/games/$id"
       params={{ id: String(game.id) }}
       className={cn(
-        "group relative block overflow-hidden outline-none ring-1 ring-transparent transition-[box-shadow] focus-visible:ring-ring",
+        "group relative block outline-none ring-1 ring-transparent transition-[box-shadow] focus-visible:ring-ring",
         className,
       )}
       title={game.name}
     >
       <GameCover url={game.cover?.url} name={game.name} />
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-end overflow-hidden bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
         <div className="line-clamp-2 text-sm font-bold leading-tight text-white">{game.name}</div>
         {year && <div className="num mt-0.5 text-[11px] text-white/70">{year}</div>}
       </div>
@@ -38,11 +39,7 @@ export function GameCard({ game, rating, tag, className }: GameCardProps) {
           {tag}
         </div>
       ) : null}
-      {rating ? (
-        <div className="absolute top-0 right-0 bg-black/80 px-1.5 py-0.5 text-xs">
-          <RatingValue value={rating} />
-        </div>
-      ) : null}
+      {grade ? <GradeBadge grade={grade} className="absolute -top-1 -right-1" /> : null}
     </Link>
   );
 }

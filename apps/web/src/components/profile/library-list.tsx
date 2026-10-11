@@ -25,6 +25,7 @@ import { STATUSES, type LibraryStatus } from "@/lib/statuses";
 import { idleDays } from "@/lib/voice";
 import { LibraryRow } from "./library-row";
 import { AllOption, LibrarySort, LibraryView, StorageKey } from "@/lib/enums";
+import { gradeOf } from "@/lib/grade";
 
 const SORTS = Object.values(LibrarySort);
 
@@ -45,7 +46,7 @@ const compare: Record<LibrarySort, (a: UserGameWithUserData, b: UserGameWithUser
     idleDays(b) - idleDays(a),
   [LibrarySort.Added]: (a, b) =>
     (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
-  [LibrarySort.Rating]: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
+  [LibrarySort.Grade]: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
   [LibrarySort.Name]: (a, b) => a.name.localeCompare(b.name),
   [LibrarySort.Release]: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
 };
@@ -197,7 +198,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
       ) : view === LibraryView.Grid ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {visible.map((entry) => (
-            <GameCard key={entry.id} game={entry} rating={entry.userGameData.rating} />
+            <GameCard key={entry.id} game={entry} grade={gradeOf(entry.userGameData.rating)} />
           ))}
         </div>
       ) : (

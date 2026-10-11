@@ -220,10 +220,10 @@
     "sortNewest": "Newest",
     "searchPlaceholder": "Search by username",
     "empty": "No members match.",
-    "rating": "Members' rating",
-    "ratings_one": "{{count}} rating",
-    "ratings_other": "{{count}} ratings",
-    "histogramLabel": "Members' rating distribution",
+    "rating": "Members' grade",
+    "ratings_one": "{{count}} grade",
+    "ratings_other": "{{count}} grades",
+    "histogramLabel": "Members' grade distribution",
     "mastered": "Mastered",
     "nobody": "Nobody's logged this yet. First one sets the tone."
   },
@@ -271,7 +271,7 @@
       "inLists": "{{count}} in lists"
     },
     "yourList": "In your list",
-    "yourRating": "Your rating",
+    "yourRating": "Your grade",
     "publicLists_one": "in {{count}} public list",
     "publicLists_other": "in {{count}} public lists",
     "removedFromIgdb": "Removed from IGDB",
@@ -311,18 +311,17 @@
     "noReviewsAdd": "No reviews yet. Add the game to your list and write the first."
   },
   "histogram": {
-    "games_one": "{{bucket}}/10 · {{count}} game",
-    "games_other": "{{bucket}}/10 · {{count}} games",
-    "ratings_one": "{{bucket}}/10 · {{count}} rating",
-    "ratings_other": "{{bucket}}/10 · {{count}} ratings"
+    "games_one": "{{grade}} · {{count}} game",
+    "games_other": "{{grade}} · {{count}} games",
+    "ratings_one": "{{grade}} · {{count}} grade",
+    "ratings_other": "{{grade}} · {{count}} grades"
   },
   "log": {
     "add": "Add game",
     "editEntry": "Edit your entry",
     "addToList": "Add to your list",
-    "rating": "Your rating",
-    "ratingAria": "Rating",
-    "notRated": "Not rated",
+    "grade": "Your grade",
+    "noGrade": "Pick a letter. Or don't, and stay neutral.",
     "status": "Status",
     "details": "Details",
     "platform": "Platform",
@@ -337,7 +336,7 @@
     "allowReactions": "Allow reactions on this review",
     "remove": "Remove",
     "removeTitle": "Remove {{name}}?",
-    "removeText": "Your rating, status and review for this game will be deleted."
+    "removeText": "Your grade, status and review for this game will be deleted."
   },
   "playthrough": {
     "title": "Playthroughs",
@@ -453,6 +452,7 @@
       "games": "Games",
       "journal": "Journal",
       "reviews": "Reviews",
+      "tiers": "Tiers",
       "lists": "Lists",
       "friends": "Friends",
       "likes": "Likes"
@@ -507,12 +507,12 @@
       "gridView": "Grid view",
       "emptyList": "Nothing in the list yet. Nothing to feel guilty about either.",
       "noMatch": "No games match. Not even the ones you forgot about.",
-      "unrated": "unrated",
+      "unrated": "no grade",
       "editEntry": "Edit entry",
       "sort": {
         "shame": "Shame",
         "added": "Date added",
-        "rating": "Rating",
+        "grade": "Grade",
         "name": "Name",
         "release": "Release year"
       }
@@ -531,8 +531,8 @@
       "workingOnIt": "working on it",
       "respect": "respect",
       "average": "Average",
-      "rated": "{{count}} rated",
-      "distribution": "Rating distribution"
+      "rated": "{{count}} graded",
+      "distribution": "Grade distribution"
     },
     "evenings": {
       "title": "{{days}} days. {{green}} of them green.",
@@ -549,6 +549,13 @@
       "trendTip": "{{month}} · {{added}} added · {{finished}} finished",
       "added": "Added",
       "finished": "Finished"
+    },
+    "tiers": {
+      "summary": "{{graded}} graded · {{ungraded}} still without a verdict",
+      "emptyRow": "Nobody here.",
+      "ungraded": "Ungraded",
+      "ungradedHintOwn": "Open a game, pick a letter, it lands in a row.",
+      "ungradedHint": "No verdict yet."
     }
   },
   "settings": {
@@ -660,5 +667,44 @@
     "playthroughLogFailed": "Could not log the playthrough",
     "playthroughSaveFailed": "Could not save the playthrough",
     "playthroughDeleteFailed": "Could not delete the playthrough"
+  },
+  "grade": {
+    "label": "Grade",
+    "none": "No grade",
+    "names": {
+      "S": "Masterpiece",
+      "A": "Great",
+      "B": "Good",
+      "C": "Fine",
+      "D": "Meh",
+      "F": "Regret"
+    },
+    "ring": "{{name}} · {{grade}} rank · {{name}} · {{grade}} rank · ",
+    "lines": {
+      "S": {
+        "main": "S. You don't hand those out. Right?",
+        "sub": "Masterpiece. Everything else just got a little worse."
+      },
+      "A": {
+        "main": "A. Great. Not a masterpiece. Noted.",
+        "sub": "You thought about it. Good."
+      },
+      "B": {
+        "main": "B. Good. Solid. You'll forget it by spring.",
+        "sub": "The most honest grade there is."
+      },
+      "C": {
+        "main": "C. Fine. You'll never think about it again.",
+        "sub": "It exists. So does oatmeal."
+      },
+      "D": {
+        "main": "D. Meh. We've all been there.",
+        "sub": "You finished it anyway. Why?"
+      },
+      "F": {
+        "main": "F. Say it to their face.",
+        "sub": "Regret, filed. The hours stay gone."
+      }
+    }
   }
 }

@@ -162,7 +162,7 @@ const communityStats = async (gameId: number) => {
       .where(and(eq(gameListItem.gameId, gameId), eq(gameList.isPublic, true))),
     db
       .select({
-        bucket: sql<number>`least(10, greatest(1, ceil(${userGames.rating})))::int`,
+        bucket: sql<number>`least(10, greatest(1, floor(${userGames.rating})))::int`,
         n: count(),
       })
       .from(userGames)

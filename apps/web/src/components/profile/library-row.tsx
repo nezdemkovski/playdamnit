@@ -7,9 +7,11 @@ import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { LogGameDialog } from "@/components/game/log-game-dialog";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
+import { PillSize } from "@/lib/enums";
 import { gameTypeName, releaseYear } from "@/lib/format";
+import { gradeOf } from "@/lib/grade";
 import { idleDays, idleLine } from "@/lib/voice";
 
 interface LibraryRowProps {
@@ -27,6 +29,7 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
   const data = entry.userGameData;
   const status = data.status;
   const idle = idleDays(entry);
+  const grade = gradeOf(data.rating);
   const barWidth =
     status === StatusEnum.Finished
       ? 100
@@ -73,14 +76,14 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
         <div className="num mt-1.5 text-[11px] text-dimmed">{idleLine(entry)}</div>
       </div>
       <div className="hidden text-right sm:block">
-        {data.rating ? (
-          <RatingValue value={data.rating} className="text-2xl" />
+        {grade ? (
+          <GradeBadge grade={grade} size={PillSize.Md} />
         ) : (
           <span className="eyebrow">{t("profile.library.unrated")}</span>
         )}
       </div>
       <div className="flex items-center justify-end gap-2 sm:justify-start">
-        <RatingValue value={data.rating} className="text-lg sm:hidden" />
+        <GradeBadge grade={grade} size={PillSize.Md} className="sm:hidden" />
         <StatusPill status={status} />
       </div>
       <div className="hidden sm:block">

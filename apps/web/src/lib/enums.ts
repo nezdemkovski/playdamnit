@@ -15,7 +15,7 @@ export enum LibraryView {
 export enum LibrarySort {
   Shame = "shame",
   Added = "added",
-  Rating = "rating",
+  Grade = "grade",
   Name = "name",
   Release = "release",
 }
@@ -38,6 +38,7 @@ export enum ProfileTab {
   Games = "games",
   Journal = "journal",
   Reviews = "reviews",
+  Tiers = "tiers",
   Lists = "lists",
   Friends = "friends",
   Likes = "likes",
@@ -118,6 +119,18 @@ export enum IgdbSize {
 export enum PillSize {
   Sm = "sm",
   Md = "md",
+  Lg = "lg",
+  Xl = "xl",
+}
+
+/** The verdict a member gives a game, S down to F (stored as a number by the API) */
+export enum Grade {
+  S = "S",
+  A = "A",
+  B = "B",
+  C = "C",
+  D = "D",
+  F = "F",
 }
 
 export enum BadgeId {

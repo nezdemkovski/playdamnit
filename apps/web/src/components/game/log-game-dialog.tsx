@@ -34,14 +34,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Playthroughs } from "./playthroughs";
 import { useSession } from "@/hooks/auth";
 import { usePlayPlatforms } from "@/hooks/platforms";
 import { useLibraryMutations } from "@/hooks/library";
-import { formatRating, ratingColor } from "@/lib/format";
+import { GradeBadge } from "./rating";
+import { Grade as GradeEnum, PillSize } from "@/lib/enums";
+import { GRADES, gradeMeta, gradeOf, ratingOf } from "@/lib/grade";
 import { STATUSES, statusMeta, type LibraryStatus } from "@/lib/statuses";
 import { GameCover } from "./game-cover";
 
@@ -67,7 +68,9 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const library = useLibraryMutations();
   const platforms = usePlayPlatforms(game.platforms);
 
-  const [rating, setRating] = useState(0);
+  const [grade, setGrade] = useState<GradeEnum | null>(null);
+  // Bumped on every pick so the seal's animation restarts; 0 means "no moment yet"
+  const [moment, setMoment] = useState(0);
   const [status, setStatus] = useState<LibraryStatus>(StatusEnum.WantToPlay);
   const [platformId, setPlatformId] = useState<string>("");
   const [endedAt, setEndedAt] = useState("");
@@ -80,7 +83,8 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   // Reset the form from the entry every time the dialog opens
   useEffect(() => {
     if (!open) return;
-    setRating(entry?.rating ?? 0);
+    setGrade(gradeOf(entry?.rating));
+    setMoment(0);
     setStatus(entry?.status ?? StatusEnum.WantToPlay);
     setPlatformId(String(entry?.platformId ?? game.platforms[0]?.id ?? ""));
     setEndedAt(toDateInput(entry?.endedAt));
@@ -98,7 +102,6 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   }
 
   const showEnded = statusMeta(status).ended;
-  const ratingText = formatRating(rating);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -106,7 +109,14 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     if (!platform) return;
     const trimmed = review.trim();
     const ended = showEnded && endedAt ? endedAt : null;
-    const common = { status, rating, platformId: platform, mastered, spoilers, allowReactions };
+    const common = {
+      status,
+      rating: ratingOf(grade),
+      platformId: platform,
+      mastered,
+      spoilers,
+      allowReactions,
+    };
     try {
       if (entry) {
         // null clears a previously set date
@@ -138,8 +148,21 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-card border-white/5 bg-popover p-6 sm:max-w-xl">
-        <DialogHeader className="flex-row items-center gap-4 text-left">
-          <GameCover url={game.cover?.url} name={game.name} className="w-16 shrink-0" />
+        <DialogHeader className="flex-row items-center gap-5 text-left">
+          <div className={cn("relative w-20 shrink-0", moment > 0 && "seal-shake")} key={moment}>
+            <GameCover url={game.cover?.url} name={game.name} />
+            {grade && (
+              <GradeBadge
+                grade={grade}
+                size={PillSize.Xl}
+                pressed={moment > 0}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              />
+            )}
+            {moment > 0 && (
+              <i className="seal-flash pointer-events-none absolute inset-0 bg-white mix-blend-overlay" />
+            )}
+          </div>
           <div className="min-w-0">
             <DialogTitle className="text-xl font-bold">{game.name}</DialogTitle>
             <DialogDescription>{entry ? t("log.editEntry") : t("log.addToList")}</DialogDescription>
@@ -149,27 +172,44 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
         <form onSubmit={submit} className="mt-2 space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>{t("log.rating")}</Label>
-              <span
-                className={cn(
-                  "text-2xl font-bold tabular-nums",
-                  rating ? ratingColor(rating) : "text-dimmed",
-                )}
-              >
-                {ratingText ?? "–"}
-              </span>
+              <Label>{t("log.grade")}</Label>
+              <span className="text-xs text-dimmed">{grade ? gradeMeta(grade).name : ""}</span>
             </div>
-            <Slider
-              value={[rating]}
-              onValueChange={([value]) => setRating(value)}
-              min={0}
-              max={10}
-              step={0.1}
-              aria-label={t("log.ratingAria")}
-            />
-            <div className="flex justify-between text-xs text-dimmed">
-              <span>{t("log.notRated")}</span>
-              <span>10</span>
+            <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label={t("log.grade")}>
+              {GRADES.map((g) => {
+                const active = g.value === grade;
+                return (
+                  <button
+                    key={g.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    title={g.name}
+                    onClick={() => {
+                      setGrade(active ? null : g.value);
+                      setMoment(active ? 0 : moment + 1);
+                    }}
+                    className={cn(
+                      "num flex h-12 items-center justify-center border text-2xl font-extrabold transition-colors",
+                      active
+                        ? g.chip
+                        : "border-border text-dimmed hover:bg-white/[0.05] hover:text-foreground",
+                    )}
+                  >
+                    {g.value}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="min-h-10 text-sm">
+              {grade ? (
+                <>
+                  <div className="font-bold">{t(`grade.lines.${grade}.main`)}</div>
+                  <div className="text-xs text-dimmed">{t(`grade.lines.${grade}.sub`)}</div>
+                </>
+              ) : (
+                <div className="text-xs text-dimmed">{t("log.noGrade")}</div>
+              )}
             </div>
           </div>
 

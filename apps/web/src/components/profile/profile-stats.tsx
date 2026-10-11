@@ -4,9 +4,10 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Histogram } from "@/components/charts/histogram";
-import { ratingColor } from "@/lib/format";
+import { GradeBadge } from "@/components/game/rating";
+import { PillSize, StatTone } from "@/lib/enums";
+import { gradeCounts, gradeOf } from "@/lib/grade";
 import { addedLine, backlogLine, finishedLine, playingLine, summarize } from "@/lib/voice";
-import { StatTone } from "@/lib/enums";
 
 /** Headline numbers in the scoreboard voice, the completion rate and the rating distribution */
 export function ProfileStats({
@@ -19,18 +20,13 @@ export function ProfileStats({
   const { t } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
   const ratings = useMemo(() => {
-    const buckets = Array.from({ length: 10 }, () => 0);
-    let rated = 0;
-    let sum = 0;
-    for (const e of entries) {
-      const r = e.userGameData.rating;
-      if (r) {
-        rated++;
-        sum += r;
-        buckets[Math.min(9, Math.max(0, Math.ceil(r) - 1))]++;
-      }
-    }
-    return { buckets, rated, average: rated ? sum / rated : 0, max: Math.max(1, ...buckets) };
+    const values = entries.map((e) => e.userGameData.rating).filter((r): r is number => !!r);
+    const sum = values.reduce((a, b) => a + b, 0);
+    return {
+      counts: gradeCounts(values),
+      rated: values.length,
+      average: values.length ? sum / values.length : 0,
+    };
   }, [entries]);
 
   return (
@@ -90,12 +86,12 @@ export function ProfileStats({
         <div className="flex items-end gap-4 border-t border-border px-4 py-3 sm:px-5">
           <div className="shrink-0">
             <div className="eyebrow">{t("profile.stats.average")}</div>
-            <div className={cn("num mt-1 text-xl font-extrabold", ratingColor(ratings.average))}>
-              {ratings.average.toFixed(1)}
+            <div className="mt-1">
+              <GradeBadge grade={gradeOf(ratings.average)} size={PillSize.Md} />
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <Histogram buckets={ratings.buckets} ariaLabel={t("profile.stats.distribution")} />
+            <Histogram counts={ratings.counts} ariaLabel={t("profile.stats.distribution")} />
           </div>
           <div className="eyebrow shrink-0">
             {t("profile.stats.rated", { count: ratings.rated })}

@@ -22,7 +22,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { GameCover } from "@/components/game/game-cover";
-import { RatingValue, StatusPill } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { relativeDate } from "@/lib/format";
 import { DateFormat, IgdbSize } from "@/lib/enums";
 import { ChartTab } from "@/lib/enums";
+import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -93,7 +94,7 @@ function Home() {
         <Section title={t("home.sections.nowPlaying")} icon={Gamepad2Icon} count={playing.length}>
           <GameRail>
             {playing.map((g) => (
-              <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
+              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
             ))}
           </GameRail>
         </Section>
@@ -145,7 +146,7 @@ function Home() {
                   )}
                 </div>
                 {item.mastered && <TrophyIcon className="size-4 text-warning" />}
-                <RatingValue value={item.rating} />
+                <GradeBadge grade={gradeOf(item.rating)} />
                 <StatusPill status={item.status} />
                 <span className="hidden w-20 text-right text-xs text-dimmed sm:block">
                   {relativeDate(item.at)}
@@ -185,7 +186,7 @@ function Home() {
           <GameRail>
             {week.data.results.map((g) => (
               <div key={g.id}>
-                <GameCard game={g} rating={byGameId.get(g.id)?.userGameData.rating} />
+                <GameCard game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
                 <div className="mt-1.5 text-xs text-dimmed">
                   {g.firstReleaseDate
                     ? format(new Date(g.firstReleaseDate * 1000), DateFormat.MonthDay)
@@ -238,7 +239,7 @@ function Home() {
         <Section title={t("home.sections.recentlyAdded")} icon={LibraryIcon}>
           <GameRail>
             {latest.map((g) => (
-              <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
+              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
             ))}
           </GameRail>
         </Section>
@@ -268,7 +269,7 @@ function Rail({
   return (
     <GameRail>
       {games.map((g) => (
-        <GameCard key={g.id} game={g} rating={byGameId.get(g.id)?.userGameData.rating} />
+        <GameCard key={g.id} game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
       ))}
     </GameRail>
   );
