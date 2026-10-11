@@ -9,6 +9,8 @@ export const QUEUES = {
   SYNC_LOOKUPS: "sync-lookups",
   // Walk IGDB's games endpoint into the catalog, a page at a time, resumable
   SYNC_CATALOG: "sync-catalog",
+  // Re-fetch the games IGDB webhooks marked in catalog_dirty
+  DRAIN_DIRTY: "drain-dirty",
 } as const;
 
 export const ALL_QUEUES = Object.values(QUEUES);

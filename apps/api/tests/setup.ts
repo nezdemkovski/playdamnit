@@ -3,3 +3,5 @@
 process.env.POSTGRES_URL =
   process.env.TEST_POSTGRES_URL ?? "postgres://test:test@127.0.0.1:1/unit_tests_have_no_db";
 process.env.NODE_ENV = "test";
+// The webhook receiver reads its secret at import time; the webhook test uses this value
+process.env.IGDB_WEBHOOK_SECRET = "test-webhook-secret";

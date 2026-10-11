@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path. Phases 1 to 4 landed on 2026-10-11.
+the lazy path. Phases 1 to 5 landed on 2026-10-11.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -192,7 +192,7 @@ What landed (2026-10-11):
 - Not automated: dropping the trigram indexes before the first full walk and `VACUUM ANALYZE`
   after it. Do that by hand around the first production run.
 
-### Phase 5. Webhooks
+### Phase 5. Webhooks — done
 
 - Receiver in the API: `POST /api/webhooks/igdb/:entity/:method`. No auth macro, outside the rate
   limiters, `X-Secret` compared with `crypto.timingSafeEqual`. It resolves the event to a game id
@@ -209,6 +209,22 @@ What landed (2026-10-11):
 - Safety net: `refresh-stale-games` moves to `last_synced_at` with a limit, and `sync-catalog` runs
   daily in `incremental` mode followed by `sync-lookups`. Webhooks are at-most-once; the delta sync
   catches what they missed.
+
+What landed (2026-10-11):
+
+- Receiver `apps/api/src/routes/webhooks/igdb/POST.ts` + `modules/webhook/service.ts`: accepts
+  `games`, `covers`, `screenshots`, `videos`, `websites`, `external_games`, `game_localizations`,
+  `involved_companies` × `create|update|delete`; resolves the game through the payload's `game`
+  or, for deletes that carry only an id, through our own child table; `games/delete` queues reason
+  `deleted`, which wins over later reasons. Integration-tested (secret, resolution, validation).
+- `drain-dirty` (`apps/librarian/src/workers/drainWorker.ts`) every minute: claims 500 rows with
+  `FOR UPDATE SKIP LOCKED` inside a transaction, fetches, writes, flags `deleted_at`, and only then
+  deletes the claims, so a failed IGDB call keeps them. Verified live.
+- Registration (`apps/librarian/src/utils/igdb/webhooks.ts`): on start, when `WEBHOOK_BASE_URL`
+  and `IGDB_WEBHOOK_SECRET` are set, lists IGDB's webhooks, creates the missing `games`/`covers`
+  hooks and re-creates inactive ones. Without a public URL (dev) it logs and skips. Not yet
+  exercised against IGDB with a real URL: that happens with the first homelab deploy.
+- `refresh-stale-games` (`last_synced_at`) and the daily incremental sync stay as the safety net.
 
 ### Phase 6. API switch (behind `SEARCH_IGDB_FALLBACK`, code removed after a day or two)
 

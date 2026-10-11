@@ -22,6 +22,7 @@ services:
 
       - LOG_LEVEL=${LOG_LEVEL:-error}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - IGDB_WEBHOOK_SECRET=${IGDB_WEBHOOK_SECRET:-}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
 
       - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
@@ -42,6 +43,8 @@ services:
       - POSTGRES_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:?TWITCH_CLIENT_ID is required}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:?TWITCH_CLIENT_SECRET is required}
+      - WEBHOOK_BASE_URL=${WEBHOOK_BASE_URL:-}
+      - IGDB_WEBHOOK_SECRET=${IGDB_WEBHOOK_SECRET:-}
       - LOG_LEVEL=${LOG_LEVEL:-error}
     depends_on:
       # The api container runs the migrations; wait until the catalog tables exist

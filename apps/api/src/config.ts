@@ -8,6 +8,8 @@ const openaiApiKey = process.env.OPENAI_API_KEY;
 const openaiModel = process.env.OPENAI_MODEL || "gpt-4o";
 const resendApiKey = process.env.RESEND_API_KEY;
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+// Shared with the librarian, which registers the webhooks with IGDB
+const igdbWebhookSecret = process.env.IGDB_WEBHOOK_SECRET;
 
 const config = {
   isDev,
@@ -17,6 +19,7 @@ const config = {
   openaiModel,
   resendApiKey,
   betterAuthSecret,
+  igdbWebhookSecret,
 };
 
 export const getConfig = () => {

@@ -47,7 +47,8 @@ The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. 
 
 - **Single PostgreSQL 18** for everything: catalog, users/sessions, and the pg-boss queue (`pgboss` schema — never touch it).
 - **API** never calls IGDB. On catalog misses it enqueues pg-boss jobs and waits for `NOTIFY game_catalog_updated` (10s, 30s for imports).
-- **Librarian** runs `search-igdb`, `fetch-by-ids`, `sync-catalog` (full walk by hand, incremental cron 02:00), `sync-lookups` (cron 03:30 + after start), `refresh-stale-games` (cron 04:00), writes the catalog and NOTIFYs `{ requestId, ok }`.
+- **Librarian** runs `search-igdb`, `fetch-by-ids`, `sync-catalog` (full walk by hand, incremental cron 02:00), `sync-lookups` (cron 03:30 + after start), `drain-dirty` (every minute), `refresh-stale-games` (cron 04:00), writes the catalog and NOTIFYs `{ requestId, ok }`.
+- **IGDB webhooks**: the API receives them at `POST /api/webhooks/igdb/:entity/:method` (`src/routes/webhooks/igdb/POST.ts`, secret in `X-Secret`, compared in constant time) and only writes the game id to `catalog_dirty`; the librarian's `drain-dirty` claims rows with `FOR UPDATE SKIP LOCKED`, re-fetches the games and sets `deleted_at` on the ones IGDB no longer returns. The librarian registers the hooks on start when `WEBHOOK_BASE_URL` and `IGDB_WEBHOOK_SECRET` are set (`src/utils/igdb/webhooks.ts`).
 - **Catalog tables mirror IGDB**: every primary key (games, platforms, genres, companies, ...) is the IGDB id, never generated locally. Lookup rows are upserted by id; the migration `20261011005705_catalog_mirror_phase1` moved the old identity ids over with an embedded mapping.
 
 ### Database (`packages/db`)

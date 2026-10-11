@@ -2000,6 +2000,76 @@ paths:
                   default: false
                   description: Whether to overwrite existing games in the library
 
+  /api/webhooks/igdb/{entity}/{method}:
+    post:
+      summary: IGDB webhook receiver
+      description: |
+        Called by IGDB, not by clients. The librarian registers these URLs with IGDB; IGDB posts
+        the changed entity (only its id on delete) with the shared secret in `X-Secret`. The game
+        the event is about is queued for a re-fetch.
+      operationId: postIgdbWebhook
+      parameters:
+        - name: entity
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - games
+              - covers
+              - screenshots
+              - videos
+              - websites
+              - external_games
+              - game_localizations
+              - involved_companies
+        - name: method
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [create, update, delete]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              properties:
+                id:
+                  type: integer
+                game:
+                  type: integer
+      responses:
+        "200":
+          description: Event acknowledged (gameId is null when it could not be resolved)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  gameId:
+                    type: integer
+                    nullable: true
+                required:
+                  - ok
+                  - gameId
+        "403":
+          description: Bad or missing X-Secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: Webhooks are not configured on this deployment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
   /api/chat/ai:
     post:
       operationId: postApiChatAi

@@ -77,6 +77,44 @@ export const igdbQuery = async <T>(
 };
 
 /**
+ * Any other authenticated IGDB call (webhook management): GET/DELETE, or a form-encoded POST.
+ * Throttled like queries. Throws IGDBError on non-2xx.
+ */
+export const igdbFetch = async (
+  method: "GET" | "POST" | "DELETE",
+  path: string,
+  form?: URLSearchParams,
+  retryAuth = true,
+): Promise<Response> => {
+  await throttle();
+
+  const response = await fetch(`${IGDB_BASE_URL}/${path}`, {
+    method,
+    headers: {
+      "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
+      Authorization: await getIGDBToken(),
+      ...(form && { "Content-Type": "application/x-www-form-urlencoded" }),
+    },
+    body: form,
+  });
+
+  if (response.status === 401 && retryAuth) {
+    invalidateIGDBToken();
+    return igdbFetch(method, path, form, false);
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new IGDBError(
+      `IGDB ${method} ${path} failed with ${response.status}: ${errorText.slice(0, 500)}`,
+      response.status,
+    );
+  }
+
+  return response;
+};
+
+/**
  * Escape a user-supplied string for an Apicalypse string literal, so it can't
  * close the literal and inject clauses.
  */

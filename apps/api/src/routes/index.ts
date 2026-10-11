@@ -16,6 +16,8 @@ import { importUserGames } from "./user/[username]/games/import";
 
 import { postAIChat } from "./chat/ai/POST";
 
+import { postIgdbWebhook } from "./webhooks/igdb/POST";
+
 export const routes = new Elysia()
   .use(getMe)
 
@@ -32,4 +34,6 @@ export const routes = new Elysia()
   .use(exportUserGames)
   .use(importUserGames)
 
-  .use(postAIChat);
+  .use(postAIChat)
+
+  .use(postIgdbWebhook);

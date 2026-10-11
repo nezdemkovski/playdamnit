@@ -6,6 +6,8 @@ import { registerIgdbWorkers } from "./workers/igdbWorker";
 import { registerRefreshWorker } from "./workers/refreshWorker";
 import { registerLookupsWorker } from "./workers/lookupsWorker";
 import { registerCatalogSyncWorker } from "./workers/catalogSyncWorker";
+import { registerDrainWorker } from "./workers/drainWorker";
+import { ensureWebhooks } from "./utils/igdb/webhooks";
 
 const validateEnvironment = () => {
   const missingVars: string[] = [];
@@ -21,6 +23,25 @@ const validateEnvironment = () => {
 };
 
 let boss: PgBoss | null = null;
+
+/**
+ * Point IGDB's webhooks at this deployment. Needs the public API URL; without it (local dev)
+ * nothing is registered and the daily incremental sync alone keeps the catalog fresh.
+ */
+const registerIgdbWebhooks = async () => {
+  const baseUrl = process.env.WEBHOOK_BASE_URL;
+  const secret = process.env.IGDB_WEBHOOK_SECRET;
+  if (!baseUrl || !secret) {
+    logger.system("WEBHOOK_BASE_URL / IGDB_WEBHOOK_SECRET not set: IGDB webhooks not registered");
+    return;
+  }
+  try {
+    await ensureWebhooks({ baseUrl, secret });
+  } catch (error) {
+    // Not fatal: the incremental sync covers the gap until the next start
+    logger.exception(error, { operation: "ensureWebhooks" });
+  }
+};
 
 const start = async () => {
   logger.system("Starting playdamnit librarian service...");
@@ -45,8 +66,11 @@ const start = async () => {
   await registerRefreshWorker(boss);
   await registerLookupsWorker(boss);
   await registerCatalogSyncWorker(boss);
+  await registerDrainWorker(boss);
 
   logger.system("All workers registered. Librarian is running.");
+
+  await registerIgdbWebhooks();
 };
 
 const shutdown = async () => {
