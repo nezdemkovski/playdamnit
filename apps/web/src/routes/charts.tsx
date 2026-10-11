@@ -31,7 +31,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
 import { Grade, IgdbSize } from "@/lib/enums";
 import { ChartTab } from "@/lib/enums";
-import { gradeOf, gradeOfPercent } from "@/lib/grade";
+import { gradeOf } from "@/lib/grade";
 
 const TABS = [
   { value: ChartTab.Popular, icon: FlameIcon, sort: GetApiGamesSort.Popular },
@@ -237,7 +237,7 @@ function ChartRow({
   tab: ChartTab;
   grade?: Grade | null;
 }) {
-  const igdb = gradeOfPercent(game.totalRating);
+  const igdb = game.totalRating ? Math.round(game.totalRating) : null;
   return (
     <li className="panel flex items-center gap-3 p-2 pr-4 transition-colors hover:bg-white/[0.05]">
       <span className="w-8 text-center text-sm font-bold tabular-nums text-dimmed">{rank}</span>
@@ -275,7 +275,7 @@ function ChartRow({
         {tab !== ChartTab.Upcoming && igdb ? (
           <span className="flex items-center gap-1 text-dimmed">
             <StarIcon className="size-3.5" />
-            <GradeBadge grade={igdb} className="border-transparent bg-transparent text-white" />
+            <span className="num font-extrabold text-foreground">{igdb}</span>
             <span className="text-xs">({compactNumber(game.totalRatingCount ?? 0)})</span>
           </span>
         ) : null}

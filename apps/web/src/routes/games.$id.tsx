@@ -39,7 +39,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
-import { gradeOf, gradeOfPercent } from "@/lib/grade";
+import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -99,7 +99,7 @@ function GameDetail({ game }: { game: Game }) {
   const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
   const date = releaseDate(game.firstReleaseDate, game.firstReleaseDatePrecision);
-  const igdbGrade = gradeOfPercent(game.totalRating);
+  const igdbScore = game.totalRating ? Math.round(game.totalRating) : null;
   const stores = (game.externalGames ?? []).filter((e) => e.url);
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
@@ -132,8 +132,8 @@ function GameDetail({ game }: { game: Game }) {
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
               <Stat label={t("game.stats.igdb")}>
-                {igdbGrade ? (
-                  <GradeBadge grade={igdbGrade} size={PillSize.Lg} />
+                {igdbScore ? (
+                  <span className="num text-2xl font-extrabold">{igdbScore}</span>
                 ) : (
                   <span className="text-2xl font-bold text-dimmed">–</span>
                 )}
