@@ -285,7 +285,7 @@ All code phases are in. What remains, in order:
    lazy `fetch-by-ids` path produces.
 3. **Only then** the first full walk: `bun run scripts/enqueue.ts sync-catalog full` in the
    librarian pod, indexes left in place, `VACUUM ANALYZE` when it is done. The daily incremental
-   sync takes over from there.
+   sync takes over from there. **Done 2026-10-11** (11:28–13:14 UTC, see below).
 4. Validate `user_games_game_id_game_id_fk` is already done by the Phase 7 migration (missing
    games get stub rows that `refresh-stale-games` fills in).
 
@@ -350,8 +350,36 @@ Gotchas met on the way: the tunnel's egress NetworkPolicy (`homelab-cloudflared-
 API client npm publish fails with a 404 because the `NPM_TOKEN` repository secret (2025-05) is no
 longer accepted by npm.
 
-Still to do: Uptime Kuma check (`/api/games?limit=1`), resource tuning on the live cluster, then
-the first full catalog walk.
+### First full walk (2026-10-11)
+
+- 11:28–13:14 UTC, about 1h45 at ~4,500 games/min with no 429s; 380,704 games, 3 GB database
+  (well under the 9 GB estimate). One stop: an IGDB placeholder release date in 2040 overflowed
+  `first_release_date integer` (unix seconds past 2038); the column is `bigint` since 0.1.5 and the
+  pg-boss retry resumed from the stored cursor.
+- `sync-lookups` was run by hand afterwards: `game_time_to_beat` only keeps rows for games already
+  in the catalog, so it stays empty until a lookups run after the walk.
+
+### Database locale
+
+The CNPG cluster was first initialised with the default `C` locale. There `lower()`/`ILIKE` leave
+non-ASCII letters alone and pg_trgm treats Cyrillic, CJK, etc. as non-word characters (no
+trigrams), so non-Latin search was broken. The database must have Unicode-aware case mapping
+**and** an UTF-8 `LC_CTYPE` (pg_trgm classifies characters through libc, not the builtin
+provider):
+
+```sql
+create database playdamnit template template0 encoding 'UTF8'
+  locale_provider builtin builtin_locale 'C.UTF-8' lc_collate 'C' lc_ctype 'C.UTF-8';
+```
+
+The `Cluster` spec in `homelab-gitops` carries the same settings (`initdb.localeProvider`,
+`builtinLocale`, `localeCollate`, `localeCType`) for a re-created cluster. The live database was
+moved on 2026-10-11 after the walk: API and librarian suspended and scaled to 0, `pg_dump -Fc` (27 s)
+and `pg_restore -j 4` (2 min) into a new database, row counts compared, names swapped; the old one
+is kept as `playdamnit_c_backup` until it is dropped by hand. Gotcha: `flux resume` does not undo a
+manual `kubectl scale`, scale back to 1 by hand.
+
+Still to do: drop `playdamnit_c_backup`, resource tuning on the live cluster.
 
 ## References
 
