@@ -86,31 +86,17 @@ export const verdictLine = (s: LibrarySummary): string => {
   return t("voice.verdict.default");
 };
 
-export const addedLine = (s: LibrarySummary): string =>
-  s.addedThisWeek > 0 ? t("voice.added.some", { count: s.addedThisWeek }) : t("voice.added.none");
-
-export const finishedLine = (entries: UserGameWithUserData[]): string => {
+/** The owner's line under the profile's finished bar: when they last finished anything */
+export const lastFinishLine = (entries: UserGameWithUserData[]): string => {
   const last = entries
     .filter((e) => e.userGameData.status === StatusEnum.Finished && e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))[0];
-  if (!last) return t("voice.finished.never");
+  if (!last) return t("voice.lastFinish.never");
   const d = daysSince(last.userGameData.endedAt);
-  if (d < 7) return t("voice.finished.thisWeek");
-  return d < 45 ? t("voice.finished.recent", { count: d }) : t("voice.finished.old", { count: d });
-};
-
-export const playingLine = (s: LibrarySummary): string => {
-  if (!s.stalePlaying) return t("voice.playing.none");
-  const d = idleDays(s.stalePlaying);
-  return d > 30 ? t("voice.playing.stale", { count: d }) : t("voice.playing.fine");
-};
-
-export const backlogLine = (s: LibrarySummary): string => {
-  const hours = s.backlog * 46; // IGDB's median "normally" across the catalog, give or take
-  if (s.backlog === 0) return t("voice.backlog.empty");
-  return hours > 1000
-    ? t("voice.backlog.huge", { hours: Math.round(hours / 100) * 100 })
-    : t("voice.backlog.ok", { hours });
+  if (d < 7) return t("voice.lastFinish.thisWeek");
+  return d < 45
+    ? t("voice.lastFinish.recent", { count: d })
+    : t("voice.lastFinish.old", { count: d });
 };
 
 export const idleLine = (entry: UserGameWithUserData): string => {

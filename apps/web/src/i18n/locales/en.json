@@ -75,29 +75,6 @@
       "default": "We're not mad. Just disappointed. Your backlog is bigger than your Steam library.",
       "streak": "{{count}} finished this month. Who are you and what did you do with the backlog?"
     },
-    "added": {
-      "some": "+{{count}} this week. Stop.",
-      "none": "Nothing new this week. Suspicious."
-    },
-    "finished": {
-      "never": "Never. We're counting.",
-      "thisWeek": "This week. Noted.",
-      "recent_one": "{{count}} day ago. Acceptable.",
-      "recent_other": "{{count}} days ago. Acceptable.",
-      "old_one": "{{count}} day ago. We remember.",
-      "old_other": "{{count}} days ago. We remember."
-    },
-    "playing": {
-      "none": "Nothing. At least you're honest.",
-      "stale_one": "One for {{count}} day. Playing is a strong word.",
-      "stale_other": "One for {{count}} days. Playing is a strong word.",
-      "fine": "Keep going."
-    },
-    "backlog": {
-      "empty": "Empty. Either discipline or denial.",
-      "huge": "≈ {{hours}} hours. A year of evenings.",
-      "ok": "≈ {{hours}} hours. Doable, allegedly."
-    },
     "idle": {
       "finished": "cleared",
       "dropped": "honest at least",
@@ -117,6 +94,14 @@
       "dropped": "Dropped. Bold. Honest. We respect it.",
       "added": "Added. That's {{count}} now. Just saying.",
       "saved": "Saved. Recounted."
+    },
+    "lastFinish": {
+      "never": "Never finished a thing. We're counting.",
+      "thisWeek": "Last finish this week. Noted.",
+      "recent_one": "Last finish {{count}} day ago. Acceptable.",
+      "recent_other": "Last finish {{count}} days ago. Acceptable.",
+      "old_one": "Last finish {{count}} day ago. We remember.",
+      "old_other": "Last finish {{count}} days ago. We remember."
     }
   },
   "layout": {
@@ -525,18 +510,7 @@
       }
     },
     "stats": {
-      "added": "Added",
-      "finished": "Finished",
-      "playing": "\"Playing\"",
-      "backlog": "Backlog",
-      "addedThisWeek": "{{count}} this week",
-      "finishedThisMonth": "{{count}} this month",
-      "dropped": "{{count}} dropped",
-      "completion": "Completion",
-      "nothingYet": "nothing yet",
-      "guilty": "guilty",
-      "workingOnIt": "working on it",
-      "respect": "respect",
+      "finished": "finished",
       "typical": "Typical",
       "typicalTip_one": "The only grade given",
       "typicalTip_other": "Middle of {{count}} grades"
