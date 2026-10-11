@@ -14,7 +14,6 @@ import {
   MessageSquareTextIcon,
   PlayIcon,
   SparklesIcon,
-  StarIcon,
   UsersIcon,
 } from "lucide-react";
 import { cn } from "cn";
@@ -137,8 +136,8 @@ function GameDetail({ game }: { game: Game }) {
                 ) : (
                   <span className="text-2xl font-bold text-dimmed">–</span>
                 )}
-                <span className="flex items-center gap-1 text-xs text-dimmed">
-                  <StarIcon className="size-3" /> {compactNumber(game.totalRatingCount ?? 0)}
+                <span className="text-xs text-dimmed">
+                  {t("game.stats.votes", { votes: compactNumber(game.totalRatingCount ?? 0) })}
                 </span>
               </Stat>
               {game.timeToBeat?.normally ? (

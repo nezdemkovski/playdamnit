@@ -260,9 +260,8 @@ function ChartRow({
         </Link>
         <div className="flex items-center gap-1 truncate text-xs text-dimmed">
           {tab !== ChartTab.Upcoming && igdb ? (
-            <span className="num flex shrink-0 items-center gap-1" title={t("charts.igdbScore")}>
-              <StarIcon className="size-3" />
-              {igdb} · {compactNumber(game.totalRatingCount ?? 0)}
+            <span className="num shrink-0">
+              {t("charts.igdb", { score: igdb, votes: compactNumber(game.totalRatingCount ?? 0) })}
             </span>
           ) : null}
           {tab !== ChartTab.Upcoming && igdb ? <span className="shrink-0">·</span> : null}

@@ -259,7 +259,7 @@
       "upcoming": "Soonest first",
       "members": "By members of this site"
     },
-    "igdbScore": "IGDB score · votes"
+    "igdb": "IGDB {{score}} · {{votes}} votes"
   },
   "game": {
     "notInCatalog": "This game isn't in the catalog.",
@@ -269,7 +269,8 @@
       "reports_one": "{{count}} report",
       "reports_other": "{{count}} reports",
       "members": "Members",
-      "inLists": "{{count}} in lists"
+      "inLists": "{{count}} in lists",
+      "votes": "{{votes}} votes on IGDB"
     },
     "yourList": "In your list",
     "yourRating": "Your grade",
