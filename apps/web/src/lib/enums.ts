@@ -158,6 +158,9 @@ export enum DateFormat {
   MonthDayLong = "MMMM d",
   MonthDayYearShort = "MMM d, yyyy",
   MonthDayYear = "MMMM d, yyyy",
+  WeekdayShort = "EEE",
+  WeekdayMonthDay = "EEEE, MMMM d",
+  DayOfMonth = "d",
 }
 
 /** Rows of the activity map, Monday first */

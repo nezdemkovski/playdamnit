@@ -208,7 +208,10 @@
     "count_one": "{{count}} release",
     "count_other": "{{count}} releases",
     "empty": "Nothing releases this month. Finish something instead.",
-    "truncated": "Showing the first {{shown}} of {{total}} dated releases. <link>Browse the charts</link>"
+    "summary": "{{total}} releases this month · the {{shown}} biggest on the grid",
+    "counting": "counting",
+    "ratings_one": "{{count}} rating",
+    "ratings_other": "{{count}} ratings"
   },
   "community": {
     "title": "Members",
