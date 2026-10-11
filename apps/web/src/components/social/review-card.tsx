@@ -50,9 +50,14 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
           <Link
             to="/games/$id"
             params={{ id: String(review.gameId) }}
-            className="w-16 shrink-0 sm:w-20"
+            className="relative w-16 shrink-0 sm:w-20"
           >
             <GameCover url={review.game.cover?.url} name={review.game.name} />
+            <GradeBadge
+              grade={gradeOf(review.rating)}
+              onArt
+              className="absolute -top-2.5 -right-2.5 block"
+            />
           </Link>
         )}
         <div className="min-w-0 flex-1">
@@ -92,7 +97,9 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <GradeBadge grade={gradeOf(review.rating)} size={PillSize.Md} />
+            {!(withGame && review.game) && (
+              <GradeBadge grade={gradeOf(review.rating)} size={PillSize.Md} />
+            )}
             <StatusPill status={review.status} />
             {review.mastered && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-semibold text-warning">
