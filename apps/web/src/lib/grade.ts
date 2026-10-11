@@ -15,10 +15,10 @@ export interface GradeMeta {
   rating: number;
   /** The picker button when this grade is pressed */
   chip: string;
-  /** Text colour utility the seal is drawn in */
-  color: string;
-  /** Solid seal (S, A, B) or hollow (C, D, F) */
-  filled: boolean;
+  /** The seal's metal: platinum, gold, silver, bronze, iron, red */
+  fill: string;
+  /** The letter on it */
+  ink: string;
 }
 
 export const GRADES: GradeMeta[] = [
@@ -29,9 +29,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 9,
     rating: 9.5,
-    chip: "border-signal bg-signal text-black",
-    color: "text-signal",
-    filled: true,
+    chip: "border-[#dcf1ff] bg-[#dcf1ff] text-black",
+    fill: "#dcf1ff",
+    ink: "#000",
   },
   {
     value: Grade.A,
@@ -40,9 +40,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 8,
     rating: 8.5,
-    chip: "border-done bg-done text-black",
-    color: "text-done",
-    filled: true,
+    chip: "border-[#ffcf4a] bg-[#ffcf4a] text-black",
+    fill: "#ffcf4a",
+    ink: "#000",
   },
   {
     value: Grade.B,
@@ -51,9 +51,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 7,
     rating: 7.5,
-    chip: "border-foreground bg-foreground text-black",
-    color: "text-foreground",
-    filled: true,
+    chip: "border-[#cfd3d8] bg-[#cfd3d8] text-black",
+    fill: "#cfd3d8",
+    ink: "#000",
   },
   {
     value: Grade.C,
@@ -62,9 +62,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 6,
     rating: 6.5,
-    chip: "border-foreground text-foreground",
-    color: "text-foreground",
-    filled: false,
+    chip: "border-[#d9975f] bg-[#d9975f] text-black",
+    fill: "#d9975f",
+    ink: "#000",
   },
   {
     value: Grade.D,
@@ -73,9 +73,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 4,
     rating: 5,
-    chip: "border-dimmed text-dimmed",
-    color: "text-dimmed",
-    filled: false,
+    chip: "border-[#6f7077] bg-[#6f7077] text-white",
+    fill: "#6f7077",
+    ink: "#fff",
   },
   {
     value: Grade.F,
@@ -84,9 +84,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 0,
     rating: 2.5,
-    chip: "border-signal text-signal",
-    color: "text-signal",
-    filled: false,
+    chip: "border-signal bg-signal text-black",
+    fill: "#ff2b2b",
+    ink: "#000",
   },
 ];
 
