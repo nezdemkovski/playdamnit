@@ -148,6 +148,9 @@ function ProfileLayout() {
                 <b>{user.counts.following}</b>{" "}
                 <span className="text-dimmed">{t("profile.counts.following")}</span>
               </Link>
+              {library.data && library.data.results.length > 0 && (
+                <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
+              )}
             </div>
             {badges && (
               <div className="mt-3">
@@ -167,11 +170,6 @@ function ProfileLayout() {
             )}
           </div>
         </div>
-        {library.data && library.data.results.length > 0 && (
-          <div className="mt-5 border-t border-border pt-4">
-            <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
-          </div>
-        )}
       </header>
 
       <nav className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b border-white/5">

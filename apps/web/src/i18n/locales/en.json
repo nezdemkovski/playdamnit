@@ -511,7 +511,7 @@
     },
     "stats": {
       "finished": "finished",
-      "typical": "Typical",
+      "typical": "typically",
       "typicalTip_one": "The only grade given",
       "typicalTip_other": "Middle of {{count}} grades"
     },
