@@ -22,10 +22,13 @@ import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { useLibrary } from "@/hooks/library";
 import { format } from "@/i18n/date";
 import { DateFormat, FriendsTab, ProfileTab } from "@/lib/enums";
+import { typicalGrade } from "@/lib/grade";
+import { playerTitle, summarize } from "@/lib/voice";
 
 export const Route = createFileRoute("/$username")({
   component: ProfileLayout,
@@ -63,6 +66,15 @@ function ProfileLayout() {
       library.data ? computeBadges(library.data.results, profile.data?.counts.reviews ?? 0) : null,
     [library.data, profile.data?.counts.reviews],
   );
+  const title = useMemo(() => {
+    const entries = library.data?.results;
+    if (!entries) return null;
+    return playerTitle(
+      summarize(entries),
+      typicalGrade(entries.map((e) => e.userGameData.rating)),
+      profile.data?.counts.reviews ?? 0,
+    );
+  }, [library.data, profile.data?.counts.reviews]);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const base = `/${username}`;
 
@@ -95,7 +107,7 @@ function ProfileLayout() {
 
   return (
     <>
-      <header className="panel overflow-hidden">
+      <header className="group/header panel overflow-hidden">
         <HallOfFame entries={library.data?.results ?? []} />
         <div className="relative -mt-14 px-5 pb-5 sm:-mt-16 sm:px-6 sm:pb-6">
           <div className="flex items-end justify-between gap-4">
@@ -118,8 +130,18 @@ function ProfileLayout() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 className="min-w-0 truncate text-3xl sm:text-4xl">{user.name || user.username}</h1>
+            <h1 className="min-w-0 truncate text-4xl sm:text-5xl">{user.name || user.username}</h1>
             <span className="num text-sm text-dimmed">@{user.username}</span>
+            {title && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="num cursor-default self-center bg-signal px-2 py-1 text-[11px] font-extrabold tracking-[.04em] text-black uppercase">
+                    {title.title}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{title.why}</TooltipContent>
+              </Tooltip>
+            )}
             {user.followsYou && (
               <span className="eyebrow text-done">{t("profile.followsYou")}</span>
             )}

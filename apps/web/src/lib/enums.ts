@@ -207,3 +207,14 @@ export enum QueryKeySuffix {
 export enum DragDataType {
   Text = "text/plain",
 }
+
+/** The chip next to a player's name, earned from their library (see lib/voice.ts) */
+export enum PlayerTitle {
+  WindowShopper = "windowShopper",
+  Hoarder = "hoarder",
+  Closer = "closer",
+  HardToPlease = "hardToPlease",
+  EasyGrader = "easyGrader",
+  Critic = "critic",
+  WorkInProgress = "workInProgress",
+}
