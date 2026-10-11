@@ -1,6 +1,6 @@
 export interface IGDBWebsite {
   id: number;
-  type: string | { id: number; type: string };
+  type?: { id: number; type: string };
   url: string;
   trusted: boolean;
 }
@@ -37,6 +37,7 @@ export interface IGDBGameResponse {
     id: number;
     name: string;
     slug: string;
+    abbreviation?: string;
   }>;
   game_modes?: Array<{
     id: number;

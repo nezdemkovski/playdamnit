@@ -5,7 +5,7 @@ import type { IGDBGameResponse } from "./types";
 
 const logger = createLogger("igdb");
 
-const IGDB_GAMES_URL = "https://api.igdb.com/v4/games";
+const IGDB_BASE_URL = "https://api.igdb.com/v4";
 
 // IGDB game type IDs: 0=MAIN_GAME, 8=REMAKE, 9=REMASTER
 const MAIN_GAME_TYPES = [0, 8, 9];
@@ -17,7 +17,7 @@ export const MAX_SEARCH_QUERY_LENGTH = 100;
 
 const GAME_FIELDS = `
   fields id, name, slug, created_at, genres.name, genres.slug,
-         platforms.name, platforms.slug, first_release_date, keywords.name,
+         platforms.name, platforms.slug, platforms.abbreviation, first_release_date, keywords.name,
          cover.image_id, cover.width, cover.height,
          screenshots.image_id, screenshots.width, screenshots.height,
          websites.type.id, websites.type.type, websites.url, websites.trusted,
@@ -45,10 +45,10 @@ const throttle = async () => {
   if (wait > 0) await Bun.sleep(wait);
 };
 
-const igdbRequest = async <T>(body: string, retryAuth = true): Promise<T> => {
+const igdbRequest = async <T>(endpoint: string, body: string, retryAuth = true): Promise<T> => {
   await throttle();
 
-  const response = await fetch(IGDB_GAMES_URL, {
+  const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
     method: "POST",
     headers: {
       "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
@@ -60,7 +60,7 @@ const igdbRequest = async <T>(body: string, retryAuth = true): Promise<T> => {
 
   if (response.status === 401 && retryAuth) {
     invalidateIGDBToken();
-    return igdbRequest<T>(body, false);
+    return igdbRequest<T>(endpoint, body, false);
   }
 
   if (!response.ok) {
@@ -103,8 +103,37 @@ export const searchIGDB = async (
   }
   body += ` limit ${safeLimit};`;
 
-  const data = await igdbRequest<IGDBGameResponse[]>(body);
+  const data = await igdbRequest<IGDBGameResponse[]>("games", body);
   return data.map(transformIGDBResponse);
+};
+
+/**
+ * Walk a whole IGDB endpoint with keyset pagination (`id > last; sort id asc`), 500 rows per
+ * request, handing every page to `onPage`. Returns the number of rows seen. Throws on failure
+ * so pg-boss can retry the job.
+ */
+export const fetchAllIGDB = async <T extends { id: number }>(
+  endpoint: string,
+  fields: string,
+  onPage: (rows: T[]) => Promise<void>,
+  opts: { where?: string; afterId?: number } = {},
+): Promise<number> => {
+  let lastId = opts.afterId ?? 0;
+  let total = 0;
+
+  for (;;) {
+    const where = [`id > ${lastId}`, opts.where].filter(Boolean).join(" & ");
+    const body = `fields ${fields}; where ${where}; sort id asc; limit ${MAX_IDS_PER_REQUEST};`;
+    const rows = await igdbRequest<T[]>(endpoint, body);
+    if (rows.length === 0) break;
+
+    await onPage(rows);
+    total += rows.length;
+    lastId = rows[rows.length - 1].id;
+    if (rows.length < MAX_IDS_PER_REQUEST) break;
+  }
+
+  return total;
 };
 
 /**
@@ -130,7 +159,7 @@ export const fetchIGDBByIds = async (
     }
     body += `; limit ${batch.length};`;
 
-    results.push(...(await igdbRequest<IGDBGameResponse[]>(body)));
+    results.push(...(await igdbRequest<IGDBGameResponse[]>("games", body)));
   }
 
   return results;

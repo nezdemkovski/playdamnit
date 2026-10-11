@@ -6,6 +6,8 @@ export const QUEUES = {
   FETCH_BY_IDS: "fetch-by-ids",
   PROCESS_SIMILAR_GAMES: "process-similar-games",
   REFRESH_STALE_GAMES: "refresh-stale-games",
+  // Mirror IGDB's lookup endpoints (platforms, genres, companies, ...) into the catalog
+  SYNC_LOOKUPS: "sync-lookups",
 } as const;
 
 export const ALL_QUEUES = Object.values(QUEUES);

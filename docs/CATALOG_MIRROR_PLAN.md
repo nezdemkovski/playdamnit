@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path.
+the lazy path. Phases 1 and 2 landed on 2026-10-11.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -90,31 +90,40 @@ the lazy path.
   `WEBHOOK_BASE_URL` (librarian).
 - "Powered by IGDB" attribution in the web footer.
 
-### Phase 1. Schema, additive migration (`packages/db/src/schema.ts`)
+### Phase 1. Schema, additive migration (`packages/db/src/schema.ts`) — done
 
-- New `game` columns from the data model (all nullable or defaulted).
-- New tables: `theme`, `company`, `collection`, `game_to_theme`, `game_to_company`,
-  `game_to_collection`, `video`, `external_game`, `game_localization`, `game_time_to_beat`.
-- `sync_state (entity text pk, cursor text, last_run_at timestamp)` — sync checkpoints.
-- `catalog_dirty (igdb_id integer pk, reason text, marked_at timestamp)` — inbound webhook queue.
-- `platform`, `genre`, `game_mode`, `type`, `website_type`: add nullable unique `igdb_id` (Phase 2 step 1).
-- `cover`, `screenshot`, `website`: `id` becomes the IGDB id (derived data, rebuilt by the full load).
+Migration `20261011005705_catalog_mirror_phase1`:
+
+- New `game` columns from the data model (all nullable or defaulted), `search_names` as a plain
+  column the librarian writes (array expressions are not immutable, so no generated column).
+- New tables: `theme`, `company`, `collection`, `external_game_source`, `game_to_theme`,
+  `game_to_company`, `game_to_collection`, `video`, `external_game`, `game_localization`,
+  `game_time_to_beat`, `sync_state`, `catalog_dirty`.
+- Postgres 18 everywhere (dev compose, prod compose, CI; the homelab CNPG already runs 18):
+  `user_games`, `user_follows`, `user_metadata` ids default to `uuidv7()`.
+- `cover`, `screenshot`, `website` keep their identity ids until Phase 4: switching them needs the
+  full load that rewrites those rows anyway.
 - `igdb_search_log`, `game_to_similar_game`, `game_to_type` are dropped in Phase 7, not here.
 
-### Phase 2. Lookup tables on IGDB ids (two deploys)
+### Phase 2. Lookup tables on IGDB ids — done
 
-`user_games.platform_id` references local ids, so this cannot be one migration.
+Done in the same migration, in one deploy, with the slug → IGDB id mapping embedded in the SQL
+(platforms from igdb.com, the rest from IGDB's enum tables; 2026-10-11). The migration:
 
-1. Migration adds `igdb_id` to every existing lookup table.
-2. One-off librarian job `sync-lookups` fetches `/platforms`, `/genres`, `/game_modes`, `/themes`,
-   `/game_types`, `/website_types`, `/collections`, `/companies` and `/game_time_to_beats` with keyset
-   pagination (most fit in one request; companies and collections take a few hundred) and fills
-   `igdb_id` on the old tables / rows in the new ones. The same job is re-run by the daily sync so
-   lookups never drift.
-3. Migration rewrites `user_games.platform_id` and all junction tables via a join on `igdb_id`,
-   then sets `id = igdb_id` (drop identity) and drops the temp column. Unmatched platforms → `NULL`.
+- refuses to run if a library (`user_games.platform_id`) references a platform without a known
+  IGDB id, listing the slugs;
+- drops the FKs, moves every reference to the negated IGDB id, deletes unmatched lookup rows and
+  their junction rows (derived data, the catalog refresh brings them back), flips ids back to
+  positive and re-adds the FKs;
+- drops the identity from `platform`, `genre`, `game_mode`, `type`, `website_type`.
 
-After this exports/imports are portable between environments and the full load writes IGDB ids directly.
+The librarian now writes lookups by IGDB id (`writeGame`) and has a `sync-lookups` queue
+(`apps/librarian/src/workers/lookupsWorker.ts`): `/platforms`, `/genres`, `/game_modes`,
+`/themes`, `/game_types`, `/website_types`, `/external_game_sources`, `/collections`,
+`/companies` and `/game_time_to_beats` with keyset pagination, upserted by id; time-to-beat rows
+are kept only for games already in the catalog. It runs daily at 03:30 and once after a deploy
+(skipped when the last run is under 20 hours old). `fetchAllIGDB` in `utils/igdb/utils.ts` is the
+reusable pager the bulk sync will build on.
 
 ### Phase 3. One Postgres driver
 
@@ -211,14 +220,14 @@ tables stop being mirrored by hand.
 
 ## Rollout order
 
-1. Phase 1 migration + Phase 2 step 1. Old code keeps working, columns are additive.
-2. Librarian with `sync-lookups`, then Phase 2 step 3.
-3. Phase 3 (driver swap) as its own deploy; no schema or behaviour change, easy to roll back.
-4. Librarian with the bulk sync, full load on production (at night: user imports share the IGDB
+1. Phases 1 + 2: one migration (the API applies it on start) and the librarian with
+   `sync-lookups`. Deploy the librarian right after; it refreshes lookup names within minutes.
+2. Phase 3 (driver swap) as its own deploy; no schema or behaviour change, easy to roll back.
+3. Librarian with the bulk sync, full load on production (at night: user imports share the IGDB
    throttle for a few minutes). The lazy search keeps running meanwhile.
-5. API with the receiver + librarian with webhook registration. Check: `catalog_dirty` fills within
+4. API with the receiver + librarian with webhook registration. Check: `catalog_dirty` fills within
    an hour on its own.
-6. Local-search flag on, code removal a day later, Phase 7.
+5. Local-search flag on, code removal a day later, Phase 7.
 
 ## Risks
 

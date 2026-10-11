@@ -71,6 +71,11 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
     involvedCompanies: gameData.involved_companies,
     keywords: gameData.keywords,
     isPopular: gameData.isPopular,
+    totalRatingCount: gameData.total_rating_count ?? null,
+    gameType: gameData.game_type?.id ?? null,
+    // Until alternative names are synced (full mirror), search matches the name alone
+    searchNames: gameData.name,
+    lastSyncedAt: new Date(),
   };
 
   // Existing games are refreshed with the latest IGDB data
@@ -110,19 +115,18 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
     );
   }
 
+  // Lookup rows are keyed by IGDB id; names and slugs are refreshed on every write
   await tx.delete(website).where(eq(website.gameId, gameData.id));
   if (gameData.websites?.length) {
-    const typeNames = [
-      ...new Set(gameData.websites.map((ws) => ws.type).filter((t): t is string => !!t)),
-    ];
-    const typeIds = new Map<string, number>();
-    if (typeNames.length) {
-      const rows = await tx
+    const websiteTypes = uniqueBy(
+      gameData.websites.map((ws) => ws.type).filter((t): t is NonNullable<typeof t> => !!t),
+      (t) => String(t.id),
+    );
+    if (websiteTypes.length) {
+      await tx
         .insert(websiteType)
-        .values(typeNames.map((t) => ({ type: t })))
-        .onConflictDoUpdate({ target: websiteType.type, set: { type: sql`excluded.type` } })
-        .returning({ id: websiteType.id, type: websiteType.type });
-      for (const row of rows) typeIds.set(row.type, row.id);
+        .values(websiteTypes.map((t) => ({ id: t.id, type: t.type })))
+        .onConflictDoUpdate({ target: websiteType.id, set: { type: sql`excluded.type` } });
     }
 
     await tx.insert(website).values(
@@ -130,7 +134,7 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         gameId: gameData.id,
         url: ws.url,
         trusted: ws.trusted || false,
-        typeId: ws.type ? (typeIds.get(ws.type) ?? null) : null,
+        typeId: ws.type?.id ?? null,
       })),
     );
   }
@@ -140,12 +144,21 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         tx
           .insert(platform)
           .values(
-            uniqueBy(gameData.platforms!, (p) => p.slug).map((p) => ({
+            uniqueBy(gameData.platforms!, (p) => String(p.id)).map((p) => ({
+              id: p.id,
               name: p.name,
               slug: p.slug,
+              abbreviation: p.abbreviation ?? null,
             })),
           )
-          .onConflictDoUpdate({ target: platform.slug, set: { name: sql`excluded.name` } })
+          .onConflictDoUpdate({
+            target: platform.id,
+            set: {
+              name: sql`excluded.name`,
+              slug: sql`excluded.slug`,
+              abbreviation: sql`excluded.abbreviation`,
+            },
+          })
           .returning({ id: platform.id }),
       )
     : [];
@@ -155,9 +168,16 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         tx
           .insert(genre)
           .values(
-            uniqueBy(gameData.genres!, (g) => g.slug).map((g) => ({ name: g.name, slug: g.slug })),
+            uniqueBy(gameData.genres!, (g) => String(g.id)).map((g) => ({
+              id: g.id,
+              name: g.name,
+              slug: g.slug,
+            })),
           )
-          .onConflictDoUpdate({ target: genre.slug, set: { name: sql`excluded.name` } })
+          .onConflictDoUpdate({
+            target: genre.id,
+            set: { name: sql`excluded.name`, slug: sql`excluded.slug` },
+          })
           .returning({ id: genre.id }),
       )
     : [];
@@ -167,22 +187,26 @@ const writeGame = async (tx: Tx, gameData: CatalogGame) => {
         tx
           .insert(gameMode)
           .values(
-            uniqueBy(gameData.game_modes!, (gm) => gm.slug).map((gm) => ({
+            uniqueBy(gameData.game_modes!, (gm) => String(gm.id)).map((gm) => ({
+              id: gm.id,
               name: gm.name,
               slug: gm.slug,
             })),
           )
-          .onConflictDoUpdate({ target: gameMode.slug, set: { name: sql`excluded.name` } })
+          .onConflictDoUpdate({
+            target: gameMode.id,
+            set: { name: sql`excluded.name`, slug: sql`excluded.slug` },
+          })
           .returning({ id: gameMode.id }),
       )
     : [];
 
-  const typeIds = gameData.game_types?.length
+  const typeIds = gameData.game_type
     ? await upsertLookup(() =>
         tx
           .insert(type)
-          .values(uniqueBy(gameData.game_types!, (gt) => gt.type).map((gt) => ({ type: gt.type })))
-          .onConflictDoUpdate({ target: type.type, set: { type: sql`excluded.type` } })
+          .values({ id: gameData.game_type!.id, type: gameData.game_type!.type })
+          .onConflictDoUpdate({ target: type.id, set: { type: sql`excluded.type` } })
           .returning({ id: type.id }),
       )
     : [];

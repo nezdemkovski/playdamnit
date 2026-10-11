@@ -119,12 +119,11 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   test("the chat agent searches, streams full cards to the UI and a compact list to the model", async () => {
     // A DLC next to the main game, to exercise the "games only" filter
     await insertGame(900002, "Zzyzx Quest Expansion");
-    const {
-      rows: [dlc],
-    } = await pg.query(
-      `insert into type (type) values ('DLC') on conflict (type) do update set type = excluded.type returning id`,
+    // Lookup ids are IGDB ids (1 = DLC)
+    await pg.query(
+      `insert into type (id, type) values (1, 'DLC') on conflict (id) do update set type = excluded.type`,
     );
-    await pg.query(`insert into game_to_type (game_id, type_id) values (900002, $1)`, [dlc.id]);
+    await pg.query(`insert into game_to_type (game_id, type_id) values (900002, 1)`);
 
     const usage = {
       inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },

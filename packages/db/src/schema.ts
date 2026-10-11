@@ -8,6 +8,7 @@ import {
   decimal,
   real,
   index,
+  jsonb,
   primaryKey,
   unique,
   check,
@@ -193,7 +194,9 @@ export type UserGameStatus = (typeof USER_GAME_STATUSES)[number];
 export const USER_GAME_SOURCES = ["steam", "gog", "manual"] as const;
 
 export const userMetadata = pgTable("user_metadata", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id")
+    .default(sql`uuidv7()`)
+    .primaryKey(),
   userId: text("user_id")
     .notNull()
     .unique()
@@ -204,7 +207,9 @@ export const userMetadata = pgTable("user_metadata", {
 export const userGames = pgTable(
   "user_games",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -230,7 +235,9 @@ export const userGames = pgTable(
 export const userFollows = pgTable(
   "user_follows",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
     followerId: text("follower_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -253,13 +260,15 @@ export const igdbSearchLog = pgTable("igdb_search_log", {
 });
 
 // ─── Game Catalog Tables ──────────────────────────────────────────────────────
+// Every catalog table is a mirror of IGDB: primary keys are IGDB ids, never generated locally.
 
 export const platform = pgTable(
   "platform",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
+    abbreviation: text("abbreviation"),
   },
   (table) => [index("idx_platform_slug").on(table.slug)],
 );
@@ -267,7 +276,7 @@ export const platform = pgTable(
 export const genre = pgTable(
   "genre",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
   },
@@ -277,17 +286,28 @@ export const genre = pgTable(
 export const gameMode = pgTable(
   "game_mode",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     name: text("name").notNull(),
     slug: text("slug").notNull().unique(),
   },
   (table) => [index("idx_game_mode_slug").on(table.slug)],
 );
 
+export const theme = pgTable(
+  "theme",
+  {
+    id: integer("id").primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+  },
+  (table) => [index("idx_theme_slug").on(table.slug)],
+);
+
+// IGDB game types ("Main Game", "DLC", ...); ids match GameTypeEnum
 export const type = pgTable(
   "type",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     type: text("type").notNull().unique(),
   },
   (table) => [index("idx_type_type").on(table.type)],
@@ -296,11 +316,38 @@ export const type = pgTable(
 export const websiteType = pgTable(
   "website_type",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     type: text("type").notNull().unique(),
   },
   (table) => [index("idx_website_type_type").on(table.type)],
 );
+
+export const company = pgTable(
+  "company",
+  {
+    id: integer("id").primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+  },
+  (table) => [index("idx_company_slug").on(table.slug)],
+);
+
+// Series ("The Legend of Zelda", ...)
+export const collection = pgTable(
+  "collection",
+  {
+    id: integer("id").primaryKey(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull().unique(),
+  },
+  (table) => [index("idx_collection_slug").on(table.slug)],
+);
+
+// Stores and services an external_game row points at (Steam, GOG, ...)
+export const externalGameSource = pgTable("external_game_source", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
+});
 
 export const game = pgTable(
   "game",
@@ -317,12 +364,42 @@ export const game = pgTable(
     keywords: text("keywords"),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     isPopular: boolean("is_popular").notNull().default(false),
+    totalRatingCount: integer("total_rating_count"),
+    // IGDB date precision for first_release_date ("YYYYMMMMDD", "YYYYMMMM", "YYYY", ...)
+    firstReleaseDatePrecision: text("first_release_date_precision"),
+    // IGDB game_type id (GameTypeEnum); single-valued, unlike the legacy game_to_type junction
+    gameType: integer("game_type"),
+    // DLC/expansions point at their parent; editions point at the game they are a version of
+    parentGameId: integer("parent_game_id"),
+    versionParentId: integer("version_parent_id"),
+    alternativeNames: text("alternative_names")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    // name + alternative names, written by the librarian; what search matches on
+    searchNames: text("search_names"),
+    // Similar games are plain IGDB ids: the target may not be in the catalog yet
+    similarGameIds: integer("similar_game_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::integer[]`),
+    // The expanded IGDB response as received; columns and child tables are derived from it
+    raw: jsonb("raw").$type<Record<string, unknown>>(),
+    igdbUpdatedAt: timestamp("igdb_updated_at"),
+    lastSyncedAt: timestamp("last_synced_at"),
+    // Set when IGDB no longer returns the game; rows stay because libraries reference them
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     index("idx_game_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+    index("idx_game_search_names_trgm").using("gin", table.searchNames.op("gin_trgm_ops")),
     index("idx_game_slug").on(table.slug),
     index("idx_game_popular").on(table.isPopular),
     index("idx_game_rating").on(table.totalRating),
+    index("idx_game_type").on(table.gameType),
+    index("idx_game_parent_game_id").on(table.parentGameId),
+    index("idx_game_version_parent_id").on(table.versionParentId),
+    index("idx_game_last_synced_at").on(table.lastSyncedAt),
   ],
 );
 
@@ -463,3 +540,137 @@ export const gameToType = pgTable(
     index("idx_g2t_type_id").on(table.typeId),
   ],
 );
+
+export const gameToTheme = pgTable(
+  "game_to_theme",
+  {
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    themeId: integer("theme_id")
+      .notNull()
+      .references(() => theme.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.gameId, table.themeId] }),
+    index("idx_g2th_game_id").on(table.gameId),
+    index("idx_g2th_theme_id").on(table.themeId),
+  ],
+);
+
+// IGDB involved_companies: one row per (game, company) with the roles the company had
+export const gameToCompany = pgTable(
+  "game_to_company",
+  {
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    companyId: integer("company_id")
+      .notNull()
+      .references(() => company.id, { onDelete: "cascade" }),
+    developer: boolean("developer").notNull().default(false),
+    publisher: boolean("publisher").notNull().default(false),
+    porting: boolean("porting").notNull().default(false),
+    supporting: boolean("supporting").notNull().default(false),
+  },
+  (table) => [
+    primaryKey({ columns: [table.gameId, table.companyId] }),
+    index("idx_g2c_game_id").on(table.gameId),
+    index("idx_g2c_company_id").on(table.companyId),
+  ],
+);
+
+export const gameToCollection = pgTable(
+  "game_to_collection",
+  {
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    collectionId: integer("collection_id")
+      .notNull()
+      .references(() => collection.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.gameId, table.collectionId] }),
+    index("idx_g2col_game_id").on(table.gameId),
+    index("idx_g2col_collection_id").on(table.collectionId),
+  ],
+);
+
+// IGDB game_videos (YouTube ids)
+export const video = pgTable(
+  "video",
+  {
+    id: integer("id").primaryKey(),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    name: text("name"),
+    videoId: text("video_id").notNull(),
+  },
+  (table) => [index("idx_video_game_id").on(table.gameId)],
+);
+
+// IGDB external_games: the game's id/url in a store or service
+export const externalGame = pgTable(
+  "external_game",
+  {
+    id: integer("id").primaryKey(),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    // external_game_source id; no FK so a new source doesn't block a game write
+    sourceId: integer("source_id"),
+    name: text("name"),
+    uid: text("uid"),
+    url: text("url"),
+  },
+  (table) => [
+    index("idx_external_game_game_id").on(table.gameId),
+    index("idx_external_game_source_id").on(table.sourceId),
+  ],
+);
+
+// IGDB game_localizations: regional titles with their own cover
+export const gameLocalization = pgTable(
+  "game_localization",
+  {
+    id: integer("id").primaryKey(),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    name: text("name"),
+    regionId: integer("region_id"),
+    coverHash: text("cover_hash"),
+    coverWidth: integer("cover_width"),
+    coverHeight: integer("cover_height"),
+  },
+  (table) => [index("idx_game_localization_game_id").on(table.gameId)],
+);
+
+// IGDB game_time_to_beats (seconds)
+export const gameTimeToBeat = pgTable("game_time_to_beat", {
+  gameId: integer("game_id")
+    .primaryKey()
+    .references(() => game.id, { onDelete: "cascade" }),
+  hastily: integer("hastily"),
+  normally: integer("normally"),
+  completely: integer("completely"),
+  count: integer("count"),
+});
+
+// ─── Catalog Sync ─────────────────────────────────────────────────────────────
+
+// Checkpoints for the librarian's IGDB syncs (one row per entity / sync kind)
+export const syncState = pgTable("sync_state", {
+  entity: text("entity").primaryKey(),
+  cursor: text("cursor"),
+  lastRunAt: timestamp("last_run_at"),
+});
+
+// Games an IGDB webhook told us about; drained in batches by the librarian
+export const catalogDirty = pgTable("catalog_dirty", {
+  igdbId: integer("igdb_id").primaryKey(),
+  reason: text("reason").notNull(),
+  markedAt: timestamp("marked_at").defaultNow().notNull(),
+});

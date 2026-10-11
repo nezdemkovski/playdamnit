@@ -35,18 +35,15 @@ export const transformIGDBResponse = (game: IGDBGameResponse) => {
     })),
     websites: websites?.map(({ id, type, url, trusted }) => ({
       id,
-      type: typeof type === "object" ? type.type : type,
+      // Website types are a lookup table keyed by IGDB id
+      type: type ? { id: type.id, type: type.type } : null,
       url,
       trusted,
     })),
     keywords: keywords?.map((keyword) => keyword.name).join(", "),
     involved_companies: involved_companies?.map((company) => company.company.name).join(", "),
-    game_types: game_type && [
-      {
-        id: game_type.id,
-        type: game_type.type,
-      },
-    ],
+    game_type: game_type && { id: game_type.id, type: game_type.type },
+    total_rating_count,
     isPopular: (total_rating_count ?? 0) >= POPULAR_RATING_COUNT,
   };
 };
