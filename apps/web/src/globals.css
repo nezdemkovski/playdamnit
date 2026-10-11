@@ -169,17 +169,13 @@
   [data-slot="button"] {
     border-radius: 0;
     font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.1em;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     transition:
       background-color 0.15s,
       border-color 0.15s,
       color 0.15s;
-  }
-  /* The red button is the "hot" action: solid red, black text, no translucency */
-  [data-slot="button"].bg-destructive {
-    color: #000;
   }
   [data-slot="badge"] {
     border-radius: 0;
@@ -226,6 +222,11 @@
   [data-slot="slider-range"] {
     background: var(--done);
   }
+}
+
+/* The red button is the "hot" action: solid red, black text. Unlayered so it beats the utility */
+[data-slot="button"].bg-destructive {
+  color: #000;
 }
 
 /* Numbers that line up and carry weight */
