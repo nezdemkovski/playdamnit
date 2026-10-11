@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 import { CommunityStats } from "@/components/game/community-stats";
 import { GameCard, GameRail } from "@/components/game/game-card";
