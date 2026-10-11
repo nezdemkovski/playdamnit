@@ -38,6 +38,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Playthroughs } from "./playthroughs";
 import { useSession } from "@/hooks/auth";
+import { usePlayPlatforms } from "@/hooks/platforms";
 import { useLibraryMutations } from "@/hooks/library";
 import { formatRating, ratingColor } from "@/lib/format";
 import { STATUSES, statusMeta, type LibraryStatus } from "@/lib/statuses";
@@ -62,6 +63,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const { user } = useSession();
   const navigate = useNavigate();
   const library = useLibraryMutations();
+  const platforms = usePlayPlatforms(game.platforms);
 
   const [rating, setRating] = useState(0);
   const [status, setStatus] = useState<LibraryStatus>("want_to_play");
@@ -209,7 +211,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                     <SelectValue placeholder="Pick a platform" />
                   </SelectTrigger>
                   <SelectContent>
-                    {game.platforms.map((p) => (
+                    {platforms.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
                         {p.name}
                       </SelectItem>
@@ -240,7 +242,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                   <Playthroughs
                     username={user.username}
                     gameId={game.id}
-                    platforms={game.platforms}
+                    platforms={platforms}
                     defaultPlatformId={entry.platformId}
                   />
                 </div>

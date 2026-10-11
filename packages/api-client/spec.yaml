@@ -1017,6 +1017,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/GamePlatform"
+        localPlatforms:
+          type: array
+          description: >-
+            Platforms IGDB lacks (Steam Deck, Steam Machine, Steam Frame): selectable for a library
+            entry or playthrough, but no catalog game lists them
+          items:
+            $ref: "#/components/schemas/GamePlatform"
         types:
           type: array
           items:
@@ -1024,6 +1031,7 @@ components:
       required:
         - genres
         - platforms
+        - localPlatforms
         - types
 
     LikedGameListResponse:

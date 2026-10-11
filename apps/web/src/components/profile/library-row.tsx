@@ -7,6 +7,7 @@ import { GameCover } from "@/components/game/game-cover";
 import { LogGameDialog } from "@/components/game/log-game-dialog";
 import { RatingValue, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
+import { usePlatformNames } from "@/hooks/platforms";
 import { gameTypeName, releaseYear, shortDate } from "@/lib/format";
 
 interface LibraryRowProps {
@@ -19,6 +20,7 @@ interface LibraryRowProps {
 export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
   const [open, setOpen] = useState(false);
   const data = entry.userGameData;
+  const platform = usePlatformNames().get(data.platformId ?? -1);
   const meta = [
     releaseYear(entry.firstReleaseDate),
     gameTypeName(entry.gameType, entry.types[0]?.type),

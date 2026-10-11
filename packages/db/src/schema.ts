@@ -379,6 +379,9 @@ export const userFollows = pgTable(
 // ─── Game Catalog Tables ──────────────────────────────────────────────────────
 // Every catalog table is a mirror of IGDB: primary keys are IGDB ids, never generated locally.
 
+// Platforms IGDB lacks (Steam Deck, ...) live at ids from here up; IGDB ids stay far below
+export const LOCAL_PLATFORM_MIN_ID = 900000;
+
 export const platform = pgTable(
   "platform",
   {
