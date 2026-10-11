@@ -10,7 +10,7 @@ import { addedLine, backlogLine, finishedLine, playingLine, summarize } from "@/
 
 /**
  * The scoreboard as one strip for the profile header: four numbers (the voice line in a
- * tooltip), the completion bar with its verdict, and the average grade.
+ * tooltip), the completion bar with its verdict, and the typical (median) grade.
  */
 export function ProfileStatStrip({
   entries,
@@ -21,11 +21,17 @@ export function ProfileStatStrip({
 }) {
   const { t } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
-  const average = useMemo(() => {
-    const values = entries.map((e) => e.userGameData.rating).filter((r): r is number => !!r);
-    return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-  }, [entries]);
-  const averageGrade = gradeOf(average);
+  // The median, not the mean: it is always a grade the person actually gave, and a mix of
+  // S and F does not average out to a C nobody got
+  const graded = useMemo(
+    () =>
+      entries
+        .map((e) => e.userGameData.rating)
+        .filter((r): r is number => !!r)
+        .sort((a, b) => b - a),
+    [entries],
+  );
+  const typicalGrade = graded.length ? gradeOf(graded[Math.floor((graded.length - 1) / 2)]) : null;
   const guilty = s.completion < 25;
 
   return (
@@ -83,19 +89,15 @@ export function ProfileStatStrip({
           </span>
         </div>
       </div>
-      {averageGrade && (
+      {typicalGrade && (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="flex items-center gap-2">
-              <span className="eyebrow">{t("profile.stats.average")}</span>
-              <GradeBadge grade={averageGrade} className="block" />
+              <span className="eyebrow">{t("profile.stats.typical")}</span>
+              <GradeBadge grade={typicalGrade} className="block" />
             </span>
           </TooltipTrigger>
-          <TooltipContent>
-            {t("profile.stats.rated", {
-              count: entries.filter((e) => e.userGameData.rating).length,
-            })}
-          </TooltipContent>
+          <TooltipContent>{t("profile.stats.typicalTip", { count: graded.length })}</TooltipContent>
         </Tooltip>
       )}
     </div>

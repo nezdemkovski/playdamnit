@@ -537,8 +537,9 @@
       "guilty": "guilty",
       "workingOnIt": "working on it",
       "respect": "respect",
-      "average": "Average",
-      "rated": "{{count}} graded"
+      "typical": "Typical",
+      "typicalTip_one": "The only grade given",
+      "typicalTip_other": "Middle of {{count}} grades"
     },
     "evenings": {
       "title": "{{days}} days. {{green}} of them green.",
