@@ -7,6 +7,10 @@ const { resendApiKey, isDev } = getConfig();
 // The Resend constructor throws without a key, so only create it when one is configured
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
+// Without a key the API runs without email: sign-up needs no verification and password
+// reset is off (see src/lib/auth.ts). In development emails are only logged anyway.
+export const emailEnabled = !!resend || isDev;
+
 export const resetPasswordEmailTemplate = (url: string) => `
     <h1>Reset Your Password</h1>
     <p>Hello,</p>

@@ -15,6 +15,7 @@ import {
 } from "@/db/postgres";
 import { getConfig } from "@/config";
 import {
+  emailEnabled,
   resetPasswordEmailTemplate,
   sendEmail,
   sendVerificationEmailTemplate,
@@ -32,25 +33,30 @@ export const auth = betterAuth({
     enabled: true,
     resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
     verifyEmailTokenExpiresIn: 24 * 60 * 60 * 1000, // 24 hours
-    requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        subject: "Reset Your Password - playdamnit.com",
-        html: resetPasswordEmailTemplate(url),
-      });
-    },
+    // No email configured: accounts are usable right after sign-up and reset is unavailable
+    requireEmailVerification: emailEnabled,
+    ...(emailEnabled && {
+      sendResetPassword: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: "Reset Your Password - playdamnit.com",
+          html: resetPasswordEmailTemplate(url),
+        });
+      },
+    }),
   },
   emailVerification: {
-    sendOnSignUp: true,
+    sendOnSignUp: emailEnabled,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        subject: "Verify Your Email - playdamnit.com",
-        html: sendVerificationEmailTemplate(url),
-      });
-    },
+    ...(emailEnabled && {
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: "Verify Your Email - playdamnit.com",
+          html: sendVerificationEmailTemplate(url),
+        });
+      },
+    }),
   },
   plugins: [username(), passkey(), admin(), apiKey(), openAPI()],
   secret: process.env.BETTER_AUTH_SECRET,

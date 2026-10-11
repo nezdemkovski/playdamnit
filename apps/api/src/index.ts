@@ -29,11 +29,7 @@ const validateEnvironment = () => {
     missingVars.push("POSTGRES_URL");
   }
 
-  if (!isDev) {
-    if (!betterAuthSecret) missingVars.push("BETTER_AUTH_SECRET");
-    // Sign-up requires email verification, so production can't work without email
-    if (!resendApiKey) missingVars.push("RESEND_API_KEY");
-  }
+  if (!isDev && !betterAuthSecret) missingVars.push("BETTER_AUTH_SECRET");
 
   if (missingVars.length > 0) {
     logger.error(`Missing required environment variables: ${missingVars.join(", ")}`);
@@ -52,6 +48,12 @@ logger.level = logLevel;
 logger.system(`Starting playdamnit API with log level: ${logLevel}`);
 
 validateEnvironment();
+
+if (!resendApiKey && !isDev) {
+  logger.system(
+    "RESEND_API_KEY is not set: sign-up skips email verification and password reset is disabled",
+  );
+}
 
 const sentryEnabled = initSentry();
 if (sentryEnabled) {

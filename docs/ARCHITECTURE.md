@@ -142,17 +142,17 @@ on any of them from the command line (`bun run scripts/enqueue.ts sync-catalog f
 
 ### API
 
-| Variable              | Required | Notes                                     |
-| --------------------- | -------- | ----------------------------------------- |
-| `POSTGRES_URL`        | Yes      |                                           |
-| `BETTER_AUTH_SECRET`  | Prod     | Min 32 chars                              |
-| `RESEND_API_KEY`      | Prod     | Email verification                        |
-| `IGDB_WEBHOOK_SECRET` | No       | Enables the webhook receiver              |
-| `OPENAI_API_KEY`      | No       | AI chat                                   |
-| `SENTRY_DSN`          | No       |                                           |
-| `TRUSTED_ORIGINS`     | No       | Comma-separated CORS origins              |
-| `TRUST_PROXY`         | No       | Honour `X-Forwarded-For` (behind a proxy) |
-| `PORT`, `LOG_LEVEL`   | No       |                                           |
+| Variable              | Required | Notes                                         |
+| --------------------- | -------- | --------------------------------------------- |
+| `POSTGRES_URL`        | Yes      |                                               |
+| `BETTER_AUTH_SECRET`  | Prod     | Min 32 chars                                  |
+| `RESEND_API_KEY`      | No       | Enables email verification and password reset |
+| `IGDB_WEBHOOK_SECRET` | No       | Enables the webhook receiver                  |
+| `OPENAI_API_KEY`      | No       | AI chat                                       |
+| `SENTRY_DSN`          | No       |                                               |
+| `TRUSTED_ORIGINS`     | No       | Comma-separated CORS origins                  |
+| `TRUST_PROXY`         | No       | Honour `X-Forwarded-For` (behind a proxy)     |
+| `PORT`, `LOG_LEVEL`   | No       |                                               |
 
 ### Librarian
 
