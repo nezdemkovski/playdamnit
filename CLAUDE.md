@@ -43,7 +43,7 @@ Filter any task with `bunx turbo run <task> --filter=@playdamnit/<name>`. `api-c
 
 ## Architecture
 
-See `docs/ARCHITECTURE.md` for flows and the schema. In short:
+The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. Current state in short:
 
 - **Single PostgreSQL** for everything: catalog, users/sessions, and the pg-boss queue (`pgboss` schema — never touch it).
 - **API** never calls IGDB. On catalog misses it enqueues pg-boss jobs and waits for `NOTIFY game_catalog_updated` (10s, 30s for imports).
