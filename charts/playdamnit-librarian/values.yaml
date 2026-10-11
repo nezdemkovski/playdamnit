@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/nezdemkovski/playdamnit-librarian
+  pullPolicy: IfNotPresent
+  # Defaults to the chart's appVersion; Renovate pins `tag: x.y.z@sha256:...` in the GitOps repo
+  tag: ""
+  digest: ""
+
+imagePullSecrets:
+  - name: playdamnit-ghcr
+
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# One instance only: the IGDB throttle and the webhook registration live in the process
+# (replicaCount stays 1; Recreate so an old pod never overlaps a new one)
+
+# Secret with the librarian's environment (POSTGRES_URL, TWITCH_*, WEBHOOK_BASE_URL, ...)
+envSecretName: playdamnit-librarian-env
+
+extraEnv:
+  - name: LOG_DIR
+    value: /tmp/logs
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

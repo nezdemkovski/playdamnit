@@ -42,3 +42,14 @@ jobs:
 
       - name: Typecheck, test and build
         run: bunx turbo run typecheck test build
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.18.4
+
+      - name: Lint and render the Helm charts
+        run: |
+          for chart in charts/*; do
+            helm lint "$chart"
+            helm template test "$chart" --set imagePullSecrets=null > /dev/null
+          done

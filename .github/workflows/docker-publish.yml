@@ -1,5 +1,7 @@
-name: Build and Publish Docker Images
+name: Publish images and charts
 
+# Every app has a chart in charts/playdamnit-<app>; its appVersion is the image tag and its
+# version the chart tag. The GitOps repo (homelab-gitops) pins both.
 on:
   push:
     branches: ["master"]
@@ -8,6 +10,12 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  # Inlined into the web bundle: the browser-facing origin of the API (same host, /api/*)
+  PUBLIC_API_URL: https://games.nezdemkovski.cloud
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
@@ -24,6 +32,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.18.4
+
+      - name: Read chart metadata
+        id: chart
+        run: |
+          chart=charts/playdamnit-${{ matrix.app }}
+          helm lint "$chart"
+          echo "version=$(helm show chart "$chart" | awk '/^version:/{print $2}')" >> "$GITHUB_OUTPUT"
+          echo "app_version=$(helm show chart "$chart" | awk '/^appVersion:/{gsub(/"/, "", $2); print $2}')" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -42,11 +62,15 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.app }}
           tags: |
+            type=raw,value=${{ steps.chart.outputs.app_version }},enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
             type=ref,event=pr
             type=sha,format=long
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       # Build context is the repository root: every image is pruned with `turbo prune`
       - name: Build and push Docker image
@@ -55,7 +79,18 @@ jobs:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64
+          build-args: |
+            VITE_API_URL=${{ env.PUBLIC_API_URL }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+      - name: Publish Helm chart
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        run: |
+          chart=charts/playdamnit-${{ matrix.app }}
+          helm package "$chart" --destination .helm-packages
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+          helm push ".helm-packages/playdamnit-${{ matrix.app }}-${{ steps.chart.outputs.version }}.tgz" "oci://ghcr.io/${{ github.repository_owner }}/charts"

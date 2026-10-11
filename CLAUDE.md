@@ -120,7 +120,8 @@ TEST_POSTGRES_URL=postgres://.../playdamnit_test bun run test       # + integrat
 
 `apps/api/tests/setup.ts` overrides `POSTGRES_URL` so tests never touch the database from `.env`.
 
-## Docker & CI
+## Docker, Helm & CI
 
-- Dockerfiles live in each app and build from the **repo root** with `turbo prune` (`docker build -f apps/api/Dockerfile .`). `docker compose up -d --build` runs postgres, api (runs migrations, `/health`), librarian and web.
-- `.github/workflows`: `ci.yml` (oxlint, oxfmt check, db:check, typecheck, test with Postgres, build), `docker-publish.yml` (images per app to GHCR), `orval-client-generator.yml` (publishes the client).
+- Dockerfiles live in each app and build from the **repo root** with `turbo prune` (`docker build -f apps/api/Dockerfile .`). `docker compose up -d --build` runs postgres, api (runs migrations, `/health`), librarian and web. Images run as non-root on a read-only root filesystem (`LOG_DIR=/tmp/logs`; the web image is nginx-unprivileged).
+- Helm charts in `charts/playdamnit-{api,librarian,web}` (scaffolded with `helm create`): `version`/`appVersion` is the release number, the image tag defaults to `appVersion`. Bump all three together. The homelab deployment (Flux, `homelab-gitops`) is described in `docs/CATALOG_MIRROR_PLAN.md`.
+- `.github/workflows`: `ci.yml` (oxlint, oxfmt check, db:check, typecheck, test with Postgres, build, helm lint/template), `docker-publish.yml` (images per app to GHCR tagged with the chart appVersion, charts to `oci://ghcr.io/nezdemkovski/charts`), `orval-client-generator.yml` (publishes the client).

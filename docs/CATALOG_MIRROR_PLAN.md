@@ -305,43 +305,50 @@ All code phases are in. What remains, in order:
   "through these terms or otherwise"; IGDB's own FAQ explicitly prefers local storage. The current
   lazy catalog already stores data indefinitely, so the mirror changes scale, not legal status.
 
-## Deployment: homelab Kubernetes
+## Deployment: homelab Kubernetes — manifests ready, not yet applied
 
-There is no production yet. The target is the Flux-managed homelab cluster (`~/Sites/homelab-gitops`,
-see its `AGENTS.md`), following the conventions the `amela` app already uses there. This is a
-separate work item from the mirror itself, but Phase 5 (webhooks) needs the public API hostname,
-so the chart work should land before it.
+Target: the Flux-managed homelab cluster (`~/Sites/homelab-gitops`, see its `AGENTS.md`), one
+hostname `games.nezdemkovski.cloud` with `/api/*` routed to the API and everything else to the
+web app (same origin: no CORS, first-party auth cookies).
 
-What has to exist:
+What exists (2026-10-11):
 
-- **Helm charts in this repo**, one per service (`charts/api`, `charts/librarian`, `charts/web`),
-  published as OCI to `ghcr.io/<owner>/charts/<name>` by the existing `docker-publish.yml` next to
-  the images. Values must carry `image.repository` + `image.tag` so Renovate can pin
-  `tag: x.y.z@sha256:…`. The librarian chart runs `replicas: 1` with `strategy: Recreate`: the IGDB
-  throttle and webhook registration are per process.
-- **In `homelab-gitops`**: `apps/playdamnit/` with namespace, `OCIRepository` + `HelmRelease` per
-  service, a `ghcr` pull secret, and a `clusters/homelab/playdamnit.yaml` Flux Kustomization.
-- **Postgres via CloudNativePG**: a single-instance `Cluster` (`postgresql:18`, `local-path`,
-  prune disabled) with `barmanObjectStore` to the RustFS S3 and a daily `ScheduledBackup`, same as
-  `amela-postgres`. Size the volume for the mirror (measured ~9 GB → 30Gi). `pg_trgm` is a
-  trusted extension, so the migration's `CREATE EXTENSION` works for the non-superuser owner.
-  The backup covers the whole database; only the user tables are irreplaceable, the catalog is
-  rebuilt by `sync-catalog`.
-- **Secrets**: one `ExternalSecret` per service from the `Homelab` 1Password vault, templating
-  `POSTGRES_URL` from the CNPG owner secret (`…-rw.playdamnit.svc.cluster.local`), plus
-  `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `TWITCH_CLIENT_ID/SECRET`, `IGDB_WEBHOOK_SECRET`,
-  `WEBHOOK_BASE_URL`, `OPENAI_API_KEY`, `SENTRY_DSN`, `TRUSTED_ORIGINS`, `TRUST_PROXY=true`
-  (requests arrive through the tunnel).
-- **Public hostnames** in `charts/cloudflared/values.yaml`: one for the web app and one for the
-  API; the API hostname is what IGDB webhooks are registered against.
-- **Network policies** (deny by default): api and librarian → CNPG `rw` service; librarian egress to
-  `api.igdb.com` and `id.twitch.tv`; api egress to Resend, OpenAI and Sentry; cloudflared → api and
-  web ingress; DNS and Kubernetes API as in the baseline.
-- **Migrations**: the API image already applies them on start (`entrypoint.sh`). Keep that, but with
-  one API replica only; if the API ever scales out, move migrations to a Helm pre-upgrade hook Job.
-- **Health**: the chart's readiness probe hits `/health` (it checks the database). The librarian has
-  no HTTP endpoint; give it a liveness probe later (Phase 7 is a good moment to add `/health` to it)
-  and an Uptime Kuma check on the API.
+- **Charts in this repo**: `charts/playdamnit-api`, `charts/playdamnit-librarian`,
+  `charts/playdamnit-web`, scaffolded with `helm create` and trimmed to Deployment + Service +
+  ServiceAccount. Non-root, read-only root filesystem with an `emptyDir` on `/tmp` (logs go to
+  `LOG_DIR=/tmp/logs`, nginx-unprivileged caches there too). The API chart runs migrations in an
+  init container (`bun run ../../packages/db/src/migrate.ts`) and sets `RUN_MIGRATIONS=false` on
+  the main container; the librarian chart is `replicas: 1` with `strategy: Recreate` and no
+  Service. Chart `version`/`appVersion` are the single release number for all three.
+- **CI**: `ci.yml` lints and renders the charts; `docker-publish.yml` tags images with the chart's
+  `appVersion` (plus branch/sha), builds the web bundle with
+  `VITE_API_URL=https://games.nezdemkovski.cloud`, and pushes the charts to
+  `oci://ghcr.io/nezdemkovski/charts/playdamnit-<app>` on every push to `master`.
+- **GitOps** (branch `playdamnit` in `homelab-gitops`, not pushed): `apps/playdamnit/` with the
+  namespace, ExternalSecrets (`playdamnit-ghcr`, `playdamnit-postgres-owner`, `cnpg-backup-s3`,
+  `playdamnit-api-env`, `playdamnit-librarian-env`), a CNPG `Cluster` (PostgreSQL 18.6, 30Gi,
+  tuned `shared_buffers`/`io_method`, barman backups to RustFS, daily `ScheduledBackup` at 01:30),
+  `OCIRepository` + `HelmRelease` per service exported with the Flux CLI, and
+  `clusters/homelab/playdamnit.yaml`. `infrastructure/network-policies/workload-playdamnit.yaml`
+  (deny by default, DNS/API/same-namespace/public egress) and `playdamnit` added to the
+  clusterwide lists (API server egress, tunnel ingress, CNPG backup egress and operator ingress).
+  `charts/cloudflared/values.yaml` routes `games.nezdemkovski.cloud` (`^/api/.*` → API, rest → web).
+
+Before the first reconcile:
+
+1. 1Password vault `Homelab`: `playdamnit-ghcr` (username/password: a PAT with `read:packages`),
+   `playdamnit-postgres` (username `playdamnit`, password), `playdamnit-api`
+   (`BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `OPENAI_API_KEY`, `SENTRY_DSN`, `IGDB_WEBHOOK_SECRET`),
+   `playdamnit-librarian` (`TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`).
+2. Cloudflare DNS: `games.nezdemkovski.cloud` CNAME to the tunnel (`<tunnel id>.cfargotunnel.com`).
+3. Merge this repo to `master` so CI publishes `0.1.0` images and charts; then pin the image tags
+   in the HelmReleases as `0.1.0@sha256:…` (Renovate keeps them pinned afterwards).
+4. Push the `playdamnit` branch of `homelab-gitops` and merge; `flux reconcile kustomization
+   playdamnit --with-source`; check the librarian log for "IGDB webhooks ensured" and
+   `sync-lookups done`.
+5. Uptime Kuma check on `https://games.nezdemkovski.cloud/api/health`? No: `/health` is served
+   at the API root, which the tunnel does not route. Point the check at
+   `https://games.nezdemkovski.cloud/api/games?limit=1` instead, or add `/api/health` later.
 
 ## References
 

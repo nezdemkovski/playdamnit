@@ -18,8 +18,8 @@ ARG VITE_API_URL=http://localhost:3030
 ENV VITE_API_URL=$VITE_API_URL
 RUN bunx turbo run build --filter=@playdamnit/web
 
-# The app is a static SPA: serve dist/ with nginx
-FROM nginx:1.29-alpine AS runner
+# The app is a static SPA: serve dist/ with nginx (unprivileged: runs as uid 101, writes only to /tmp)
+FROM nginxinc/nginx-unprivileged:1.29-alpine AS runner
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /repo/apps/web/dist /usr/share/nginx/html
 

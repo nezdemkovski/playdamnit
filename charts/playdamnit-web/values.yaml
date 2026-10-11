@@ -1,0 +1,62 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/nezdemkovski/playdamnit-web
+  pullPolicy: IfNotPresent
+  # Defaults to the chart's appVersion; Renovate pins `tag: x.y.z@sha256:...` in the GitOps repo
+  tag: ""
+  digest: ""
+
+imagePullSecrets:
+  - name: playdamnit-ghcr
+
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+probes:
+  liveness:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 20
+  readiness:
+    path: /
+    initialDelaySeconds: 2
+    periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

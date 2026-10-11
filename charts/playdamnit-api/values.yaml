@@ -1,0 +1,80 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/nezdemkovski/playdamnit-api
+  pullPolicy: IfNotPresent
+  # Defaults to the chart's appVersion; Renovate pins `tag: x.y.z@sha256:...` in the GitOps repo
+  tag: ""
+  digest: ""
+
+imagePullSecrets:
+  - name: playdamnit-ghcr
+
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3030
+
+# Secret with the API's environment (POSTGRES_URL, BETTER_AUTH_SECRET, ...); see .env.example
+envSecretName: playdamnit-api-env
+
+# Plain env on top of the secret
+extraEnv:
+  # Migrations run in the init container below, not in the entrypoint
+  - name: RUN_MIGRATIONS
+    value: "false"
+  - name: LOG_DIR
+    value: /tmp/logs
+
+migrations:
+  enabled: true
+  command:
+    - bun
+    - run
+    - ../../packages/db/src/migrate.ts
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    cpu: "1"
+    memory: 768Mi
+
+probes:
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
