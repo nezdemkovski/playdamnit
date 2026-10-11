@@ -41,77 +41,99 @@ const throttle = async () => {
   if (wait > 0) await Bun.sleep(wait);
 };
 
-/** One throttled, authenticated IGDB request. Throws IGDBError on non-2xx. */
-export const igdbQuery = async <T>(
-  endpoint: string,
-  body: string,
-  retryAuth = true,
-): Promise<T> => {
-  await throttle();
+// 429 / transient 5xx / network errors: wait and try again this many times before giving up
+const MAX_TRANSIENT_RETRIES = 3;
+const TRANSIENT_STATUSES = new Set([429, 500, 502, 503, 504]);
 
-  const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
-      Authorization: await getIGDBToken(),
-      "Content-Type": "text/plain",
-    },
-    body,
-  });
+const isTransientStatus = (status: number) => TRANSIENT_STATUSES.has(status);
 
-  if (response.status === 401 && retryAuth) {
-    invalidateIGDBToken();
-    return igdbQuery<T>(endpoint, body, false);
-  }
+/** Seconds IGDB asked us to wait (Retry-After), or a growing default. */
+const retryDelayMs = (response: Response | null, attempt: number) => {
+  const header = Number(response?.headers.get("retry-after"));
+  if (Number.isFinite(header) && header > 0) return Math.min(header, 60) * 1000;
+  return 1000 * 2 ** attempt;
+};
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new IGDBError(
-      `IGDB request failed with ${response.status}: ${errorText.slice(0, 500)}`,
-      response.status,
-    );
-  }
-
-  return (await response.json()) as T;
+/** Hold every caller back, not just the one that got the 429 */
+const pauseThrottle = (ms: number) => {
+  nextSlot = Math.max(nextSlot, Date.now() + ms);
 };
 
 /**
- * Any other authenticated IGDB call (webhook management): GET/DELETE, or a form-encoded POST.
- * Throttled like queries. Throws IGDBError on non-2xx.
+ * Core of every IGDB call: throttled, authenticated, retried on 401 (new token), 429 and
+ * transient 5xx/network failures. Throws IGDBError once the retries are spent.
  */
-export const igdbFetch = async (
+const igdbRequest = async (
+  method: "GET" | "POST" | "DELETE",
+  path: string,
+  init: { body?: string | URLSearchParams; contentType?: string },
+): Promise<Response> => {
+  let retryAuth = true;
+  for (let attempt = 0; ; attempt++) {
+    await throttle();
+
+    let response: Response | null = null;
+    try {
+      response = await fetch(`${IGDB_BASE_URL}/${path}`, {
+        method,
+        headers: {
+          "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
+          Authorization: await getIGDBToken(),
+          ...(init.contentType && { "Content-Type": init.contentType }),
+        },
+        ...(init.body !== undefined && { body: init.body }),
+      });
+    } catch (error) {
+      if (attempt >= MAX_TRANSIENT_RETRIES) throw error;
+      const wait = retryDelayMs(null, attempt);
+      logger.warn(`IGDB ${method} ${path}: network error, retrying in ${wait}ms`, {
+        error: String(error),
+      });
+      await Bun.sleep(wait);
+      continue;
+    }
+
+    if (response.status === 401 && retryAuth) {
+      retryAuth = false;
+      invalidateIGDBToken();
+      continue;
+    }
+
+    if (isTransientStatus(response.status) && attempt < MAX_TRANSIENT_RETRIES) {
+      const wait = retryDelayMs(response, attempt);
+      if (response.status === 429) pauseThrottle(wait);
+      logger.warn(`IGDB ${method} ${path} answered ${response.status}, retrying in ${wait}ms`);
+      await response.text().catch(() => undefined);
+      await Bun.sleep(wait);
+      continue;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new IGDBError(
+        `IGDB ${method} ${path} failed with ${response.status}: ${errorText.slice(0, 500)}`,
+        response.status,
+      );
+    }
+
+    return response;
+  }
+};
+
+/** An Apicalypse query against an endpoint. */
+export const igdbQuery = async <T>(endpoint: string, body: string): Promise<T> =>
+  (await igdbRequest("POST", endpoint, { body, contentType: "text/plain" })).json() as Promise<T>;
+
+/** Any other authenticated IGDB call (webhook management): GET/DELETE, or a form-encoded POST. */
+export const igdbFetch = (
   method: "GET" | "POST" | "DELETE",
   path: string,
   form?: URLSearchParams,
-  retryAuth = true,
-): Promise<Response> => {
-  await throttle();
-
-  const response = await fetch(`${IGDB_BASE_URL}/${path}`, {
-    method,
-    headers: {
-      "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
-      Authorization: await getIGDBToken(),
-      ...(form && { "Content-Type": "application/x-www-form-urlencoded" }),
-    },
-    ...(form && { body: form }),
+) =>
+  igdbRequest(method, path, {
+    body: form,
+    contentType: form ? "application/x-www-form-urlencoded" : undefined,
   });
-
-  if (response.status === 401 && retryAuth) {
-    invalidateIGDBToken();
-    return igdbFetch(method, path, form, false);
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new IGDBError(
-      `IGDB ${method} ${path} failed with ${response.status}: ${errorText.slice(0, 500)}`,
-      response.status,
-    );
-  }
-
-  return response;
-};
 
 /**
  * Walk a whole IGDB endpoint with keyset pagination (`id > last; sort id asc`), 500 rows per
