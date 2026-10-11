@@ -2,7 +2,13 @@ import { and, count, eq, exists, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
 import { game, gameToPlatform } from "@playdamnit/db/schema";
-import { GAME_CARD_WITH, GAME_DETAIL_WITH, transformGameResponse } from "@/utils/gameTransformers";
+import {
+  GAME_CARD_COLUMNS,
+  GAME_CARD_WITH,
+  GAME_DETAIL_COLUMNS,
+  GAME_DETAIL_WITH,
+  transformGameResponse,
+} from "@/utils/gameTransformers";
 import { NotFoundError } from "@/utils/errors";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
@@ -17,6 +23,7 @@ export abstract class GameService {
   static async findById(gameId: number) {
     const result = await db.query.game.findFirst({
       where: { id: gameId },
+      columns: GAME_DETAIL_COLUMNS,
       with: GAME_DETAIL_WITH,
     });
 
@@ -54,6 +61,7 @@ export abstract class GameService {
         offset,
         where: opts.platformId ? { platforms: { id: opts.platformId } } : undefined,
         orderBy: { id: "asc" },
+        columns: GAME_CARD_COLUMNS,
         with: GAME_CARD_WITH,
       }),
       db.select({ total: count() }).from(game).where(countWhere),

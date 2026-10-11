@@ -406,7 +406,7 @@ export const game = pgTable(
 export const cover = pgTable(
   "cover",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     gameId: integer("game_id")
       .notNull()
       .unique()
@@ -424,7 +424,7 @@ export const cover = pgTable(
 export const screenshot = pgTable(
   "screenshot",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id, { onDelete: "cascade" }),
@@ -441,7 +441,7 @@ export const screenshot = pgTable(
 export const website = pgTable(
   "website",
   {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    id: integer("id").primaryKey(),
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id, { onDelete: "cascade" }),

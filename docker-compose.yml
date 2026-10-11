@@ -43,7 +43,6 @@ services:
       - TWITCH_CLIENT_ID=${TWITCH_CLIENT_ID:?TWITCH_CLIENT_ID is required}
       - TWITCH_CLIENT_SECRET=${TWITCH_CLIENT_SECRET:?TWITCH_CLIENT_SECRET is required}
       - LOG_LEVEL=${LOG_LEVEL:-error}
-      - SIMILAR_GAMES_MAX_DEPTH=${SIMILAR_GAMES_MAX_DEPTH:-1}
     depends_on:
       # The api container runs the migrations; wait until the catalog tables exist
       api:

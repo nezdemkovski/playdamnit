@@ -13,8 +13,12 @@ export const GAME_DETAIL_WITH = {
   ...GAME_CARD_WITH,
   screenshots: true,
   websites: true,
-  similarGames: { columns: { id: true } },
 } as const;
+
+// Columns never sent to clients: the raw IGDB document and the search key. Lists also skip
+// the similar-game ids, which only the detail view turns into `similarGames`.
+export const GAME_DETAIL_COLUMNS = { raw: false, searchNames: false } as const;
+export const GAME_CARD_COLUMNS = { ...GAME_DETAIL_COLUMNS, similarGameIds: false } as const;
 
 interface Image {
   id: number;
@@ -32,11 +36,24 @@ interface GameWithRelations {
   types?: unknown[];
   screenshots?: Image[];
   websites?: unknown[];
-  similarGames?: { id: number }[];
+  similarGameIds?: number[];
+  raw?: unknown;
+  searchNames?: unknown;
 }
 
 export const transformGameResponse = <T extends GameWithRelations>(game: T) => {
-  const { cover, platforms, genres, types, screenshots, websites, similarGames, ...rest } = game;
+  const {
+    cover,
+    platforms,
+    genres,
+    types,
+    screenshots,
+    websites,
+    similarGameIds,
+    raw: _raw,
+    searchNames: _searchNames,
+    ...rest
+  } = game;
 
   return {
     ...rest,
@@ -60,8 +77,8 @@ export const transformGameResponse = <T extends GameWithRelations>(game: T) => {
       })),
     }),
     ...(websites && { websites }),
-    ...(similarGames && {
-      similarGames: similarGames.map(({ id }) => ({ id })),
+    ...(similarGameIds && {
+      similarGames: similarGameIds.map((id) => ({ id })),
     }),
   };
 };

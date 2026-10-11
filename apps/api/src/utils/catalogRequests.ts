@@ -54,7 +54,7 @@ export const ensureGamesInCatalog = async (
 
   await enqueueAndWait<Omit<FetchByIdsJob, "requestId">>(
     QUEUES.FETCH_BY_IDS,
-    { ids: missing, depth: 0 },
+    { ids: missing },
     timeoutMs,
   );
 
@@ -78,6 +78,6 @@ export const backfillMissingLibraryGames = async (): Promise<number> => {
   if (ids.length === 0) return 0;
 
   const boss = await getBoss();
-  await boss.send(QUEUES.FETCH_BY_IDS, { ids, depth: 0 } satisfies FetchByIdsJob, JOB_OPTIONS);
+  await boss.send(QUEUES.FETCH_BY_IDS, { ids } satisfies FetchByIdsJob, JOB_OPTIONS);
   return ids.length;
 };

@@ -8,7 +8,7 @@ import {
   type UserGameStatus,
 } from "@playdamnit/db/schema";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
-import { GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
+import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 
@@ -101,7 +101,7 @@ export abstract class UserGameService {
         orderBy: { addedAt: "desc" },
         limit: opts.limit,
         offset: opts.offset,
-        with: { game: { with: GAME_CARD_WITH } },
+        with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
       }),
       postgresDb.select({ total: count() }).from(userGames).where(where),
     ]);

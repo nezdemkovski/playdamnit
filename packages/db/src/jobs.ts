@@ -4,10 +4,11 @@
 export const QUEUES = {
   SEARCH_IGDB: "search-igdb",
   FETCH_BY_IDS: "fetch-by-ids",
-  PROCESS_SIMILAR_GAMES: "process-similar-games",
   REFRESH_STALE_GAMES: "refresh-stale-games",
   // Mirror IGDB's lookup endpoints (platforms, genres, companies, ...) into the catalog
   SYNC_LOOKUPS: "sync-lookups",
+  // Walk IGDB's games endpoint into the catalog, a page at a time, resumable
+  SYNC_CATALOG: "sync-catalog",
 } as const;
 
 export const ALL_QUEUES = Object.values(QUEUES);
@@ -23,14 +24,25 @@ export interface SearchIgdbJob {
 export interface FetchByIdsJob {
   ids: number[];
   requestId?: string;
-  // 0 = requested by a user; incremented on every similar-games hop
-  depth?: number;
 }
 
-export interface ProcessSimilarGamesJob {
-  gameId: number;
-  similarGameIds: number[];
-  depth: number;
+export interface SyncLookupsJob {
+  force?: boolean;
+}
+
+export interface SyncCatalogCursor {
+  // full: the last IGDB game id written
+  id?: number;
+  // incremental: IGDB `updated_at` (unix seconds) and the last id seen at that second
+  updatedAt?: number;
+  updatedAtId?: number;
+  // when this walk started (unix seconds); seeds the incremental cursor when a full walk ends
+  startedAt?: number;
+}
+
+export interface SyncCatalogJob {
+  mode: "full" | "incremental";
+  cursor?: SyncCatalogCursor;
 }
 
 export interface CatalogUpdatedPayload {

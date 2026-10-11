@@ -6,5 +6,5 @@
       "@/db/*": ["./db/*"]
     }
   },
-  "include": ["src", "db"]
+  "include": ["src", "db", "tests", "scripts"]
 }

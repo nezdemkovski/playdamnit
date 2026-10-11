@@ -47,7 +47,7 @@ The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. 
 
 - **Single PostgreSQL 18** for everything: catalog, users/sessions, and the pg-boss queue (`pgboss` schema — never touch it).
 - **API** never calls IGDB. On catalog misses it enqueues pg-boss jobs and waits for `NOTIFY game_catalog_updated` (10s, 30s for imports).
-- **Librarian** runs `search-igdb`, `fetch-by-ids`, `process-similar-games`, `refresh-stale-games` (cron 04:00), `sync-lookups` (cron 03:30 + after start), writes the catalog and NOTIFYs `{ requestId, ok }`.
+- **Librarian** runs `search-igdb`, `fetch-by-ids`, `sync-catalog` (full walk by hand, incremental cron 02:00), `sync-lookups` (cron 03:30 + after start), `refresh-stale-games` (cron 04:00), writes the catalog and NOTIFYs `{ requestId, ok }`.
 - **Catalog tables mirror IGDB**: every primary key (games, platforms, genres, companies, ...) is the IGDB id, never generated locally. Lookup rows are upserted by id; the migration `20261011005705_catalog_mirror_phase1` moved the old identity ids over with an embedded mapping.
 
 ### Database (`packages/db`)
@@ -81,7 +81,9 @@ The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. 
 ### Librarian (`apps/librarian`)
 
 - IGDB client in `src/utils/igdb/`: requests ≥ 260ms apart (IGDB allows 4/s), up to 500 ids per request with an explicit `limit`, Apicalypse-escaped search strings, errors are thrown so pg-boss retries.
-- Similar-games crawl is bounded by `SIMILAR_GAMES_MAX_DEPTH` (default 1). Writes are upserts so refreshes update existing games.
+- Every game write goes through `src/catalog/writeGames.ts`: one transaction per batch of up to 500 expanded IGDB documents (`GAME_FIELDS` in `src/utils/igdb/utils.ts`), bulk upserts per table, `game.raw` keeps the document, `src/catalog/derive.ts` (pure, unit-tested) turns it into rows. Similar games are `game.similar_game_ids`; there is no crawl.
+- `sync-catalog` walks `/games` by id (full) or `updated_at` (incremental), 10 pages per job, re-enqueuing itself with the cursor (`sync_state`). Start a full walk with `bun run scripts/enqueue.ts sync-catalog full` from `apps/librarian`.
+- Upserts refresh columns with `excluded.<column>`; build the `set` map from `getTableColumns` (property keys), Drizzle drops unknown keys silently.
 
 ### API client (`packages/api-client`)
 

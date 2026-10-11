@@ -3,9 +3,9 @@ import { PgBoss } from "pg-boss";
 import { ALL_QUEUES } from "@playdamnit/db/jobs";
 import logger from "./utils/enhancedLogger";
 import { registerIgdbWorkers } from "./workers/igdbWorker";
-import { registerSimilarGamesWorker } from "./workers/similarGamesWorker";
 import { registerRefreshWorker } from "./workers/refreshWorker";
 import { registerLookupsWorker } from "./workers/lookupsWorker";
+import { registerCatalogSyncWorker } from "./workers/catalogSyncWorker";
 
 const validateEnvironment = () => {
   const missingVars: string[] = [];
@@ -42,9 +42,9 @@ const start = async () => {
   }
 
   await registerIgdbWorkers(boss);
-  await registerSimilarGamesWorker(boss);
   await registerRefreshWorker(boss);
   await registerLookupsWorker(boss);
+  await registerCatalogSyncWorker(boss);
 
   logger.system("All workers registered. Librarian is running.");
 };

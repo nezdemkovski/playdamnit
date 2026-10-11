@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path. Phases 1 to 3 landed on 2026-10-11.
+the lazy path. Phases 1 to 4 landed on 2026-10-11.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -143,7 +143,7 @@ drivers parse `numeric`, `timestamp` and arrays differently. One driver means on
 rules, one pool per process, and the Better Auth CLI can load `src/lib/auth.ts` again, so the auth
 tables stop being mirrored by hand.
 
-### Phase 4. Bulk sync in the librarian
+### Phase 4. Bulk sync in the librarian — done
 
 - New queue `sync-catalog` with `{ mode: "full" | "incremental", cursor }`. One run processes a fixed
   number of pages and re-enqueues itself with the new cursor. This sidesteps pg-boss's default 15 min
@@ -167,8 +167,30 @@ tables stop being mirrored by hand.
 - Before the first full load drop `idx_game_name_trgm` (and the new `search_names` index); recreate
   them and `VACUUM ANALYZE` afterwards.
 - Sizing: ~700 IGDB requests for games (minutes of API time), tens of minutes of writes. With `raw`
-  and media tables the DB grows to roughly 5–8 GB. `raw` is TOASTed and compressed by Postgres;
+  and media tables the DB grows to roughly 9 GB. `raw` is TOASTed and compressed by Postgres;
   keep it out of `select *` paths in the API.
+
+What landed (2026-10-11):
+
+- `apps/librarian/src/catalog/derive.ts` (pure, unit-tested) and `writeGames.ts`: one transaction
+  per batch, bulk upserts for lookups, games, media, links and junctions. `GAME_FIELDS` is the
+  full expanded document. Slug collisions are defused by renaming the old owner's slug.
+- `sync-catalog` queue (`catalogSyncWorker.ts`): full walk by id, incremental walk by
+  `updated_at` with a per-second id sub-walk, 10 pages per job, cursor in `sync_state`, the
+  finished full walk seeds the incremental cursor. Incremental runs daily at 02:00; a full walk
+  is started with `bun run scripts/enqueue.ts sync-catalog full`.
+- `process-similar-games`, `SIMILAR_GAMES_MAX_DEPTH` and the crawl are gone; `GET /games/:id`
+  reads `similar_game_ids`. `refresh-stale-games` uses `last_synced_at`.
+- Migration `20261011092715_catalog_mirror_phase4`: `cover`, `screenshot`, `website` keyed by IGDB
+  id (tables truncated; there is no production data yet).
+- API list queries exclude `raw`, `search_names` and `similar_game_ids` (`GAME_CARD_COLUMNS`).
+- IGDB caps a response at 10 MB and a full game document averages ~35 KB, so expanded games are
+  fetched 100 per page (`GAME_PAGE_SIZE`), halving on a 413. Measured on the dev box: ~3 s per
+  page including the write, ~32 games/s, so a full walk of ~350k games takes about 3 hours and
+  the `game` table lands at ~20 KB per row (~7 GB) plus ~1–2 GB of child tables. Size the
+  production volume at 30Gi, not 20Gi.
+- Not automated: dropping the trigram indexes before the first full walk and `VACUUM ANALYZE`
+  after it. Do that by hand around the first production run.
 
 ### Phase 5. Webhooks
 
@@ -266,7 +288,7 @@ What has to exist:
   service, a `ghcr` pull secret, and a `clusters/homelab/playdamnit.yaml` Flux Kustomization.
 - **Postgres via CloudNativePG**: a single-instance `Cluster` (`postgresql:18`, `local-path`,
   prune disabled) with `barmanObjectStore` to the RustFS S3 and a daily `ScheduledBackup`, same as
-  `amela-postgres`. Size the volume for the mirror (plan says 5–8 GB → 20Gi). `pg_trgm` is a
+  `amela-postgres`. Size the volume for the mirror (measured ~9 GB → 30Gi). `pg_trgm` is a
   trusted extension, so the migration's `CREATE EXTENSION` works for the non-superuser owner.
   The backup covers the whole database; only the user tables are irreplaceable, the catalog is
   rebuilt by `sync-catalog`.

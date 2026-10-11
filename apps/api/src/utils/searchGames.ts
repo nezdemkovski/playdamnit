@@ -2,7 +2,7 @@ import { count, desc, ilike, or, sql, type Column, type SQL } from "drizzle-orm"
 
 import { db } from "@/db/postgres";
 import { game, igdbSearchLog } from "@playdamnit/db/schema";
-import { GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
+import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { requestIgdbSearch } from "@/utils/catalogRequests";
 import { createLogger } from "@/utils/enhancedLogger";
 
@@ -57,6 +57,7 @@ const fetchGames = (rankQuery: string, where: GameFilter, limit: number, offset:
     ],
     limit,
     offset,
+    columns: GAME_CARD_COLUMNS,
     with: GAME_CARD_WITH,
   });
 

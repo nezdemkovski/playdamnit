@@ -40,7 +40,7 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     // Fake librarian: "IGDB" knows any id, and searches for "Zzyzx" find one game
     fakeLibrarian = new PgBoss(TEST_URL!);
     await fakeLibrarian.start();
-    for (const name of ["search-igdb", "fetch-by-ids", "process-similar-games"]) {
+    for (const name of ["search-igdb", "fetch-by-ids"]) {
       await fakeLibrarian.createQueue(name);
     }
     await fakeLibrarian.work<{ query: string; requestId: string }>(

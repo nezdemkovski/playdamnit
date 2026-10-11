@@ -1,6 +1,5 @@
 import { createLogger } from "../enhancedLogger";
 import { getIGDBToken, invalidateIGDBToken } from "./token";
-import { transformIGDBResponse } from "./transformers";
 import type { IGDBGameResponse } from "./types";
 
 const logger = createLogger("igdb");
@@ -12,19 +11,17 @@ const MAIN_GAME_TYPES = [0, 8, 9];
 
 // IGDB allows 4 requests/second and 8 open requests per client
 const MIN_REQUEST_INTERVAL_MS = 260;
-const MAX_IDS_PER_REQUEST = 500;
+export const MAX_IDS_PER_REQUEST = 500;
 export const MAX_SEARCH_QUERY_LENGTH = 100;
 
-const GAME_FIELDS = `
-  fields id, name, slug, created_at, genres.name, genres.slug,
-         platforms.name, platforms.slug, platforms.abbreviation, first_release_date, keywords.name,
-         cover.image_id, cover.width, cover.height,
-         screenshots.image_id, screenshots.width, screenshots.height,
-         websites.type.id, websites.type.type, websites.url, websites.trusted,
-         game_modes.name, game_modes.slug, total_rating, total_rating_count,
-         similar_games, storyline, summary,
-         involved_companies.company.name, involved_companies.company.slug,
-         game_type.id, game_type.type;`;
+// The whole game document with every relation we store expanded one level (two for the
+// company and cover sub-objects). `*` covers the scalar fields and plain reference ids
+// (parent_game, version_parent, similar_games, updated_at, ...).
+export const GAME_FIELDS = `
+  fields *, alternative_names.*, cover.*, screenshots.*, videos.*, websites.*, websites.type.*,
+         external_games.*, involved_companies.*, involved_companies.company.*,
+         game_localizations.*, game_localizations.cover.*, release_dates.*,
+         genres.*, platforms.*, game_modes.*, themes.*, collections.*, game_type.*, keywords.*;`;
 
 export class IGDBError extends Error {
   constructor(
@@ -45,7 +42,12 @@ const throttle = async () => {
   if (wait > 0) await Bun.sleep(wait);
 };
 
-const igdbRequest = async <T>(endpoint: string, body: string, retryAuth = true): Promise<T> => {
+/** One throttled, authenticated IGDB request. Throws IGDBError on non-2xx. */
+export const igdbQuery = async <T>(
+  endpoint: string,
+  body: string,
+  retryAuth = true,
+): Promise<T> => {
   await throttle();
 
   const response = await fetch(`${IGDB_BASE_URL}/${endpoint}`, {
@@ -60,7 +62,7 @@ const igdbRequest = async <T>(endpoint: string, body: string, retryAuth = true):
 
   if (response.status === 401 && retryAuth) {
     invalidateIGDBToken();
-    return igdbRequest<T>(endpoint, body, false);
+    return igdbQuery<T>(endpoint, body, false);
   }
 
   if (!response.ok) {
@@ -93,7 +95,7 @@ export const searchIGDB = async (
   query: string,
   showOnlyGames: boolean = true,
   limit: number = 50,
-) => {
+): Promise<IGDBGameResponse[]> => {
   logger.info("Searching IGDB for:", { query, showOnlyGames });
 
   const safeLimit = Math.min(Math.max(1, Math.trunc(limit)), MAX_IDS_PER_REQUEST);
@@ -103,8 +105,7 @@ export const searchIGDB = async (
   }
   body += ` limit ${safeLimit};`;
 
-  const data = await igdbRequest<IGDBGameResponse[]>("games", body);
-  return data.map(transformIGDBResponse);
+  return igdbQuery<IGDBGameResponse[]>("games", body);
 };
 
 /**
@@ -125,7 +126,7 @@ export const fetchAllIGDB = async <T extends { id: number }>(
   for (;;) {
     const where = [`id > ${lastId}`, opts.where].filter(Boolean).join(" & ");
     const body = `fields ${fields}; where ${where}; sort id asc; limit ${MAX_IDS_PER_REQUEST};`;
-    const rows = await igdbRequest<T[]>(endpoint, body);
+    const rows = await igdbQuery<T[]>(endpoint, body);
     if (rows.length === 0) break;
 
     await onPage(rows);
@@ -137,9 +138,17 @@ export const fetchAllIGDB = async <T extends { id: number }>(
   return total;
 };
 
+// IGDB caps a response at 10 MB; a full game document averages ~35 KB, so a page of
+// expanded games has to be far below the 500-row limit
+export const GAME_PAGE_SIZE = 100;
+
+/** IGDB answered 413: the page was too big for the 10 MB response limit. */
+export const isPayloadTooLarge = (error: unknown) =>
+  error instanceof IGDBError && error.status === 413;
+
 /**
- * Fetch games by id, in batches of 500 (IGDB's max page size; the default is only 10).
- * Throws on failure so pg-boss can retry the job.
+ * Fetch games by id, in pages of GAME_PAGE_SIZE. A page that still exceeds IGDB's response
+ * limit is split in half and retried. Throws on other failures so pg-boss can retry the job.
  */
 export const fetchIGDBByIds = async (
   ids: number[],
@@ -150,17 +159,28 @@ export const fetchIGDBByIds = async (
 
   logger.info(`Fetching games from IGDB by IDs`, { count: validIds.length });
 
-  const results: IGDBGameResponse[] = [];
-
-  for (let i = 0; i < validIds.length; i += MAX_IDS_PER_REQUEST) {
-    const batch = validIds.slice(i, i + MAX_IDS_PER_REQUEST);
+  const fetchBatch = async (batch: number[]): Promise<IGDBGameResponse[]> => {
     let body = `${GAME_FIELDS} where id = (${batch.join(",")})`;
     if (showOnlyGames) {
       body += ` & game_type = (${MAIN_GAME_TYPES.join(",")})`;
     }
     body += `; limit ${batch.length};`;
 
-    results.push(...(await igdbRequest<IGDBGameResponse[]>("games", body)));
+    try {
+      return await igdbQuery<IGDBGameResponse[]>("games", body);
+    } catch (error) {
+      if (!isPayloadTooLarge(error) || batch.length < 2) throw error;
+      const half = Math.ceil(batch.length / 2);
+      return [
+        ...(await fetchBatch(batch.slice(0, half))),
+        ...(await fetchBatch(batch.slice(half))),
+      ];
+    }
+  };
+
+  const results: IGDBGameResponse[] = [];
+  for (let i = 0; i < validIds.length; i += GAME_PAGE_SIZE) {
+    results.push(...(await fetchBatch(validIds.slice(i, i + GAME_PAGE_SIZE))));
   }
 
   return results;
