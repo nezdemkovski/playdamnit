@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, Star, Calendar, Plus, Gamepad2, ArrowLeft } from "lucide-react";
-import { Game, useGetApiGamesSearch, useGetApiGamesAutocomplete } from "@playdamnit/api-client";
+import { Game, useGetApiGamesSearch } from "@playdamnit/api-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,8 @@ export default function SearchAndAddModal({ isOpen, onClose, onSuccess }: Search
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  // Enhanced search with new API parameters
   const { data: searchResults, isLoading } = useGetApiGamesSearch(
-    {
-      q: searchQuery,
-      per_page: 10,
-      page: 1,
-      facets: "genres,platforms",
-    },
+    { q: searchQuery, limit: 10 },
     {
       query: {
         enabled: searchQuery.length > 2,
@@ -36,23 +30,8 @@ export default function SearchAndAddModal({ isOpen, onClose, onSuccess }: Search
     },
   );
 
-  // Autocomplete for inline suggestions
-  const { data: autocompleteResults } = useGetApiGamesAutocomplete(
-    {
-      q: searchQuery,
-      type: "simple",
-      limit: 10,
-    },
-    {
-      query: {
-        enabled: searchQuery.length >= 1,
-        queryKey: ["games", "autocomplete", searchQuery],
-      },
-    },
-  );
-
-  // Extract game names from autocomplete results for inline suggestions
-  const suggestions = autocompleteResults?.suggestions?.map((s: any) => s.value || s.display) || [];
+  // Inline suggestions are the names of the current matches
+  const suggestions = searchResults?.results.map((game) => game.name) ?? [];
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game);

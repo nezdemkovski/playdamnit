@@ -3,12 +3,7 @@ import { Search, Star, Calendar, Gamepad2, Plus, Loader2, X } from "lucide-react
 import { cn } from "@/lib/utils";
 import { InlineAutocompleteInput } from "./inline-autocomplete-input";
 import { Badge } from "./badge";
-import {
-  Game,
-  useGetApiGamesSearch,
-  useGetApiGamesAutocomplete,
-  usePostApiUserByUsernameGames,
-} from "@playdamnit/api-client";
+import { Game, useGetApiGamesSearch, usePostApiUserByUsernameGames } from "@playdamnit/api-client";
 
 interface InlineGameSearchProps {
   username: string;
@@ -29,13 +24,8 @@ export function InlineGameSearch({
   const searchRef = useRef<HTMLDivElement>(null);
   const addGameMutation = usePostApiUserByUsernameGames();
 
-  // Search results
   const { data: searchResults, isLoading } = useGetApiGamesSearch(
-    {
-      q: searchQuery,
-      per_page: 8,
-      page: 1,
-    },
+    { q: searchQuery, limit: 8 },
     {
       query: {
         enabled: searchQuery.length > 2,
@@ -44,22 +34,8 @@ export function InlineGameSearch({
     },
   );
 
-  // Autocomplete for inline suggestions
-  const { data: autocompleteResults } = useGetApiGamesAutocomplete(
-    {
-      q: searchQuery,
-      type: "simple",
-      limit: 10,
-    },
-    {
-      query: {
-        enabled: searchQuery.length >= 1,
-        queryKey: ["games", "autocomplete", searchQuery],
-      },
-    },
-  );
-
-  const suggestions = autocompleteResults?.suggestions?.map((s: any) => s.value || s.display) || [];
+  // Inline suggestions are the names of the current matches
+  const suggestions = searchResults?.results.map((game) => game.name) ?? [];
   const games = searchResults?.results || [];
 
   // Handle clicking outside to close
@@ -135,19 +111,6 @@ export function InlineGameSearch({
     setIsOpen(false);
   };
 
-  const formatSource = (source?: string) => {
-    switch (source) {
-      case "typesense":
-        return "Local";
-      case "sqlite":
-        return "Local";
-      case "igdb":
-        return "IGDB";
-      default:
-        return source || "Unknown";
-    }
-  };
-
   return (
     <div ref={searchRef} className={cn("relative", className)} onKeyDown={handleKeyDown}>
       {/* Search Input */}
@@ -184,11 +147,6 @@ export function InlineGameSearch({
               {(searchResults as any)?.meta && (
                 <div className="px-4 py-2 border-b border-playdamnit-purple/20 text-xs text-playdamnit-light/60">
                   Found {(searchResults as any).meta.total} games
-                  {(searchResults as any).meta.sources && (
-                    <span className="ml-2">
-                      • Sources: {(searchResults as any).meta.sources.join(", ")}
-                    </span>
-                  )}
                 </div>
               )}
 
@@ -249,19 +207,6 @@ export function InlineGameSearch({
                             <span className="truncate">{game.platforms[0].name}</span>
                           </div>
                         )}
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] px-1 py-0",
-                            (game as any).source === "igdb" && "border-blue-500/30 text-blue-400",
-                            (game as any).source === "sqlite" &&
-                              "border-green-500/30 text-green-400",
-                            (game as any).source === "typesense" &&
-                              "border-purple-500/30 text-purple-400",
-                          )}
-                        >
-                          {formatSource((game as any).source)}
-                        </Badge>
                       </div>
 
                       <div className="flex flex-wrap gap-1">
