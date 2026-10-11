@@ -194,8 +194,6 @@
     "count_other": "{{count}} releases",
     "empty": "Nothing releases this month. Finish something instead.",
     "counting": "counting",
-    "ratings_one": "{{count}} rating",
-    "ratings_other": "{{count}} ratings",
     "summary_one": "{{total}} release this month",
     "summary_other": "{{total}} releases this month",
     "openDay_one": "{{date}}: {{count}} release",

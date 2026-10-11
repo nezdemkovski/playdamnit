@@ -437,7 +437,6 @@ function DayRow({
   entry?: UserGameData;
   onNavigate: () => void;
 }) {
-  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-[28px_44px_1fr_auto] items-center gap-4 border-b border-border py-3 last:border-b-0">
       <span className="num text-sm font-extrabold text-dimmed">
@@ -471,15 +470,14 @@ function DayRow({
             .join(" · ")}
         </div>
       </div>
+      {/* The right edge is you: your seal and status when the game is in your list */}
       <div className="flex items-center gap-2">
-        {entry ? (
+        {entry && (
           <>
             <GradeBadge grade={gradeOf(entry.rating)} size={PillSize.Md} />
             <StatusPill status={entry.status} />
           </>
-        ) : game.totalRatingCount ? (
-          <span className="eyebrow">{t("calendar.ratings", { count: game.totalRatingCount })}</span>
-        ) : null}
+        )}
       </div>
     </div>
   );
