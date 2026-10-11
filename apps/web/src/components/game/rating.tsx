@@ -81,12 +81,6 @@ export function GradeBadge({
           {grade}
         </text>
       </svg>
-      {pressed && (
-        <i
-          className="seal-pulse pointer-events-none absolute -inset-1.5 border-2 border-current"
-          style={{ borderRadius: "50%" }}
-        />
-      )}
     </span>
   );
 }

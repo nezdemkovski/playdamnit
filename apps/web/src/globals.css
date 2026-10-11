@@ -296,7 +296,7 @@
   font-weight: 700;
 }
 
-/* The seal's moment: pressed on with a turn, one ring of light leaves it */
+/* The seal's moment: pressed on with a turn */
 @keyframes seal-press {
   0% {
     opacity: 0;
@@ -319,33 +319,13 @@
     transform: rotate(0);
   }
 }
-@keyframes seal-pulse {
-  0% {
-    opacity: 0.9;
-    scale: 0.9;
-  }
-  100% {
-    opacity: 0;
-    scale: 1.6;
-  }
-}
 .seal-in {
   animation: seal-press 0.5s cubic-bezier(0.2, 1.2, 0.3, 1) forwards;
 }
 .seal-spin {
   animation: seal-spin 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 1;
 }
-.seal-pulse {
-  animation: seal-pulse 0.7s 0.3s ease-out 1 forwards;
-  opacity: 0;
-}
 @media (prefers-reduced-motion: reduce) {
   .seal-in,
   .seal-spin,
-  .seal-pulse {
-    animation: none;
-  }
-  .seal-in {
-    opacity: 1;
-  }
-}
+  
