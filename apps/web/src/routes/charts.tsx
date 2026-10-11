@@ -265,6 +265,7 @@ function ChartRow({
               {igdb} · {compactNumber(game.totalRatingCount ?? 0)}
             </span>
           ) : null}
+          {tab !== ChartTab.Upcoming && igdb ? <span className="shrink-0">·</span> : null}
           <span className="truncate">
             {[
               releaseYear(game.firstReleaseDate),
