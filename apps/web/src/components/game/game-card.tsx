@@ -39,7 +39,11 @@ export function GameCard({ game, grade, tag, className }: GameCardProps) {
           {tag}
         </div>
       ) : null}
-      {grade ? <GradeBadge grade={grade} className="absolute top-1 right-1" /> : null}
+      {grade ? (
+        <div className="absolute top-0 right-0 bg-background p-1">
+          <GradeBadge grade={grade} className="block" />
+        </div>
+      ) : null}
     </Link>
   );
 }
