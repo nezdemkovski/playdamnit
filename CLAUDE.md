@@ -77,7 +77,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 
 #### Authentication (Better Auth 1.7)
 
-- `src/lib/auth.ts`: email/password (verification and password reset only when `RESEND_API_KEY` is set; otherwise sign-up needs no verification), passkeys (`@better-auth/passkey`), API keys (`@better-auth/api-key`, keys owned by `referenceId`), admin, username.
+- `src/lib/auth.ts`: email/password (verification and password reset only when `RESEND_API_KEY` is set; otherwise sign-up needs no verification), passkeys (`@better-auth/passkey`; `rpID` is the hostname of `BETTER_AUTH_URL`, allowed origins = `TRUSTED_ORIGINS` plus localhost:3000/3030 in development), API keys (`@better-auth/api-key`, keys owned by `referenceId`), admin, username. `user.deleteUser` (password-confirmed, rows cascade) and `user.changeEmail` are enabled; with email on, a change is verified from the new address, without it the address is applied directly. `BETTER_AUTH_URL` must be the API's public URL (defaults to http://localhost:3030 in development).
 - The auth tables are passed to `drizzleAdapter(db, { schema })` explicitly — Drizzle v1 clients carry no schema.
 - The auth tables live in `packages/db/src/schema.ts`; after a Better Auth upgrade compare them with `bunx @better-auth/cli generate` output (the config loads under Node now that the driver is `node-postgres`).
 - Auth endpoints are served by the `/api/auth/*` route in `src/index.ts`; don't also `.mount()` the handler.

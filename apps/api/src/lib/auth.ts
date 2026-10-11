@@ -15,13 +15,26 @@ import {
 } from "@/db/postgres";
 import { getConfig } from "@/config";
 import {
+  changeEmailTemplate,
   emailEnabled,
   resetPasswordEmailTemplate,
   sendEmail,
   sendVerificationEmailTemplate,
 } from "@/utils/email";
 
-const { trustedOrigins, isDev } = getConfig();
+const { trustedOrigins, isDev, betterAuthUrl } = getConfig();
+
+// WebAuthn ties passkeys to the site's hostname (rpID) and accepts registrations only from the
+// listed browser origins: the web app's origins plus this API's own
+const DEV_WEB_ORIGINS = ["http://localhost:3000", "http://localhost:3030"];
+const rpID = betterAuthUrl ? new URL(betterAuthUrl).hostname : "localhost";
+const passkeyOrigins = [
+  ...new Set([
+    ...(betterAuthUrl ? [new URL(betterAuthUrl).origin] : []),
+    ...trustedOrigins,
+    ...(isDev ? DEV_WEB_ORIGINS : []),
+  ]),
+];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -58,8 +71,41 @@ export const auth = betterAuth({
       },
     }),
   },
-  plugins: [username(), passkey(), admin(), apiKey(), openAPI()],
+  user: {
+    // Password-confirmed, immediate; every row that references the user cascades
+    deleteUser: { enabled: true },
+    changeEmail: {
+      enabled: true,
+      // Without email the new address is applied directly (accounts are never verified then)
+      updateEmailWithoutVerification: !emailEnabled,
+      ...(emailEnabled && {
+        sendChangeEmailVerification: async ({
+          user,
+          newEmail,
+          url,
+        }: {
+          user: { email: string };
+          newEmail: string;
+          url: string;
+        }) => {
+          await sendEmail({
+            to: user.email,
+            subject: "Confirm your new email - playdamnit.com",
+            html: changeEmailTemplate(newEmail, url),
+          });
+        },
+      }),
+    },
+  },
+  plugins: [
+    username(),
+    passkey({ rpID, rpName: "PlayDamnIt", origin: passkeyOrigins }),
+    admin(),
+    apiKey(),
+    openAPI(),
+  ],
   secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: betterAuthUrl,
   trustedOrigins: (request) => {
     if (!request) return [];
 

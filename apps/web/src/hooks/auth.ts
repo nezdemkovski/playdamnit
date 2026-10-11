@@ -108,6 +108,37 @@ export const useChangePassword = () =>
     onError: (error) => toast.error(errorMessage(error, "Could not change the password")),
   });
 
+export const useChangeEmail = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (newEmail: string) => {
+      unwrap(await authClient.changeEmail({ newEmail, callbackURL: "/" }));
+      // Either the address changed right away, or a confirmation went to the current inbox
+      const session = (await authClient.getSession()).data;
+      return session?.user.email.toLowerCase() === newEmail.toLowerCase();
+    },
+    onSuccess: (applied) => {
+      queryClient.invalidateQueries({ queryKey: SESSION_KEY });
+      toast.success(applied ? "Email updated" : "Check your current inbox to confirm the change.");
+    },
+    onError: (error) => toast.error(errorMessage(error, "Could not change the email")),
+  });
+};
+
+export const useDeleteAccount = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async (password: string) => unwrap(await authClient.deleteUser({ password })),
+    onSuccess: async () => {
+      queryClient.clear();
+      toast.success("Your account is gone. Take care.");
+      navigate({ to: "/" });
+    },
+    onError: (error) => toast.error(errorMessage(error, "Could not delete the account")),
+  });
+};
+
 export const usePasskeys = (enabled: boolean) =>
   useQuery({
     queryKey: PASSKEYS_KEY,

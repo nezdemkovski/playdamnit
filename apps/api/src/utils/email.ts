@@ -33,6 +33,15 @@ export const sendVerificationEmailTemplate = (url: string) => `
     <p style="color: #666; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser: ${url}</p>
 `;
 
+export const changeEmailTemplate = (newEmail: string, url: string) => `
+    <h1>Confirm your new email</h1>
+    <p>Hello,</p>
+    <p>You asked to change the email of your playdamnit account to <b>${newEmail}</b>. Click the button below to confirm:</p>
+    <a href="${url}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 16px 0;">Confirm change</a>
+    <p>If you didn't request this, you can safely ignore this email.</p>
+    <p style="color: #666; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser: ${url}</p>
+`;
+
 export const sendEmail = async ({
   to,
   subject,
