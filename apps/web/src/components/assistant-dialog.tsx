@@ -120,7 +120,7 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
                         </p>
                       );
                     return (
-                      <GameRail key={i} className="[&>*]:w-24 sm:[&>*]:w-24 md:[&>*]:w-24">
+                      <GameRail key={i} itemClassName="basis-24">
                         {games.map((game) => (
                           <GameCard
                             key={game.id}

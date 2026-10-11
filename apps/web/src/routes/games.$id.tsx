@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 
 import { CommunityStats } from "@/components/game/community-stats";
 import { GameCard, GameRail } from "@/components/game/game-card";
+import { Rail } from "@/components/rail";
 import { GameCover } from "@/components/game/game-cover";
 import { GameLikeButton } from "@/components/game/like-button";
 import { LogGameButton } from "@/components/game/log-game-button";
@@ -402,13 +403,13 @@ function GameDetail({ game }: { game: Game }) {
           icon={CameraIcon}
           count={game.screenshots.length}
         >
-          <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
+          <Rail itemClassName="basis-[85%] sm:basis-[70%] md:basis-[60%]">
             {game.screenshots.map((shot, i) => (
               <button
                 type="button"
                 key={shot.id}
                 onClick={() => setMediaIndex(i)}
-                className="group w-[85%] shrink-0 cursor-zoom-in snap-start overflow-hidden bg-muted sm:w-[70%] md:w-[60%]"
+                className="group block w-full cursor-zoom-in overflow-hidden bg-muted"
               >
                 <img
                   src={igdbImage(shot.url, IgdbSize.ScreenshotBig) ?? undefined}
@@ -418,19 +419,19 @@ function GameDetail({ game }: { game: Game }) {
                 />
               </button>
             ))}
-          </div>
+          </Rail>
         </Section>
       )}
 
       {game.videos && game.videos.length > 0 && (
         <Section title={t("game.sections.videos")} icon={PlayIcon} count={game.videos.length}>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Rail itemClassName="basis-[70%] sm:basis-1/2 md:basis-1/3">
             {game.videos.map((video, i) => (
               <button
                 type="button"
                 key={video.id}
                 onClick={() => setMediaIndex(videoStart + i)}
-                className="group relative overflow-hidden bg-muted text-left"
+                className="group relative block w-full overflow-hidden bg-muted text-left"
                 title={video.name ?? undefined}
               >
                 <img
@@ -451,7 +452,7 @@ function GameDetail({ game }: { game: Game }) {
                 )}
               </button>
             ))}
-          </div>
+          </Rail>
         </Section>
       )}
 

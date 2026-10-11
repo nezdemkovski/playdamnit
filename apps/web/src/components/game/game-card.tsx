@@ -2,6 +2,8 @@ import type { Game } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 
+import { Rail } from "@/components/rail";
+
 import { GameCover } from "./game-cover";
 import { GradeBadge } from "./rating";
 import type { Grade } from "@/lib/enums";
@@ -46,22 +48,19 @@ export function GameCard({ game, grade, tag, className }: GameCardProps) {
   );
 }
 
-/** Horizontal rail of cards (home page rows, related games) */
+/** Horizontal rail of cards (home page rows, related games); seals may overhang the corners */
 export function GameRail({
   children,
+  itemClassName = "basis-28 sm:basis-32 md:basis-36",
   className,
 }: {
   children: React.ReactNode;
+  itemClassName?: string;
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "no-scrollbar -mx-3 -mt-3 flex snap-x gap-3 overflow-x-auto px-3 pt-3 pb-1 [&>*]:w-28 [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-32 md:[&>*]:w-36",
-        className,
-      )}
-    >
+    <Rail overhang itemClassName={itemClassName} className={className}>
       {children}
-    </div>
+    </Rail>
   );
 }
