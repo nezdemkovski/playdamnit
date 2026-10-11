@@ -6,14 +6,14 @@ Guidance for Claude Code (claude.ai/code) in this repository.
 
 Bun workspaces + Turborepo. Use **Bun** only (never npm, node, pnpm or yarn for scripts and installs).
 
-| Path                  | Package                  | What                                                                 |
-| --------------------- | ------------------------ | -------------------------------------------------------------------- |
-| `apps/api`            | `@playdamnit/api`        | Elysia 2 HTTP API (Bun)                                              |
-| `apps/librarian`      | `@playdamnit/librarian`  | pg-boss worker, sole owner of IGDB access (Bun)                      |
-| `apps/web`            | `@playdamnit/web`        | React SPA: Vite, TanStack Router + Query, Tailwind                   |
-| `packages/db`         | `@playdamnit/db`         | Drizzle schema, relations, migrations, migrator, job contract        |
-| `packages/api-client` | `@playdamnit/api-client` | OpenAPI spec + orval-generated React Query client (published to npm) |
-| `packages/tsconfig`   | `@playdamnit/tsconfig`   | Shared tsconfig for Bun services                                     |
+| Path                  | Package                  | What                                                               |
+| --------------------- | ------------------------ | ------------------------------------------------------------------ |
+| `apps/api`            | `@playdamnit/api`        | Elysia 2 HTTP API (Bun)                                            |
+| `apps/librarian`      | `@playdamnit/librarian`  | pg-boss worker, sole owner of IGDB access (Bun)                    |
+| `apps/web`            | `@playdamnit/web`        | React SPA: Vite, TanStack Router + Query, Tailwind                 |
+| `packages/db`         | `@playdamnit/db`         | Drizzle schema, relations, migrations, migrator, job contract      |
+| `packages/api-client` | `@playdamnit/api-client` | OpenAPI spec + orval-generated React Query client (workspace-only) |
+| `packages/tsconfig`   | `@playdamnit/tsconfig`   | Shared tsconfig for Bun services                                   |
 
 Workspace packages are imported by name (`@playdamnit/db/schema`, `@playdamnit/db/jobs`, ...) — never with relative paths across packages. `packages/db` ships TypeScript source; Bun and the bundler resolve it directly.
 
@@ -91,7 +91,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 
 - `spec.yaml` is the hand-maintained OpenAPI contract. **Update it with every route change.** `bun run generate` runs orval (`index.ts` is generated and gitignored), `build` bundles it.
 - Calls return the response body directly (the axios mutator unwraps `response.data`). Apps set the API URL with `configureApiClient({ baseURL })`; `generated.ts` is orval output (gitignored), `index.ts` is the hand-written entry.
-- Changes to `spec.yaml`, `index.ts`, `custom-axios.ts` or `orval.config.mjs` on `master` publish a new patch version to npm.
+- The package is consumed only by `apps/web` through the workspace; it is not published anywhere.
 
 ### Web (`apps/web`)
 
@@ -124,4 +124,4 @@ TEST_POSTGRES_URL=postgres://.../playdamnit_test bun run test       # + integrat
 
 - Dockerfiles live in each app and build from the **repo root** with `turbo prune` (`docker build -f apps/api/Dockerfile .`). `docker compose up -d --build` runs postgres, api (runs migrations, `/health`), librarian and web. Images run as non-root on a read-only root filesystem (`LOG_DIR=/tmp/logs`; the web image is nginx-unprivileged).
 - Helm charts in `charts/playdamnit-{api,librarian,web}` (scaffolded with `helm create`): `version`/`appVersion` is the release number, the image tag defaults to `appVersion`. Bump all three together. The homelab deployment (Flux, `homelab-gitops`) is described in `docs/CATALOG_MIRROR_PLAN.md`.
-- `.github/workflows`: `ci.yml` (oxlint, oxfmt check, db:check, typecheck, test with Postgres, build, helm lint/template), `docker-publish.yml` (images per app to GHCR tagged with the chart appVersion, charts to `oci://ghcr.io/nezdemkovski/charts`), `orval-client-generator.yml` (publishes the client).
+- `.github/workflows`: `ci.yml` (oxlint, oxfmt check, db:check, typecheck, test with Postgres, build, helm lint/template), `docker-publish.yml` (images per app to GHCR tagged with the chart appVersion, charts to `oci://ghcr.io/nezdemkovski/charts`).
