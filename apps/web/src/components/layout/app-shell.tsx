@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh">
       <Sidebar onSearch={() => setSearchOpen(true)} onAssistant={() => setAssistantOpen(true)} />
-      <div className="pb-20 md:pb-0 md:pl-[72px]">
+      <div className="pb-20 md:pb-0 md:pl-[72px] xl:pl-60">
         <main className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6 md:pt-6">
           {children}
           <Footer />

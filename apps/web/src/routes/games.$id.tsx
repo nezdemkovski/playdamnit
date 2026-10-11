@@ -1,27 +1,42 @@
-import { useGetApiGamesById, type Game } from "@playdamnit/api-client";
+import { useGetApiGamesById, useGetApiGamesByIdReviews, type Game } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CameraIcon,
   ClockIcon,
   ExternalLinkIcon,
   LayersIcon,
+  MessageSquareTextIcon,
   PlayIcon,
+  SparklesIcon,
   StarIcon,
   UsersIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useState } from "react";
 
+import { CommunityStats } from "@/components/game/community-stats";
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { GameCover } from "@/components/game/game-cover";
+import { GameLikeButton } from "@/components/game/like-button";
 import { LogGameButton } from "@/components/game/log-game-button";
+import { ManageListsButton } from "@/components/game/manage-lists-dialog";
 import { RatingValue, StatusPill } from "@/components/game/rating";
+import { Markdown } from "@/components/markdown";
 import { Section } from "@/components/section";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ReviewCard } from "@/components/social/review-card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
-import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
+import {
+  compactNumber,
+  formatHours,
+  gameTypeName,
+  ratingColor,
+  releaseDate,
+  shortDate,
+} from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 
 export const Route = createFileRoute("/games/$id")({
@@ -84,6 +99,9 @@ function GameDetail({ game }: { game: Game }) {
   const stores = (game.externalGames ?? []).filter((e) => e.url);
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
+  const community = game.community!;
+  const [reviewSort, setReviewSort] = useState<"latest" | "top">("latest");
+  const reviews = useGetApiGamesByIdReviews(game.id, { sort: reviewSort, limit: 20 });
 
   return (
     <>
@@ -129,27 +147,48 @@ function GameDetail({ game }: { game: Game }) {
                   </span>
                 </Stat>
               ) : null}
-              {game.isPopular && (
-                <Stat label="Popularity">
-                  <span className="text-2xl font-bold">Top</span>
-                  <span className="text-xs text-dimmed">among IGDB users</span>
-                </Stat>
-              )}
+              <Stat label="Members">
+                <span
+                  className={cn(
+                    "text-2xl font-bold",
+                    community.ratingAverage ? ratingColor(community.ratingAverage) : "",
+                  )}
+                >
+                  {community.ratingAverage?.toFixed(1) ?? community.total}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-dimmed">
+                  <UsersIcon className="size-3" /> {community.total} in lists
+                </span>
+              </Stat>
             </dl>
           </div>
 
-          <div className="panel flex items-center gap-4 bg-background/80 p-4 backdrop-blur-md sm:p-5">
-            <Avatar className="size-12 border border-white/30">
-              <AvatarImage src={user?.image ?? undefined} alt="" />
-              <AvatarFallback className="bg-[#1c1f21] text-lg font-semibold">
-                {(user?.username ?? "?").slice(0, 1).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="mb-1.5 text-xs text-dimmed">
-                {entry ? "In your list" : "Your rating"}
+          <div className="panel flex flex-col gap-3 bg-background/80 p-4 backdrop-blur-md sm:p-5">
+            <div className="flex items-center gap-4">
+              <UserAvatar
+                user={user ?? { username: "?" }}
+                className="size-12"
+                textClassName="text-lg"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="mb-1.5 text-xs text-dimmed">
+                  {entry ? "In your list" : "Your rating"}
+                </div>
+                <LogGameButton game={game} entry={entry} />
               </div>
-              <LogGameButton game={game} entry={entry} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <GameLikeButton
+                gameId={game.id}
+                liked={game.viewer?.liked ?? false}
+                count={community.likes}
+              />
+              <ManageListsButton gameId={game.id} gameName={game.name} />
+              {community.lists > 0 && (
+                <span className="text-xs text-dimmed">
+                  in {community.lists} public {community.lists === 1 ? "list" : "lists"}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -184,10 +223,13 @@ function GameDetail({ game }: { game: Game }) {
           <div className="mb-2 flex items-center gap-2 text-sm">
             <span className="font-semibold">Your review</span>
             <RatingValue value={entry.rating} />
+            {entry.spoilers && <span className="text-xs text-dimmed">marked as spoilers</span>}
           </div>
-          <p className="whitespace-pre-line leading-relaxed">{entry.review}</p>
+          <Markdown>{entry.review}</Markdown>
         </div>
       )}
+
+      <CommunityStats community={community} className="mt-6 max-w-3xl" />
 
       <dl className="mt-8 grid gap-x-8 gap-y-2 md:grid-cols-2">
         {game.developers?.length ? (
@@ -314,6 +356,57 @@ function GameDetail({ game }: { game: Game }) {
           </GameRail>
         </Section>
       )}
+
+      {game.similarGames && game.similarGames.length > 0 && (
+        <Section title="Similar games" icon={SparklesIcon} count={game.similarGames.length}>
+          <GameRail>
+            {game.similarGames.map((g) => (
+              <div key={g.id}>
+                <GameCard game={g} rating={byGameId.get(g.id)?.userGameData.rating} />
+                <div className="mt-2 line-clamp-2 text-xs font-semibold">{g.name}</div>
+              </div>
+            ))}
+          </GameRail>
+        </Section>
+      )}
+
+      <Section
+        title="Reviews"
+        icon={MessageSquareTextIcon}
+        count={community.reviews}
+        action={
+          <div className="flex gap-1 text-sm">
+            {(["latest", "top"] as const).map((sort) => (
+              <button
+                key={sort}
+                type="button"
+                onClick={() => setReviewSort(sort)}
+                className={cn(
+                  "rounded-full px-3 py-1 font-semibold capitalize",
+                  reviewSort === sort ? "bg-white/10 text-white" : "text-dimmed hover:text-white",
+                )}
+              >
+                {sort === "top" ? "Top liked" : "Latest"}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {reviews.isPending && <Skeleton className="h-32 rounded-card" />}
+        {reviews.data?.results.length === 0 && (
+          <div className="panel p-10 text-center text-sm text-dimmed">
+            No reviews yet.{" "}
+            {entry
+              ? "Edit your entry to write one."
+              : "Add the game to your list and write the first."}
+          </div>
+        )}
+        <div className="space-y-3">
+          {reviews.data?.results.map((review) => (
+            <ReviewCard key={review.id} review={review} />
+          ))}
+        </div>
+      </Section>
 
       {game.localizedCovers && game.localizedCovers.length > 0 && (
         <Section title="Regional covers" icon={UsersIcon} count={game.localizedCovers.length}>

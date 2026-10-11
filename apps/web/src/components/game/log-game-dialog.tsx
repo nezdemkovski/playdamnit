@@ -34,7 +34,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Playthroughs } from "./playthroughs";
 import { useSession } from "@/hooks/auth";
 import { useLibraryMutations } from "@/hooks/library";
 import { formatRating, ratingColor } from "@/lib/format";
@@ -66,6 +68,8 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const [platformId, setPlatformId] = useState<string>("");
   const [endedAt, setEndedAt] = useState("");
   const [review, setReview] = useState("");
+  const [mastered, setMastered] = useState(false);
+  const [spoilers, setSpoilers] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Reset the form from the entry every time the dialog opens
@@ -76,7 +80,9 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     setPlatformId(String(entry?.platformId ?? game.platforms[0]?.id ?? ""));
     setEndedAt(toDateInput(entry?.endedAt));
     setReview(entry?.review ?? "");
-    setDetailsOpen(!!entry?.endedAt);
+    setMastered(entry?.mastered ?? false);
+    setSpoilers(entry?.spoilers ?? false);
+    setDetailsOpen(!!entry?.endedAt || !!entry?.mastered);
   }, [open, entry, game.platforms]);
 
   if (open && !user) {
@@ -94,7 +100,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     if (!platform) return;
     const trimmed = review.trim();
     const ended = showEnded && endedAt ? endedAt : null;
-    const common = { status, rating, platformId: platform };
+    const common = { status, rating, platformId: platform, mastered, spoilers };
     try {
       if (entry) {
         // null clears a previously set date
@@ -225,6 +231,20 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                   />
                 </div>
               )}
+              <div className="flex items-center gap-3 sm:col-span-2">
+                <Switch id="mastered" checked={mastered} onCheckedChange={setMastered} />
+                <Label htmlFor="mastered">Mastered (100%, platinum, true ending)</Label>
+              </div>
+              {entry && user?.username && (
+                <div className="sm:col-span-2">
+                  <Playthroughs
+                    username={user.username}
+                    gameId={game.id}
+                    platforms={game.platforms}
+                    defaultPlatformId={entry.platformId}
+                  />
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
 
@@ -237,8 +257,15 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               placeholder={`Write your review in less than ${MAX_REVIEW} characters…`}
               className="min-h-28"
             />
-            <div className="text-right text-xs text-dimmed">
-              {review.length} / {MAX_REVIEW}
+            <div className="flex items-center justify-between gap-3 text-xs text-dimmed">
+              <span>Markdown works: **bold**, *italic*, [links](url), lists.</span>
+              <span>
+                {review.length} / {MAX_REVIEW}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch id="spoilers" checked={spoilers} onCheckedChange={setSpoilers} />
+              <Label htmlFor="spoilers">Contains spoilers</Label>
             </div>
           </div>
 

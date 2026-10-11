@@ -1,0 +1,174 @@
+import { useGetApiUserByUsername } from "@playdamnit/api-client";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import {
+  BookOpenIcon,
+  HeartIcon,
+  LayersIcon,
+  LibraryIcon,
+  LinkIcon,
+  MessageSquareTextIcon,
+  SettingsIcon,
+  UserIcon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "cn";
+
+import { FollowButton } from "@/components/social/follow-button";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/user-avatar";
+
+export const Route = createFileRoute("/$username")({
+  component: ProfileLayout,
+});
+
+const TABS: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  count?: "games" | "reviews" | "lists";
+}[] = [
+  { to: "", label: "Profile", icon: UserIcon },
+  { to: "/games", label: "Games", icon: LibraryIcon, count: "games" },
+  { to: "/journal", label: "Journal", icon: BookOpenIcon },
+  { to: "/reviews", label: "Reviews", icon: MessageSquareTextIcon, count: "reviews" },
+  { to: "/lists", label: "Lists", icon: LayersIcon, count: "lists" },
+  { to: "/friends", label: "Friends", icon: UsersIcon },
+  { to: "/likes", label: "Likes", icon: HeartIcon },
+];
+
+/** Profile header (avatar, bio, links, follow) and the tab bar; tabs render in the outlet */
+function ProfileLayout() {
+  const { username } = Route.useParams();
+  const profile = useGetApiUserByUsername(username);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const base = `/${username}`;
+
+  if (profile.error) {
+    return (
+      <div className="panel mt-10 p-16 text-center text-dimmed">
+        No user called <span className="font-semibold text-white">@{username}</span>.
+        <div className="mt-4">
+          <Link to="/" className="font-semibold text-white hover:underline">
+            Back home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  if (profile.isPending) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-40 rounded-card" />
+        <Skeleton className="h-10 rounded-full" />
+        <Skeleton className="h-64 rounded-card" />
+      </div>
+    );
+  }
+  const user = profile.data;
+
+  return (
+    <>
+      <header className="panel p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <UserAvatar user={user} className="size-20 sm:size-24" textClassName="text-3xl" />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="truncate text-2xl font-bold">{user.name || user.username}</h1>
+              <span className="text-sm text-dimmed">@{user.username}</span>
+              {user.followsYou && (
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">Follows you</span>
+              )}
+              {!user.listPublic && (
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">Private list</span>
+              )}
+            </div>
+            {user.bio && <p className="mt-2 max-w-2xl text-sm text-white/80">{user.bio}</p>}
+            {user.links.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {user.links.map((link) => (
+                  <a
+                    key={link}
+                    href={link}
+                    target="_blank"
+                    rel="noreferrer nofollow"
+                    className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-dimmed hover:text-white"
+                  >
+                    <LinkIcon className="size-3" /> {new URL(link).hostname.replace(/^www\./, "")}
+                  </a>
+                ))}
+              </div>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+              <span>
+                <b>{user.counts.games}</b> <span className="text-dimmed">games</span>
+              </span>
+              <Link
+                to="/$username/friends"
+                params={{ username }}
+                search={{ tab: "followers" }}
+                className="hover:underline"
+              >
+                <b>{user.counts.followers}</b> <span className="text-dimmed">followers</span>
+              </Link>
+              <Link
+                to="/$username/friends"
+                params={{ username }}
+                search={{ tab: "following" }}
+                className="hover:underline"
+              >
+                <b>{user.counts.following}</b> <span className="text-dimmed">following</span>
+              </Link>
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {user.isOwn ? (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/$username/settings" params={{ username }}>
+                  <SettingsIcon /> Edit profile
+                </Link>
+              </Button>
+            ) : (
+              <FollowButton username={user.username} isFollowing={user.isFollowing} />
+            )}
+          </div>
+        </div>
+      </header>
+
+      <nav className="no-scrollbar mt-4 flex gap-1 overflow-x-auto border-b border-white/5">
+        {TABS.map((tab) => {
+          const href = base + tab.to;
+          const active =
+            tab.to === ""
+              ? pathname === base || pathname === `${base}/`
+              : pathname.startsWith(href);
+          const count = tab.count ? user.counts[tab.count] : undefined;
+          return (
+            <Link
+              key={tab.to}
+              to={href as "/$username"}
+              params={{ username }}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors",
+                active
+                  ? "border-white text-white"
+                  : "border-transparent text-dimmed hover:text-white",
+              )}
+            >
+              <tab.icon className="size-4" />
+              {tab.label}
+              {count !== undefined && count > 0 && (
+                <span className="text-xs text-dimmed">{count}</span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-5">
+        <Outlet />
+      </div>
+    </>
+  );
+}

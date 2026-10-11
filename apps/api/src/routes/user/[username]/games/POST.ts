@@ -25,6 +25,8 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       review: t.Optional(reviewSchema),
       platformId: platformIdSchema,
       endedAt: t.Optional(endedAtSchema),
+      mastered: t.Optional(t.Boolean()),
+      spoilers: t.Optional(t.Boolean()),
     }),
   },
   ({ params, user, body }) => {

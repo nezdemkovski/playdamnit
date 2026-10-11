@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/hooks/auth";
 
-export const Route = createFileRoute("/$username/settings")({
+export const Route = createFileRoute("/$username_/settings")({
   component: SettingsPage,
 });
 

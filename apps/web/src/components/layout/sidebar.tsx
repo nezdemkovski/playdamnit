@@ -1,5 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BarChart3Icon,
+  BellIcon,
+  CalendarDaysIcon,
   HomeIcon,
   LibraryIcon,
   LogInIcon,
@@ -7,17 +10,30 @@ import {
   SearchIcon,
   SettingsIcon,
   SparklesIcon,
+  UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { UserAvatar } from "@/components/user-avatar";
 import { useSession, useSignOut } from "@/hooks/auth";
+import { useNotifications } from "@/hooks/social";
+
+type To =
+  | "/"
+  | "/auth"
+  | "/calendar"
+  | "/charts"
+  | "/community"
+  | "/notifications"
+  | "/$username"
+  | "/$username/settings";
 
 const itemClass = (active: boolean) =>
   cn(
-    "flex size-11 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    "relative flex items-center gap-3 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+    "size-11 justify-center xl:h-11 xl:w-full xl:justify-start xl:px-4",
     active ? "bg-white/10 text-white" : "text-dimmed hover:bg-white/5 hover:text-white",
   );
 
@@ -28,15 +44,27 @@ function RailItem({
   onClick,
   to,
   params,
+  badge,
 }: {
   label: string;
   icon: LucideIcon;
   active?: boolean;
   onClick?: () => void;
-  to?: "/" | "/auth" | "/$username" | "/$username/settings";
+  to?: To;
   params?: Record<string, string>;
+  badge?: number;
 }) {
-  const content = <Icon className="size-5" strokeWidth={2} />;
+  const content = (
+    <>
+      <Icon className="size-5 shrink-0" strokeWidth={2} />
+      <span className="hidden text-sm font-semibold xl:inline">{label}</span>
+      {badge ? (
+        <span className="absolute top-1.5 right-1.5 min-w-4 rounded-full bg-status-playing px-1 text-center text-[10px] font-bold leading-4 text-black xl:static xl:ml-auto">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      ) : null}
+    </>
+  );
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -55,7 +83,9 @@ function RailItem({
           </button>
         )}
       </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side="right" className="xl:hidden">
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 }
@@ -66,76 +96,155 @@ interface SidebarProps {
 }
 
 /**
- * The icon rail from the reference design: logo, avatar, search and the main sections.
- * Fixed on the left from the md breakpoint, a bottom bar on phones.
+ * The icon rail from the reference design: logo, avatar, search and the main sections. Icons
+ * only from md, icons with labels from xl, a bottom bar on phones.
  */
 export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
   const { user } = useSession();
   const signOut = useSignOut();
+  const { unread } = useNotifications(!!user);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const username = user?.username ?? "";
   const profilePath = `/${username}`;
+  const is = (path: string) => pathname === path;
 
-  const items = (
+  const common = (
     <>
-      <RailItem label="Home" icon={HomeIcon} to="/" active={pathname === "/"} />
-      {user ? (
-        <>
-          <RailItem
-            label="My list"
-            icon={LibraryIcon}
-            to="/$username"
-            params={{ username }}
-            active={pathname === profilePath}
-          />
-          <RailItem label="AI assistant" icon={SparklesIcon} onClick={onAssistant} />
-          <RailItem
-            label="Settings"
-            icon={SettingsIcon}
-            to="/$username/settings"
-            params={{ username }}
-            active={pathname === `${profilePath}/settings`}
-          />
-          <RailItem label="Sign out" icon={LogOutIcon} onClick={() => signOut.mutate()} />
-        </>
-      ) : (
-        <RailItem label="Sign in" icon={LogInIcon} to="/auth" active={pathname === "/auth"} />
-      )}
+      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem
+        label="Calendar"
+        icon={CalendarDaysIcon}
+        to="/calendar"
+        active={pathname.startsWith("/calendar")}
+      />
+      <RailItem
+        label="Charts"
+        icon={BarChart3Icon}
+        to="/charts"
+        active={pathname.startsWith("/charts")}
+      />
+      <RailItem
+        label="Community"
+        icon={UsersIcon}
+        to="/community"
+        active={pathname.startsWith("/community")}
+      />
+    </>
+  );
+
+  const rail = user ? (
+    <>
+      {common}
+      <RailItem
+        label="My games"
+        icon={LibraryIcon}
+        to="/$username"
+        params={{ username }}
+        active={pathname.startsWith(profilePath) && !is(`${profilePath}/settings`)}
+      />
+      <RailItem
+        label="Notifications"
+        icon={BellIcon}
+        to="/notifications"
+        active={is("/notifications")}
+        badge={unread}
+      />
+      <RailItem label="AI assistant" icon={SparklesIcon} onClick={onAssistant} />
+      <RailItem
+        label="Settings"
+        icon={SettingsIcon}
+        to="/$username/settings"
+        params={{ username }}
+        active={is(`${profilePath}/settings`)}
+      />
+      <RailItem label="Sign out" icon={LogOutIcon} onClick={() => signOut.mutate()} />
+    </>
+  ) : (
+    <>
+      {common}
+      <RailItem label="Sign in" icon={LogInIcon} to="/auth" active={is("/auth")} />
+    </>
+  );
+
+  const mobile = user ? (
+    <>
+      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem
+        label="Charts"
+        icon={BarChart3Icon}
+        to="/charts"
+        active={pathname.startsWith("/charts")}
+      />
+      <RailItem
+        label="My games"
+        icon={LibraryIcon}
+        to="/$username"
+        params={{ username }}
+        active={pathname.startsWith(profilePath)}
+      />
+      <RailItem
+        label="Notifications"
+        icon={BellIcon}
+        to="/notifications"
+        active={is("/notifications")}
+        badge={unread}
+      />
+      <RailItem
+        label="Community"
+        icon={UsersIcon}
+        to="/community"
+        active={pathname.startsWith("/community")}
+      />
+    </>
+  ) : (
+    <>
+      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem
+        label="Charts"
+        icon={BarChart3Icon}
+        to="/charts"
+        active={pathname.startsWith("/charts")}
+      />
+      <RailItem
+        label="Calendar"
+        icon={CalendarDaysIcon}
+        to="/calendar"
+        active={pathname.startsWith("/calendar")}
+      />
+      <RailItem label="Sign in" icon={LogInIcon} to="/auth" active={is("/auth")} />
     </>
   );
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col items-center gap-2 border-r border-white/5 bg-sidebar py-5 md:flex">
-        <Link to="/" className="mb-3 block overflow-hidden rounded-lg" aria-label="PlayDamnIt">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col items-center gap-2 border-r border-white/5 bg-sidebar px-3 py-5 md:flex xl:w-60 xl:items-stretch">
+        <Link
+          to="/"
+          className="mb-3 block self-center overflow-hidden rounded-lg xl:self-start"
+          aria-label="PlayDamnIt"
+        >
           <img src="/logo.svg" alt="" className="h-8 w-auto" />
         </Link>
         {user && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to="/$username"
-                params={{ username }}
-                className="mb-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Avatar className="size-10 border border-white/30">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                  <AvatarFallback className="bg-[#1c1f21] text-lg font-semibold">
-                    {(user.username ?? user.name).slice(0, 1).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">@{username}</TooltipContent>
-          </Tooltip>
+          <Link
+            to="/$username"
+            params={{ username }}
+            className="mb-1 flex items-center gap-3 self-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring xl:self-stretch xl:px-1"
+          >
+            <UserAvatar user={user} className="size-10" textClassName="text-lg" />
+            <span className="hidden min-w-0 xl:block">
+              <span className="block truncate text-sm font-bold">{user.name || username}</span>
+              <span className="block truncate text-xs text-dimmed">@{username}</span>
+            </span>
+          </Link>
         )}
         <RailItem label="Search" icon={SearchIcon} onClick={onSearch} />
-        <nav className="mt-2 flex flex-col items-center gap-1">{items}</nav>
+        <nav className="mt-2 flex flex-col items-center gap-1 xl:items-stretch">{rail}</nav>
       </aside>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/5 bg-sidebar/95 px-2 py-1.5 backdrop-blur md:hidden">
         <RailItem label="Search" icon={SearchIcon} onClick={onSearch} />
-        {items}
+        {mobile}
       </nav>
     </>
   );

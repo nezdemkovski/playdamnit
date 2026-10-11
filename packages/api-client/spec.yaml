@@ -232,8 +232,21 @@ components:
             $ref: "#/components/schemas/GameType"
         similarGames:
           type: array
+          description: Only present on GET /api/games/{id}; cards of IGDB's similar games
           items:
-            $ref: "#/components/schemas/GameSimilarGame"
+            $ref: "#/components/schemas/GameRelated"
+        community:
+          description: Only present on GET /api/games/{id}; what members did with the game
+          allOf:
+            - $ref: "#/components/schemas/GameCommunity"
+        viewer:
+          description: Only present on GET /api/games/{id}
+          type: object
+          properties:
+            liked:
+              type: boolean
+          required:
+            - liked
         totalRatingCount:
           type: number
           nullable: true
@@ -469,13 +482,569 @@ components:
         - id
         - url
 
-    GameSimilarGame:
+    GameCommunity:
+      type: object
+      properties:
+        total:
+          type: number
+          description: Members with the game in their list
+        statuses:
+          type: object
+          additionalProperties:
+            type: number
+          description: Count per status
+        mastered:
+          type: number
+        ratingAverage:
+          type: number
+          nullable: true
+        ratingCount:
+          type: number
+        histogram:
+          type: array
+          description: Ratings bucketed 1..10
+          items:
+            type: number
+        reviews:
+          type: number
+        likes:
+          type: number
+        lists:
+          type: number
+          description: Public lists containing the game
+      required:
+        - total
+        - statuses
+        - mastered
+        - ratingAverage
+        - ratingCount
+        - histogram
+        - reviews
+        - likes
+        - lists
+
+    PublicUser:
       type: object
       properties:
         id:
-          type: number
+          type: string
+        username:
+          type: string
+          nullable: true
+        name:
+          type: string
+        image:
+          type: string
+          nullable: true
       required:
         - id
+        - username
+        - name
+        - image
+
+    Review:
+      type: object
+      description: A library entry with text; `id` is the entry id used for likes
+      properties:
+        id:
+          type: string
+        gameId:
+          type: number
+        user:
+          $ref: "#/components/schemas/PublicUser"
+        rating:
+          type: number
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        mastered:
+          type: boolean
+        spoilers:
+          type: boolean
+        review:
+          type: string
+        platformId:
+          type: number
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        addedAt:
+          type: string
+        updatedAt:
+          type: string
+        likes:
+          type: number
+        liked:
+          type: boolean
+        game:
+          description: Present on feeds (not on a game's own reviews)
+          allOf:
+            - $ref: "#/components/schemas/Game"
+      required:
+        - id
+        - gameId
+        - user
+        - rating
+        - status
+        - mastered
+        - spoilers
+        - review
+        - platformId
+        - endedAt
+        - addedAt
+        - updatedAt
+        - likes
+        - liked
+
+    ReviewListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - results
+        - meta
+
+    LikeResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+      required:
+        - liked
+
+    FollowResponse:
+      type: object
+      properties:
+        following:
+          type: boolean
+      required:
+        - following
+
+    CommunityUser:
+      allOf:
+        - $ref: "#/components/schemas/PublicUser"
+        - type: object
+          properties:
+            bio:
+              type: string
+              nullable: true
+            gamesCount:
+              type: number
+            followersCount:
+              type: number
+            isFollowing:
+              type: boolean
+          required:
+            - gamesCount
+            - followersCount
+            - isFollowing
+
+    CommunityUserListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommunityUser"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - results
+        - meta
+
+    ConnectionUser:
+      allOf:
+        - $ref: "#/components/schemas/PublicUser"
+        - type: object
+          properties:
+            isFollowing:
+              type: boolean
+          required:
+            - isFollowing
+
+    ConnectionListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectionUser"
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - results
+        - meta
+
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        bio:
+          type: string
+          nullable: true
+          maxLength: 300
+        links:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        listPublic:
+          type: boolean
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [follow, review_like]
+        actor:
+          $ref: "#/components/schemas/PublicUser"
+        game:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: number
+            name:
+              type: string
+            slug:
+              type: string
+            cover:
+              $ref: "#/components/schemas/GameCover"
+          required:
+            - id
+            - name
+            - slug
+            - cover
+        readAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - actor
+        - game
+        - readAt
+        - createdAt
+
+    NotificationListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        unread:
+          type: number
+      required:
+        - results
+        - unread
+
+    FeedItem:
+      type: object
+      description: A list entry a followed member added or changed
+      properties:
+        id:
+          type: string
+        user:
+          $ref: "#/components/schemas/PublicUser"
+        game:
+          $ref: "#/components/schemas/Game"
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        mastered:
+          type: boolean
+        hasReview:
+          type: boolean
+        at:
+          type: string
+        isNew:
+          type: boolean
+          description: Added rather than changed
+      required:
+        - id
+        - user
+        - game
+        - status
+        - rating
+        - mastered
+        - hasReview
+        - at
+        - isNew
+
+    FeedResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedItem"
+      required:
+        - results
+
+    Playthrough:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        gameId:
+          type: number
+        startedAt:
+          type: string
+          nullable: true
+          description: YYYY-MM-DD
+        endedAt:
+          type: string
+          nullable: true
+          description: YYYY-MM-DD
+        hours:
+          type: number
+          nullable: true
+        platformId:
+          type: number
+          nullable: true
+        platform:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GamePlatform"
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - gameId
+        - startedAt
+        - endedAt
+        - hours
+        - platformId
+        - note
+        - createdAt
+
+    PlaythroughInput:
+      type: object
+      properties:
+        startedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        hours:
+          type: number
+          nullable: true
+        platformId:
+          type: number
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    JournalItem:
+      type: object
+      description: A playthrough, or a finished/dropped entry that has no playthrough logged
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [playthrough, entry]
+        date:
+          type: string
+          description: YYYY-MM-DD, what the journal is ordered by
+        startedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        hours:
+          type: number
+          nullable: true
+        platform:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GamePlatform"
+        note:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        mastered:
+          type: boolean
+        game:
+          $ref: "#/components/schemas/Game"
+      required:
+        - id
+        - kind
+        - date
+        - startedAt
+        - endedAt
+        - hours
+        - platform
+        - note
+        - game
+
+    JournalResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/JournalItem"
+        private:
+          type: boolean
+      required:
+        - results
+        - private
+
+    GameListSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          $ref: "#/components/schemas/PublicUser"
+        gamesCount:
+          type: number
+        covers:
+          type: array
+          description: The first few covers, for the list card
+          items:
+            $ref: "#/components/schemas/GameCover"
+      required:
+        - id
+        - name
+        - description
+        - isPublic
+        - createdAt
+        - updatedAt
+        - gamesCount
+        - covers
+
+    GameListDetail:
+      allOf:
+        - $ref: "#/components/schemas/GameListSummary"
+        - type: object
+          properties:
+            games:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/Game"
+                  - type: object
+                    properties:
+                      position:
+                        type: number
+                      note:
+                        type: string
+                        nullable: true
+                    required:
+                      - position
+                      - note
+          required:
+            - games
+
+    GameListInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        isPublic:
+          type: boolean
+
+    GameListMembership:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isPublic:
+          type: boolean
+        contains:
+          type: boolean
+      required:
+        - id
+        - name
+        - isPublic
+        - contains
+
+    CatalogLookups:
+      type: object
+      properties:
+        genres:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameGenre"
+        platforms:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamePlatform"
+        types:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameType"
+      required:
+        - genres
+        - platforms
+        - types
+
+    LikedGameListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Game"
+              - type: object
+                properties:
+                  likedAt:
+                    type: string
+                required:
+                  - likedAt
+        meta:
+          $ref: "#/components/schemas/Meta"
+      required:
+        - results
+        - meta
 
     GameType:
       type: object
@@ -535,6 +1104,9 @@ components:
     UserGameData:
       type: object
       properties:
+        id:
+          type: string
+          description: Entry id (the review id for likes)
         status:
           $ref: "#/components/schemas/StatusEnum"
         rating:
@@ -558,11 +1130,21 @@ components:
             - steam
             - gog
             - manual
+        mastered:
+          type: boolean
+        spoilers:
+          type: boolean
+        updatedAt:
+          type: string
       required:
+        - id
         - status
         - rating
         - platformId
         - addedAt
+        - mastered
+        - spoilers
+        - updatedAt
 
     UserGamePatchResponse:
       type: object
@@ -642,18 +1224,32 @@ components:
           type: string
         image:
           type: string
+          nullable: true
         name:
           type: string
         username:
           type: string
+          nullable: true
         email:
           type: string
+        bio:
+          type: string
+          nullable: true
+        links:
+          type: array
+          items:
+            type: string
+        listPublic:
+          type: boolean
       required:
         - id
         - image
         - name
         - username
         - email
+        - bio
+        - links
+        - listPublic
 
     PublicUserResponse:
       type: object
@@ -662,21 +1258,60 @@ components:
           type: string
         image:
           type: string
+          nullable: true
         name:
           type: string
         username:
           type: string
-        games:
+        bio:
+          type: string
+          nullable: true
+        links:
           type: array
           items:
-            type: object
-            properties: {}
+            type: string
+        listPublic:
+          type: boolean
+        createdAt:
+          type: string
+        counts:
+          type: object
+          properties:
+            games:
+              type: number
+            followers:
+              type: number
+            following:
+              type: number
+            reviews:
+              type: number
+            lists:
+              type: number
+          required:
+            - games
+            - followers
+            - following
+            - reviews
+            - lists
+        isFollowing:
+          type: boolean
+        followsYou:
+          type: boolean
+        isOwn:
+          type: boolean
       required:
         - id
         - image
         - name
         - username
-        - games
+        - bio
+        - links
+        - listPublic
+        - createdAt
+        - counts
+        - isFollowing
+        - followsYou
+        - isOwn
 
     UserGameCreateRequest:
       type: object
@@ -700,6 +1335,10 @@ components:
           type: string
           nullable: true
           description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
+        mastered:
+          type: boolean
+        spoilers:
+          type: boolean
       required:
         - gameId
         - status
@@ -725,6 +1364,10 @@ components:
           type: string
           nullable: true
           description: Date when the game was finished or dropped. Only applicable for games with status 'finished' or 'dropped'.
+        mastered:
+          type: boolean
+        spoilers:
+          type: boolean
       minProperties: 1
 
     ChatRequest:
@@ -912,6 +1555,32 @@ components:
 
 paths:
   /api/me:
+    patch:
+      operationId: patchApiMe
+      tags:
+        - User
+      summary: Update bio, links and list privacy
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdateRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
     get:
       operationId: getApiMe
       tags:
@@ -982,15 +1651,53 @@ paths:
           schema:
             type: number
             default: 0
+        - name: genreId
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: year
+          in: query
+          required: false
+          description: Release year
+          schema:
+            type: number
+        - name: releasedFrom
+          in: query
+          required: false
+          description: Unix seconds, inclusive
+          schema:
+            type: number
+        - name: releasedTo
+          in: query
+          required: false
+          description: Unix seconds, inclusive
+          schema:
+            type: number
+        - name: types
+          in: query
+          required: false
+          description: Comma-separated IGDB game_type ids to keep
+          schema:
+            type: string
+        - name: ids
+          in: query
+          required: false
+          description: Comma-separated game ids; results come back in catalog order
+          schema:
+            type: string
         - name: sort
           in: query
           required: false
           description: >-
-            id (catalog order, default), popular (IGDB rating count) or recent (released games,
-            newest first; unreleased and undated games are left out)
+            id (catalog order, default), popular (IGDB rating count), rating (IGDB rating, games
+            with enough votes), recent (released games with a cover, newest first), upcoming
+            (unreleased games with a cover, soonest first), wanted (most wanted/backlogged by
+            members), played (most members) or date (release calendar: dated games with a
+            cover in date order, combine with releasedFrom/releasedTo)
           schema:
             type: string
-            enum: [id, popular, recent]
+            enum: [id, popular, rating, recent, upcoming, wanted, played, date]
       operationId: getApiGames
       tags:
         - Games
@@ -1543,6 +2250,972 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundErrorResponse"
+
+  /api/me/avatar:
+    post:
+      operationId: postApiMeAvatar
+      tags:
+        - User
+      summary: Upload an avatar (JPEG, PNG, WebP or GIF, up to 2 MB)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "200":
+          description: The new image path (relative to the API)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    nullable: true
+                required:
+                  - image
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+    delete:
+      operationId: deleteApiMeAvatar
+      tags:
+        - User
+      summary: Remove the avatar
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    nullable: true
+                required:
+                  - image
+
+  /api/me/notifications:
+    get:
+      operationId: getApiMeNotifications
+      tags:
+        - User
+      summary: Latest notifications and the unread count
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 30
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /api/me/notifications/read:
+    post:
+      operationId: postApiMeNotificationsRead
+      tags:
+        - User
+      summary: Mark every notification read
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Done
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
+
+  /api/me/feed:
+    get:
+      operationId: getApiMeFeed
+      tags:
+        - User
+      summary: What the people you follow did lately
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 40
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        "200":
+          description: Feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedResponse"
+
+  /api/users:
+    get:
+      operationId: getApiUsers
+      tags:
+        - User
+      summary: "Community: members with their list size and followers"
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [games, followers, newest]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 30
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityUserListResponse"
+
+  /api/user/{username}/follow:
+    post:
+      operationId: postApiUserByUsernameFollow
+      tags:
+        - User
+      summary: Follow a member
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Following
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+    delete:
+      operationId: deleteApiUserByUsernameFollow
+      tags:
+        - User
+      summary: Unfollow a member
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Not following
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResponse"
+
+  /api/user/{username}/followers:
+    get:
+      operationId: getApiUserByUsernameFollowers
+      tags:
+        - User
+      summary: Who follows this member
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Followers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionListResponse"
+
+  /api/user/{username}/following:
+    get:
+      operationId: getApiUserByUsernameFollowing
+      tags:
+        - User
+      summary: Who this member follows
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Following
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionListResponse"
+
+  /api/user/{username}/reviews:
+    get:
+      operationId: getApiUserByUsernameReviews
+      tags:
+        - User
+      summary: A member's reviews with their games, newest first
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+
+  /api/user/{username}/journal:
+    get:
+      operationId: getApiUserByUsernameJournal
+      tags:
+        - User
+      summary: Playthroughs and finished entries, newest first
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Journal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalResponse"
+
+  /api/user/{username}/likes:
+    get:
+      operationId: getApiUserByUsernameLikes
+      tags:
+        - User
+      summary: Games a member liked
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Liked games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikedGameListResponse"
+
+  /api/user/{username}/lists:
+    get:
+      operationId: getApiUserByUsernameLists
+      tags:
+        - Lists
+      summary: A member's lists (private ones only for the owner)
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameListSummary"
+    post:
+      operationId: postApiUserByUsernameLists
+      tags:
+        - Lists
+      summary: Create a list
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameListInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameListSummary"
+
+  /api/user/{username}/avatar:
+    get:
+      operationId: getApiUserByUsernameAvatar
+      tags:
+        - User
+      summary: The uploaded avatar image
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Image bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No avatar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
+  /api/user/{username}/games/{id}/playthroughs:
+    get:
+      operationId: getApiUserByUsernameGamesByIdPlaythroughs
+      tags:
+        - User
+      summary: Playthroughs of one entry
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Playthroughs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Playthrough"
+    post:
+      operationId: postApiUserByUsernameGamesByIdPlaythroughs
+      tags:
+        - User
+      summary: Log a playthrough
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaythroughInput"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playthrough"
+
+  /api/user/{username}/games/{id}/playthroughs/{playthroughId}:
+    patch:
+      operationId: patchApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId
+      tags:
+        - User
+      summary: Edit a playthrough
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: playthroughId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaythroughInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Playthrough"
+    delete:
+      operationId: deleteApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId
+      tags:
+        - User
+      summary: Delete a playthrough
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: playthroughId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: string
+                required:
+                  - message
+                  - id
+
+  /api/catalog:
+    get:
+      operationId: getApiCatalog
+      tags:
+        - Games
+      summary: Lookup tables for filters (genres, platforms with games, game types)
+      responses:
+        "200":
+          description: Lookups
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogLookups"
+
+  /api/games/{id}/reviews:
+    get:
+      operationId: getApiGamesByIdReviews
+      tags:
+        - Games
+      summary: Members' reviews of a game
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [latest, top]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+
+  /api/games/{id}/like:
+    post:
+      operationId: postApiGamesByIdLike
+      tags:
+        - Games
+      summary: Like a game
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+    delete:
+      operationId: deleteApiGamesByIdLike
+      tags:
+        - Games
+      summary: Remove the like
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Not liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+
+  /api/games/{id}/lists:
+    get:
+      operationId: getApiGamesByIdLists
+      tags:
+        - Lists
+      summary: The signed-in member's lists, flagged with whether each contains the game
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameListMembership"
+
+  /api/reviews:
+    get:
+      operationId: getApiReviews
+      tags:
+        - Games
+      summary: Site-wide review feed
+      parameters:
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [latest, top]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 0
+        - name: following
+          in: query
+          required: false
+          description: Any value keeps only people the viewer follows
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reviews with their games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+
+  /api/reviews/{id}/like:
+    post:
+      operationId: postApiReviewsByIdLike
+      tags:
+        - Games
+      summary: Like a review
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+    delete:
+      operationId: deleteApiReviewsByIdLike
+      tags:
+        - Games
+      summary: Remove the like
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Not liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+
+  /api/lists/{id}:
+    get:
+      operationId: getApiListsById
+      tags:
+        - Lists
+      summary: A list with its games in order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameListDetail"
+        "404":
+          description: Not found (or private)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+    patch:
+      operationId: patchApiListsById
+      tags:
+        - Lists
+      summary: Rename, describe or hide a list
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameListInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameListSummary"
+    delete:
+      operationId: deleteApiListsById
+      tags:
+        - Lists
+      summary: Delete a list
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: string
+                required:
+                  - message
+                  - id
+
+  /api/lists/{id}/games:
+    put:
+      operationId: putApiListsByIdGames
+      tags:
+        - Lists
+      summary: Replace the list's games with this ordered set
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gameIds:
+                  type: array
+                  items:
+                    type: number
+              required:
+                - gameIds
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: number
+                required:
+                  - count
+    post:
+      operationId: postApiListsByIdGames
+      tags:
+        - Lists
+      summary: Append a game
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gameId:
+                  type: number
+              required:
+                - gameId
+      responses:
+        "200":
+          description: Added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: boolean
+                required:
+                  - added
+
+  /api/lists/{id}/games/{gameId}:
+    delete:
+      operationId: deleteApiListsByIdGamesByGameId
+      tags:
+        - Lists
+      summary: Remove a game from the list
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: boolean
+                required:
+                  - added
 
   /api/chat/ai:
     post:

@@ -18,4 +18,11 @@ export const betterAuth = new Elysia({ name: "better-auth" }).macro({
       };
     },
   },
+  // Public routes that behave differently for a signed-in viewer (likes, follow state, privacy)
+  viewer: {
+    async derive({ request: { headers } }) {
+      const session = await auth.api.getSession({ headers });
+      return { viewer: session?.user ?? null };
+    },
+  },
 });

@@ -114,9 +114,16 @@ them with `deleted: true` and hides them from search and catalog lists.
 
 ### Users (Better Auth + custom)
 
-`user`, `session`, `account`, `verification`, `passkey`, `apikey`, `user_metadata`, `user_games`
-(unique `(user_id, game_id)`, FK to `game` and `platform`), `user_follows`. These are the only
-tables that need backups; the catalog is rebuilt from IGDB.
+`user` (+ `bio`, `links`, `list_public`), `session`, `account`, `verification`, `passkey`,
+`apikey`, `user_games` (unique `(user_id, game_id)`, FK to `game` and `platform`; `mastered`,
+`spoilers`, `updated_at`), `playthrough` (replays with dates/hours, FK to the entry), `review_like`,
+`game_like`, `game_list` + `game_list_item` (ordered custom lists), `user_follows`,
+`notification` (follow, review_like), `user_avatar` (uploaded picture as bytea, served at
+`GET /api/user/:username/avatar`). These are the only tables that need backups; the catalog is
+rebuilt from IGDB.
+
+A list set to private hides the member's library, reviews, journal and likes from everyone else
+(`utils/social.ts`: `canSeeList`, `visibleToViewer`). Reviews are `user_games` rows with text.
 
 Schema: `packages/db/src/schema.ts`; relations: `src/relations.ts`; queue contract: `src/jobs.ts`;
 migrations: `packages/db/migrations/` (applied by the API image on start).

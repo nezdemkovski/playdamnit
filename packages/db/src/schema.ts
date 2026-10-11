@@ -10,6 +10,9 @@ import {
   real,
   index,
   jsonb,
+  customType,
+  date,
+  foreignKey,
   primaryKey,
   unique,
   check,
@@ -41,6 +44,10 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
+  // Profile fields managed by PATCH /api/me (not by Better Auth)
+  bio: text("bio"),
+  links: jsonb("links").$type<string[]>().notNull().default([]),
+  listPublic: boolean("list_public").notNull().default(true),
 });
 
 export const session = pgTable(
@@ -176,17 +183,6 @@ export type UserGameStatus = (typeof USER_GAME_STATUSES)[number];
 
 export const USER_GAME_SOURCES = ["steam", "gog", "manual"] as const;
 
-export const userMetadata = pgTable("user_metadata", {
-  id: uuid("id")
-    .default(sql`uuidv7()`)
-    .primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .unique()
-    .references(() => user.id, { onDelete: "cascade" }),
-  bio: text("bio"),
-});
-
 export const userGames = pgTable(
   "user_games",
   {
@@ -208,12 +204,156 @@ export const userGames = pgTable(
     platformId: integer("platform_id").references(() => platform.id, {
       onDelete: "set null",
     }),
+    // Backloggd-style completion flag on top of the status (100%, platinum, ...)
+    mastered: boolean("mastered").notNull().default(false),
+    spoilers: boolean("spoilers").notNull().default(false),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
   (table) => [
     unique("user_games_user_id_game_id_unique").on(table.userId, table.gameId),
     index("idx_user_games_game_id").on(table.gameId),
+    index("idx_user_games_updated_at").on(table.updatedAt),
   ],
 );
+
+// One run through a game: the journal. An entry can have several (replays).
+export const playthrough = pgTable(
+  "playthrough",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    userId: text("user_id").notNull(),
+    gameId: integer("game_id").notNull(),
+    startedAt: date("started_at"),
+    endedAt: date("ended_at"),
+    hours: decimal("hours", { precision: 6, scale: 1 }),
+    platformId: integer("platform_id").references(() => platform.id, { onDelete: "set null" }),
+    note: text("note"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId, table.gameId],
+      foreignColumns: [userGames.userId, userGames.gameId],
+      name: "playthrough_user_game_fk",
+    }).onDelete("cascade"),
+    index("idx_playthrough_user_id").on(table.userId),
+  ],
+);
+
+export const reviewLike = pgTable(
+  "review_like",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    userGameId: uuid("user_game_id")
+      .notNull()
+      .references(() => userGames.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.userGameId] }),
+    index("idx_review_like_user_game_id").on(table.userGameId),
+  ],
+);
+
+export const gameLike = pgTable(
+  "game_like",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.gameId] }),
+    index("idx_game_like_game_id").on(table.gameId),
+  ],
+);
+
+export const gameList = pgTable(
+  "game_list",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    isPublic: boolean("is_public").notNull().default(true),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("idx_game_list_user_id").on(table.userId)],
+);
+
+export const gameListItem = pgTable(
+  "game_list_item",
+  {
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => gameList.id, { onDelete: "cascade" }),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "restrict" }),
+    position: integer("position").notNull().default(0),
+    note: text("note"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.listId, table.gameId] }),
+    index("idx_game_list_item_game_id").on(table.gameId),
+  ],
+);
+
+export const NOTIFICATION_TYPES = ["follow", "review_like"] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export const notification = pgTable(
+  "notification",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: text("type", { enum: NOTIFICATION_TYPES }).notNull(),
+    actorId: text("actor_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    gameId: integer("game_id").references(() => game.id, { onDelete: "cascade" }),
+    readAt: timestamp("read_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("idx_notification_user_id_created_at").on(table.userId, table.createdAt)],
+);
+
+const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
+// Uploaded avatars live in the database (no object storage in the homelab); served by the API
+export const userAvatar = pgTable("user_avatar", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
 
 export const userFollows = pgTable(
   "user_follows",

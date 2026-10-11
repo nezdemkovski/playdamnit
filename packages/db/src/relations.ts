@@ -12,9 +12,15 @@ export const relations = defineRelations(
     verification: schema.verification,
     passkey: schema.passkey,
     apikey: schema.apikey,
-    userMetadata: schema.userMetadata,
     userGames: schema.userGames,
     userFollows: schema.userFollows,
+    playthrough: schema.playthrough,
+    reviewLike: schema.reviewLike,
+    gameLike: schema.gameLike,
+    gameList: schema.gameList,
+    gameListItem: schema.gameListItem,
+    notification: schema.notification,
+    userAvatar: schema.userAvatar,
     platform: schema.platform,
     genre: schema.genre,
     gameMode: schema.gameMode,
@@ -48,6 +54,34 @@ export const relations = defineRelations(
         to: r.game.id,
         optional: false,
       }),
+      user: r.one.user({ from: r.userGames.userId, to: r.user.id, optional: false }),
+      playthroughs: r.many.playthrough({
+        from: [r.userGames.userId, r.userGames.gameId],
+        to: [r.playthrough.userId, r.playthrough.gameId],
+      }),
+      likes: r.many.reviewLike({ from: r.userGames.id, to: r.reviewLike.userGameId }),
+    },
+    playthrough: {
+      game: r.one.game({ from: r.playthrough.gameId, to: r.game.id, optional: false }),
+      platform: r.one.platform({ from: r.playthrough.platformId, to: r.platform.id }),
+    },
+    gameList: {
+      user: r.one.user({ from: r.gameList.userId, to: r.user.id, optional: false }),
+      items: r.many.gameListItem({ from: r.gameList.id, to: r.gameListItem.listId }),
+    },
+    gameListItem: {
+      game: r.one.game({ from: r.gameListItem.gameId, to: r.game.id, optional: false }),
+    },
+    gameLike: {
+      game: r.one.game({ from: r.gameLike.gameId, to: r.game.id, optional: false }),
+    },
+    notification: {
+      actor: r.one.user({ from: r.notification.actorId, to: r.user.id, optional: false }),
+      game: r.one.game({ from: r.notification.gameId, to: r.game.id }),
+    },
+    userFollows: {
+      follower: r.one.user({ from: r.userFollows.followerId, to: r.user.id, optional: false }),
+      following: r.one.user({ from: r.userFollows.followingId, to: r.user.id, optional: false }),
     },
     game: {
       cover: r.one.cover({ from: r.game.id, to: r.cover.gameId }),

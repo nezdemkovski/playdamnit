@@ -1,9 +1,12 @@
 import { Elysia, t } from "elysia";
+
+import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
 
-export const getUserGames = new Elysia().get(
+export const getUserGames = new Elysia().use(betterAuth).get(
   "/user/:username/games",
   {
+    viewer: true,
     params: t.Object({
       username: t.String(),
     }),
@@ -12,5 +15,6 @@ export const getUserGames = new Elysia().get(
       offset: t.Optional(t.Numeric({ minimum: 0 })),
     }),
   },
-  ({ params, query }) => UserGameService.getUserGames(params.username, query),
+  ({ params, query, viewer }) =>
+    UserGameService.getUserGames(params.username, { ...query, viewerId: viewer?.id ?? null }),
 );

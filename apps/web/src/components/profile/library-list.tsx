@@ -1,5 +1,5 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
-import { ArrowDownUpIcon, SearchIcon } from "lucide-react";
+import { ArrowDownUpIcon, LayoutGridIcon, ListIcon, SearchIcon } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
 
@@ -12,8 +12,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { GameCard } from "@/components/game/game-card";
 import { STATUSES, type LibraryStatus } from "@/lib/statuses";
 import { LibraryRow } from "./library-row";
+
+const ALL_YEARS = "all";
 
 type Sort = "added" | "rating" | "name" | "release";
 const SORTS: { value: Sort; label: string }[] = [
@@ -40,6 +50,30 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
   const [status, setStatus] = useState<LibraryStatus | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("added");
+  const [view, setView] = useState<"list" | "grid">(() => {
+    try {
+      return localStorage.getItem("library-view") === "grid" ? "grid" : "list";
+    } catch {
+      return "list";
+    }
+  });
+  const [year, setYear] = useState<string>(ALL_YEARS);
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    for (const e of entries) {
+      const d = e.userGameData.endedAt ?? e.userGameData.addedAt;
+      if (d) set.add(new Date(d).getFullYear());
+    }
+    return [...set].sort((a, b) => b - a);
+  }, [entries]);
+  const switchView = (v: "list" | "grid") => {
+    setView(v);
+    try {
+      localStorage.setItem("library-view", v);
+    } catch {
+      // storage may be unavailable
+    }
+  };
 
   const counts = useMemo(() => {
     const map = new Map<string, number>();
@@ -92,6 +126,39 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
             className="rounded-full pl-9"
           />
         </div>
+        <Select value={year} onValueChange={setYear}>
+          <SelectTrigger size="sm" className="w-24 rounded-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_YEARS}>All years</SelectItem>
+            {years.map((y) => (
+              <SelectItem key={y} value={String(y)}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex rounded-full bg-white/5 p-0.5">
+          <Button
+            variant={view === "list" ? "secondary" : "ghost"}
+            size="icon-sm"
+            aria-label="List view"
+            aria-pressed={view === "list"}
+            onClick={() => switchView("list")}
+          >
+            <ListIcon />
+          </Button>
+          <Button
+            variant={view === "grid" ? "secondary" : "ghost"}
+            size="icon-sm"
+            aria-label="Grid view"
+            aria-pressed={view === "grid"}
+            onClick={() => switchView("grid")}
+          >
+            <LayoutGridIcon />
+          </Button>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="sm">
@@ -113,6 +180,12 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
       {visible.length === 0 ? (
         <div className="panel p-10 text-center text-sm text-dimmed">
           {entries.length === 0 ? "Nothing in the list yet." : "No games match."}
+        </div>
+      ) : view === "grid" ? (
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {visible.map((entry) => (
+            <GameCard key={entry.id} game={entry} rating={entry.userGameData.rating} />
+          ))}
         </div>
       ) : (
         <div className="space-y-2">

@@ -10,20 +10,57 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ChartsRouteImport } from './routes/charts'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as UsernameIndexRouteImport } from './routes/$username.index'
-import { Route as UsernameSettingsRouteImport } from './routes/$username.settings'
+import { Route as UsernameFriendsRouteImport } from './routes/$username.friends'
+import { Route as UsernameGamesRouteImport } from './routes/$username.games'
+import { Route as UsernameJournalRouteImport } from './routes/$username.journal'
+import { Route as UsernameLikesRouteImport } from './routes/$username.likes'
+import { Route as UsernameListsRouteImport } from './routes/$username.lists'
+import { Route as UsernameReviewsRouteImport } from './routes/$username.reviews'
+import { Route as UsernameSettingsRouteImport } from './routes/$username_.settings'
 import { Route as GamesIdRouteImport } from './routes/games.$id'
+import { Route as ListsIdRouteImport } from './routes/lists.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsernameRoute = UsernameRouteImport.update({
+  id: '/$username',
+  path: '/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChartsRoute = ChartsRouteImport.update({
+  id: '/charts',
+  path: '/charts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -32,12 +69,42 @@ const SearchRoute = SearchRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsernameIndexRoute = UsernameIndexRouteImport.update({
-  id: '/$username/',
-  path: '/$username/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameFriendsRoute = UsernameFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameGamesRoute = UsernameGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameJournalRoute = UsernameJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameLikesRoute = UsernameLikesRouteImport.update({
+  id: '/likes',
+  path: '/likes',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameListsRoute = UsernameListsRouteImport.update({
+  id: '/lists',
+  path: '/lists',
+  getParentRoute: () => UsernameRoute,
+} as any)
+const UsernameReviewsRoute = UsernameReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => UsernameRoute,
 } as any)
 const UsernameSettingsRoute = UsernameSettingsRouteImport.update({
-  id: '/$username/settings',
+  id: '/$username_/settings',
   path: '/$username/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -46,66 +113,146 @@ const GamesIdRoute = GamesIdRouteImport.update({
   path: '/games/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListsIdRoute = ListsIdRouteImport.update({
+  id: '/lists/$id',
+  path: '/lists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$username': typeof UsernameRouteWithChildren
   '/auth': typeof AuthRoute
+  '/calendar': typeof CalendarRoute
+  '/charts': typeof ChartsRoute
+  '/community': typeof CommunityRoute
+  '/notifications': typeof NotificationsRoute
   '/search': typeof SearchRoute
+  '/$username/friends': typeof UsernameFriendsRoute
+  '/$username/games': typeof UsernameGamesRoute
+  '/$username/journal': typeof UsernameJournalRoute
+  '/$username/likes': typeof UsernameLikesRoute
+  '/$username/lists': typeof UsernameListsRoute
+  '/$username/reviews': typeof UsernameReviewsRoute
   '/$username/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
+  '/lists/$id': typeof ListsIdRoute
   '/$username/': typeof UsernameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/calendar': typeof CalendarRoute
+  '/charts': typeof ChartsRoute
+  '/community': typeof CommunityRoute
+  '/notifications': typeof NotificationsRoute
   '/search': typeof SearchRoute
+  '/$username/friends': typeof UsernameFriendsRoute
+  '/$username/games': typeof UsernameGamesRoute
+  '/$username/journal': typeof UsernameJournalRoute
+  '/$username/likes': typeof UsernameLikesRoute
+  '/$username/lists': typeof UsernameListsRoute
+  '/$username/reviews': typeof UsernameReviewsRoute
   '/$username/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
+  '/lists/$id': typeof ListsIdRoute
   '/$username': typeof UsernameIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$username': typeof UsernameRouteWithChildren
   '/auth': typeof AuthRoute
+  '/calendar': typeof CalendarRoute
+  '/charts': typeof ChartsRoute
+  '/community': typeof CommunityRoute
+  '/notifications': typeof NotificationsRoute
   '/search': typeof SearchRoute
-  '/$username/settings': typeof UsernameSettingsRoute
+  '/$username/friends': typeof UsernameFriendsRoute
+  '/$username/games': typeof UsernameGamesRoute
+  '/$username/journal': typeof UsernameJournalRoute
+  '/$username/likes': typeof UsernameLikesRoute
+  '/$username/lists': typeof UsernameListsRoute
+  '/$username/reviews': typeof UsernameReviewsRoute
+  '/$username_/settings': typeof UsernameSettingsRoute
   '/games/$id': typeof GamesIdRoute
+  '/lists/$id': typeof ListsIdRoute
   '/$username/': typeof UsernameIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$username'
     | '/auth'
+    | '/calendar'
+    | '/charts'
+    | '/community'
+    | '/notifications'
     | '/search'
+    | '/$username/friends'
+    | '/$username/games'
+    | '/$username/journal'
+    | '/$username/likes'
+    | '/$username/lists'
+    | '/$username/reviews'
     | '/$username/settings'
     | '/games/$id'
+    | '/lists/$id'
     | '/$username/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/calendar'
+    | '/charts'
+    | '/community'
+    | '/notifications'
     | '/search'
+    | '/$username/friends'
+    | '/$username/games'
+    | '/$username/journal'
+    | '/$username/likes'
+    | '/$username/lists'
+    | '/$username/reviews'
     | '/$username/settings'
     | '/games/$id'
+    | '/lists/$id'
     | '/$username'
   id:
     | '__root__'
     | '/'
+    | '/$username'
     | '/auth'
+    | '/calendar'
+    | '/charts'
+    | '/community'
+    | '/notifications'
     | '/search'
-    | '/$username/settings'
+    | '/$username/friends'
+    | '/$username/games'
+    | '/$username/journal'
+    | '/$username/likes'
+    | '/$username/lists'
+    | '/$username/reviews'
+    | '/$username_/settings'
     | '/games/$id'
+    | '/lists/$id'
     | '/$username/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  UsernameRoute: typeof UsernameRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CalendarRoute: typeof CalendarRoute
+  ChartsRoute: typeof ChartsRoute
+  CommunityRoute: typeof CommunityRoute
+  NotificationsRoute: typeof NotificationsRoute
   SearchRoute: typeof SearchRoute
   UsernameSettingsRoute: typeof UsernameSettingsRoute
   GamesIdRoute: typeof GamesIdRoute
-  UsernameIndexRoute: typeof UsernameIndexRoute
+  ListsIdRoute: typeof ListsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,11 +264,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$username': {
+      id: '/$username'
+      path: '/$username'
+      fullPath: '/$username'
+      preLoaderRoute: typeof UsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/charts': {
+      id: '/charts'
+      path: '/charts'
+      fullPath: '/charts'
+      preLoaderRoute: typeof ChartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -133,13 +315,55 @@ declare module '@tanstack/react-router' {
     }
     '/$username/': {
       id: '/$username/'
-      path: '/$username'
+      path: '/'
       fullPath: '/$username/'
       preLoaderRoute: typeof UsernameIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof UsernameRoute
     }
-    '/$username/settings': {
-      id: '/$username/settings'
+    '/$username/friends': {
+      id: '/$username/friends'
+      path: '/friends'
+      fullPath: '/$username/friends'
+      preLoaderRoute: typeof UsernameFriendsRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username/games': {
+      id: '/$username/games'
+      path: '/games'
+      fullPath: '/$username/games'
+      preLoaderRoute: typeof UsernameGamesRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username/journal': {
+      id: '/$username/journal'
+      path: '/journal'
+      fullPath: '/$username/journal'
+      preLoaderRoute: typeof UsernameJournalRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username/likes': {
+      id: '/$username/likes'
+      path: '/likes'
+      fullPath: '/$username/likes'
+      preLoaderRoute: typeof UsernameLikesRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username/lists': {
+      id: '/$username/lists'
+      path: '/lists'
+      fullPath: '/$username/lists'
+      preLoaderRoute: typeof UsernameListsRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username/reviews': {
+      id: '/$username/reviews'
+      path: '/reviews'
+      fullPath: '/$username/reviews'
+      preLoaderRoute: typeof UsernameReviewsRouteImport
+      parentRoute: typeof UsernameRoute
+    }
+    '/$username_/settings': {
+      id: '/$username_/settings'
       path: '/$username/settings'
       fullPath: '/$username/settings'
       preLoaderRoute: typeof UsernameSettingsRouteImport
@@ -152,16 +376,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lists/$id': {
+      id: '/lists/$id'
+      path: '/lists/$id'
+      fullPath: '/lists/$id'
+      preLoaderRoute: typeof ListsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface UsernameRouteChildren {
+  UsernameFriendsRoute: typeof UsernameFriendsRoute
+  UsernameGamesRoute: typeof UsernameGamesRoute
+  UsernameJournalRoute: typeof UsernameJournalRoute
+  UsernameLikesRoute: typeof UsernameLikesRoute
+  UsernameListsRoute: typeof UsernameListsRoute
+  UsernameReviewsRoute: typeof UsernameReviewsRoute
+  UsernameIndexRoute: typeof UsernameIndexRoute
+}
+
+const UsernameRouteChildren: UsernameRouteChildren = {
+  UsernameFriendsRoute: UsernameFriendsRoute,
+  UsernameGamesRoute: UsernameGamesRoute,
+  UsernameJournalRoute: UsernameJournalRoute,
+  UsernameLikesRoute: UsernameLikesRoute,
+  UsernameListsRoute: UsernameListsRoute,
+  UsernameReviewsRoute: UsernameReviewsRoute,
+  UsernameIndexRoute: UsernameIndexRoute,
+}
+
+const UsernameRouteWithChildren = UsernameRoute._addFileChildren(
+  UsernameRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  UsernameRoute: UsernameRouteWithChildren,
   AuthRoute: AuthRoute,
+  CalendarRoute: CalendarRoute,
+  ChartsRoute: ChartsRoute,
+  CommunityRoute: CommunityRoute,
+  NotificationsRoute: NotificationsRoute,
   SearchRoute: SearchRoute,
   UsernameSettingsRoute: UsernameSettingsRoute,
   GamesIdRoute: GamesIdRoute,
-  UsernameIndexRoute: UsernameIndexRoute,
+  ListsIdRoute: ListsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

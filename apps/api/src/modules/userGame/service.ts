@@ -3,6 +3,7 @@ import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { db as postgresDb } from "@/db/postgres";
 import {
   platform,
+  playthrough,
   userGames,
   USER_GAME_STATUSES,
   type UserGameStatus,
@@ -10,6 +11,7 @@ import {
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
+import { canSeeList, requireUser } from "@/utils/social";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 
 const MAX_IMPORT_GAMES = 1000;
@@ -22,7 +24,26 @@ interface UserGameInput {
   review?: string | null;
   platformId?: number | null;
   endedAt?: string | null;
+  mastered?: boolean;
+  spoilers?: boolean;
 }
+
+export interface PlaythroughInput {
+  startedAt?: string | null;
+  endedAt?: string | null;
+  hours?: number | null;
+  platformId?: number | null;
+  note?: string | null;
+}
+
+const parseDay = (value: string | null | undefined, label: string): string | null | undefined => {
+  if (value === undefined) return undefined;
+  if (value === null || value.trim() === "") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(new Date(value).getTime())) {
+    throw new BadRequestError(`${label} must be a YYYY-MM-DD date`);
+  }
+  return value;
+};
 
 export interface ImportGameInput {
   gameId?: unknown;
@@ -83,14 +104,13 @@ export abstract class UserGameService {
   /**
    * Get games for a user by username. Without a limit the whole library is returned.
    */
-  static async getUserGames(username: string, opts: { limit?: number; offset?: number } = {}) {
-    const userData = await postgresDb.query.user.findFirst({
-      where: { username },
-      columns: { id: true },
-    });
-
-    if (!userData) {
-      throw new NotFoundError("User not found");
+  static async getUserGames(
+    username: string,
+    opts: { limit?: number; offset?: number; viewerId?: string | null } = {},
+  ) {
+    const userData = await requireUser(username);
+    if (!canSeeList(userData, opts.viewerId ?? null)) {
+      throw new ForbiddenError("This list is private");
     }
 
     const where = eq(userGames.userId, userData.id);
@@ -113,6 +133,7 @@ export abstract class UserGameService {
         .map((entry) => ({
           ...transformGameResponse(entry.game),
           userGameData: {
+            id: entry.id,
             status: entry.status,
             rating: entry.rating !== null ? Number(entry.rating) : null,
             review: entry.review,
@@ -120,6 +141,9 @@ export abstract class UserGameService {
             addedAt: entry.addedAt,
             endedAt: entry.endedAt,
             source: entry.source,
+            mastered: entry.mastered,
+            spoilers: entry.spoilers,
+            updatedAt: entry.updatedAt,
           },
         })),
       meta: { total, limit: opts.limit, offset: opts.offset ?? 0 },
@@ -146,6 +170,8 @@ export abstract class UserGameService {
           status: input.status,
           rating: input.rating?.toString() ?? null,
           review: input.review ?? null,
+          mastered: input.mastered ?? false,
+          spoilers: input.spoilers ?? false,
           endedAt: parseEndedAt(input.endedAt) ?? null,
           platformId: input.platformId ?? null,
           source: "manual",
@@ -187,6 +213,8 @@ export abstract class UserGameService {
         ...(input.status !== undefined && { status: input.status }),
         ...(input.rating !== undefined && { rating: input.rating?.toString() ?? null }),
         ...(input.review !== undefined && { review: input.review }),
+        ...(input.mastered !== undefined && { mastered: input.mastered }),
+        ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
         ...(input.platformId !== undefined && { platformId: input.platformId }),
         ...(endedAt !== undefined && { endedAt }),
       })
@@ -220,6 +248,74 @@ export abstract class UserGameService {
       message: "Removed successfully",
       id: deletedGame.gameId,
     };
+  }
+
+  // ─── Playthroughs (the journal) ───────────────────────────────────────────
+
+  private static async requireEntry(userId: string, gameId: number) {
+    const entry = await postgresDb.query.userGames.findFirst({
+      where: { userId, gameId },
+      columns: { id: true },
+    });
+    if (!entry) throw new NotFoundError("Game not found in user's library");
+    return entry;
+  }
+
+  static async listPlaythroughs(username: string, gameId: number, viewerId: string | null) {
+    const owner = await requireUser(username);
+    if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
+    const rows = await postgresDb.query.playthrough.findMany({
+      where: { userId: owner.id, gameId },
+      orderBy: { createdAt: "desc" },
+      with: { platform: true },
+    });
+    return rows.map((row) => ({ ...row, hours: row.hours !== null ? Number(row.hours) : null }));
+  }
+
+  static async addPlaythrough(userId: string, gameId: number, input: PlaythroughInput) {
+    await UserGameService.requireEntry(userId, gameId);
+    await assertPlatformExists(input.platformId);
+    const [row] = await postgresDb
+      .insert(playthrough)
+      .values({
+        userId,
+        gameId,
+        startedAt: parseDay(input.startedAt, "Start date") ?? null,
+        endedAt: parseDay(input.endedAt, "End date") ?? null,
+        hours: input.hours !== null && input.hours !== undefined ? input.hours.toString() : null,
+        platformId: input.platformId ?? null,
+        note: input.note?.trim() || null,
+      })
+      .returning();
+    return { ...row, hours: row.hours !== null ? Number(row.hours) : null };
+  }
+
+  static async updatePlaythrough(userId: string, id: string, input: PlaythroughInput) {
+    await assertPlatformExists(input.platformId);
+    const startedAt = parseDay(input.startedAt, "Start date");
+    const endedAt = parseDay(input.endedAt, "End date");
+    const [row] = await postgresDb
+      .update(playthrough)
+      .set({
+        ...(startedAt !== undefined && { startedAt }),
+        ...(endedAt !== undefined && { endedAt }),
+        ...(input.hours !== undefined && { hours: input.hours?.toString() ?? null }),
+        ...(input.platformId !== undefined && { platformId: input.platformId }),
+        ...(input.note !== undefined && { note: input.note?.trim() || null }),
+      })
+      .where(and(eq(playthrough.id, id), eq(playthrough.userId, userId)))
+      .returning();
+    if (!row) throw new NotFoundError("Playthrough not found");
+    return { ...row, hours: row.hours !== null ? Number(row.hours) : null };
+  }
+
+  static async deletePlaythrough(userId: string, id: string) {
+    const [row] = await postgresDb
+      .delete(playthrough)
+      .where(and(eq(playthrough.id, id), eq(playthrough.userId, userId)))
+      .returning({ id: playthrough.id });
+    if (!row) throw new NotFoundError("Playthrough not found");
+    return { message: "Removed successfully", id: row.id };
   }
 
   /**
