@@ -16,6 +16,10 @@ const WEBHOOK_ENTITIES = [
   "game_localizations",
   "involved_companies",
 ] as const;
+// Where the receiver path and IGDB's endpoint name differ
+const IGDB_ENDPOINT: Partial<Record<(typeof WEBHOOK_ENTITIES)[number], string>> = {
+  videos: "game_videos",
+};
 const WEBHOOK_METHODS = ["create", "update", "delete"] as const;
 
 interface IGDBWebhook {
@@ -41,7 +45,7 @@ const listWebhooks = async (): Promise<IGDBWebhook[]> =>
 export const ensureWebhooks = async (opts: { baseUrl: string; secret: string }) => {
   const existing = await listWebhooks();
   const byUrl = new Map(existing.map((hook) => [hook.url, hook]));
-  const result = { existing: existing.length, created: 0, recreated: 0, active: 0 };
+  const result = { existing: existing.length, created: 0, recreated: 0, active: 0, failed: 0 };
 
   for (const entity of WEBHOOK_ENTITIES) {
     for (const method of WEBHOOK_METHODS) {
@@ -52,17 +56,22 @@ export const ensureWebhooks = async (opts: { baseUrl: string; secret: string }) 
         result.active++;
         continue;
       }
-      if (hook) {
-        await igdbFetch("DELETE", `webhooks/${hook.id}`);
-        result.recreated++;
-      } else {
-        result.created++;
+      // One bad hook must not stop the others from being registered
+      try {
+        if (hook) {
+          await igdbFetch("DELETE", `webhooks/${hook.id}`);
+        }
+        await igdbFetch(
+          "POST",
+          `${IGDB_ENDPOINT[entity] ?? entity}/webhooks/`,
+          new URLSearchParams({ url, method, secret: opts.secret }),
+        );
+        if (hook) result.recreated++;
+        else result.created++;
+      } catch (error) {
+        result.failed++;
+        logger.exception(error, { operation: "ensureWebhooks", entity, method });
       }
-      await igdbFetch(
-        "POST",
-        `${entity}/webhooks/`,
-        new URLSearchParams({ url, method, secret: opts.secret }),
-      );
     }
   }
 
