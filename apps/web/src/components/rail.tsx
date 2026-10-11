@@ -33,7 +33,9 @@ export function Rail({ children, itemClassName, overhang = false, className }: R
   return (
     <Carousel
       opts={{ align: "start", slidesToScroll: "auto", containScroll: "trimSnaps", dragFree: true }}
-      className={cn(overhang && "-mx-3 -mt-3", className)}
+      // Dragging the row must not select text or pick up an image or link as a drag ghost
+      onDragStartCapture={(event) => event.preventDefault()}
+      className={cn("select-none", overhang && "-mx-3 -mt-3", className)}
     >
       <CarouselContent className={overhang ? "ml-0 pt-3 pr-3 pb-1" : "-ml-3"}>
         {items.map((child) => (
