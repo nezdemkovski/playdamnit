@@ -267,9 +267,16 @@
       "reports_one": "{{count}} report",
       "reports_other": "{{count}} reports",
       "members": "Members",
-      "inLists": "{{count}} in lists",
       "everyoneElse": "Everyone else",
-      "ratings": "{{ratings}} ratings"
+      "ratings": "{{ratings}} ratings",
+      "grades_one": "{{count}} grade from members",
+      "grades_other": "{{count}} grades from members",
+      "alsoEveryoneElse": "Everyone else says {{score}}",
+      "alsoMembers_one": "{{count}} member here says so",
+      "alsoMembers_other": "{{count}} members here say so",
+      "noMembersYet": "Nobody here has graded it. Be first.",
+      "inListsLabel": "In lists here",
+      "statusLine": "{{finished}} finished · {{playing}} playing"
     },
     "yourList": "In your list",
     "yourRating": "Your grade",

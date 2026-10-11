@@ -38,7 +38,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
+import { MEMBERS_VERDICT_MIN, gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -103,6 +103,8 @@ function GameDetail({ game }: { game: Game }) {
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
   const community = game.community!;
+  const membersGrade = gradeOf(community.ratingAverage);
+  const membersLead = !!membersGrade && community.ratingCount >= MEMBERS_VERDICT_MIN;
   const [reviewSort, setReviewSort] = useState(GetApiGamesByIdReviewsSort.Latest);
   const reviews = useGetApiGamesByIdReviews(game.id, { sort: reviewSort, limit: 20 });
 
@@ -130,16 +132,43 @@ function GameDetail({ game }: { game: Game }) {
               loading={ImageLoading.Eager}
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
-              <Stat label={t("game.stats.everyoneElse")}>
-                {worldScore ? (
-                  <span className="num text-2xl font-extrabold">{worldScore}</span>
-                ) : (
-                  <span className="text-2xl font-bold text-dimmed">–</span>
-                )}
-                <span className="text-xs text-dimmed">
-                  {t("game.stats.ratings", { ratings: compactNumber(game.totalRatingCount ?? 0) })}
-                </span>
-              </Stat>
+              {/* One verdict up front: the members' once enough of them have graded, else everyone else's */}
+              {membersLead ? (
+                <Stat label={t("game.stats.members")}>
+                  <GradeBadge grade={membersGrade} size={PillSize.Lg} />
+                  <span className="text-xs text-dimmed">
+                    {t("game.stats.grades", { count: community.ratingCount })}
+                  </span>
+                  {worldScore ? (
+                    <span className="num mt-1 text-xs text-dimmed">
+                      {t("game.stats.alsoEveryoneElse", { score: worldScore })}
+                    </span>
+                  ) : null}
+                </Stat>
+              ) : (
+                <Stat label={t("game.stats.everyoneElse")}>
+                  {worldScore ? (
+                    <span className="num text-2xl font-extrabold">{worldScore}</span>
+                  ) : (
+                    <span className="text-2xl font-bold text-dimmed">–</span>
+                  )}
+                  <span className="text-xs text-dimmed">
+                    {t("game.stats.ratings", {
+                      ratings: compactNumber(game.totalRatingCount ?? 0),
+                    })}
+                  </span>
+                  <span className="mt-1 flex items-center gap-1 text-xs text-dimmed">
+                    {membersGrade ? (
+                      <>
+                        <GradeBadge grade={membersGrade} className="size-5" />
+                        {t("game.stats.alsoMembers", { count: community.ratingCount })}
+                      </>
+                    ) : (
+                      t("game.stats.noMembersYet")
+                    )}
+                  </span>
+                </Stat>
+              )}
               {game.timeToBeat?.normally ? (
                 <Stat label={t("game.stats.toFinish")}>
                   <span className="text-2xl font-bold">
@@ -151,15 +180,14 @@ function GameDetail({ game }: { game: Game }) {
                   </span>
                 </Stat>
               ) : null}
-              <Stat label={t("game.stats.members")}>
-                {community.ratingAverage ? (
-                  <GradeBadge grade={gradeOf(community.ratingAverage)} size={PillSize.Lg} />
-                ) : (
-                  <span className="num text-2xl font-bold">{community.total}</span>
-                )}
+              <Stat label={t("game.stats.inListsLabel")}>
+                <span className="num text-2xl font-extrabold">{community.total}</span>
                 <span className="flex items-center gap-1 text-xs text-dimmed">
                   <UsersIcon className="size-3" />{" "}
-                  {t("game.stats.inLists", { count: community.total })}
+                  {t("game.stats.statusLine", {
+                    finished: community.statuses.finished ?? 0,
+                    playing: community.statuses.playing ?? 0,
+                  })}
                 </span>
               </Stat>
             </dl>

@@ -92,6 +92,9 @@ export const GRADES: GradeMeta[] = [
 
 const BY_GRADE = new Map(GRADES.map((g) => [g.value, g]));
 
+/** Member grades a game needs before their average outranks everyone else's score */
+export const MEMBERS_VERDICT_MIN = 10;
+
 export const gradeMeta = (grade: Grade): GradeMeta => BY_GRADE.get(grade)!;
 
 /** The grade of a 0–10 rating; nothing for 0, null or undefined (not graded) */
