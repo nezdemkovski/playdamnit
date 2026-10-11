@@ -6,7 +6,22 @@ on:
   push:
     branches: ["master"]
     tags: ["v*.*.*"]
+    # Docs and workflow edits must not republish 0.x.y images under a new digest
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "charts/**"
+      - "bun.lock"
+      - "package.json"
+      - "turbo.json"
   pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "charts/**"
+      - "bun.lock"
+      - "package.json"
+      - "turbo.json"
 
 env:
   REGISTRY: ghcr.io

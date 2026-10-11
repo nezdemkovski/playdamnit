@@ -336,10 +336,11 @@ What exists (2026-10-11):
 
 Before the first reconcile:
 
-1. 1Password vault `Homelab`: `playdamnit-ghcr` (username/password: a PAT with `read:packages`),
-   `playdamnit-postgres` (username `playdamnit`, password), `playdamnit-api`
-   (`BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `OPENAI_API_KEY`, `SENTRY_DSN`, `IGDB_WEBHOOK_SECRET`),
-   `playdamnit-librarian` (`TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`).
+1. 1Password vault `Homelab`, one item `playdamnit`: `username`/`password` are the Postgres
+   owner, plus `BETTER_AUTH_SECRET`, `IGDB_WEBHOOK_SECRET`, `TWITCH_CLIENT_ID`,
+   `TWITCH_CLIENT_SECRET`, `RESEND_API_KEY`, `OPENAI_API_KEY`, `SENTRY_DSN`. The pull secret reuses
+   `haymaker-ghcr` (same GitHub user). Created 2026-10-11; `RESEND_API_KEY` is still empty and the
+   API refuses to start in production without it.
 2. Cloudflare DNS: `games.nezdemkovski.cloud` CNAME to the tunnel (`<tunnel id>.cfargotunnel.com`).
 3. Merge this repo to `master` so CI publishes `0.1.0` images and charts; then pin the image tags
    in the HelmReleases as `0.1.0@sha256:…` (Renovate keeps them pinned afterwards).
