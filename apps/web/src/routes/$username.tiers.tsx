@@ -25,14 +25,12 @@ function ProfileTiers() {
     () =>
       GRADES.map((meta) => ({
         meta,
-        games: entries
-          .filter((e) => gradeOf(e.userGameData.rating) === meta.value)
-          .toSorted(byName),
+        games: entries.filter((e) => gradeOf(e.userGameData.rating) === meta.value).sort(byName),
       })),
     [entries],
   );
   const ungraded = useMemo(
-    () => entries.filter((e) => !gradeOf(e.userGameData.rating)).toSorted(byName),
+    () => entries.filter((e) => !gradeOf(e.userGameData.rating)).sort(byName),
     [entries],
   );
 
