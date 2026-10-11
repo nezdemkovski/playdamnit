@@ -78,7 +78,7 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
             // Viewing: the name appears on hover; arranging: always, to tell tiles apart
             // Smaller type here: the whole tile scales 2.5× on hover
             !arranging &&
-              "text-[6px] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+              "text-[7px] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
           )}
         >
           <span className="line-clamp-2">{game.name}</span>
@@ -119,7 +119,7 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
         title={game.name}
         className={cn(
           className,
-          "origin-left transition-transform duration-150 hover:z-20 hover:scale-[2.5] hover:ring-1 hover:ring-foreground focus-visible:z-20 focus-visible:scale-[2.5]",
+          "origin-center transition-transform duration-150 hover:z-20 hover:scale-[1.8] hover:ring-1 hover:ring-foreground focus-visible:z-20 focus-visible:scale-[1.8]",
         )}
       >
         {content}
