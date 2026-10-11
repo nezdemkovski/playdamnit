@@ -17,7 +17,7 @@ export interface GradeMeta {
   chip: string;
   /** The seal's metal: platinum, gold, silver, bronze, iron, red */
   fill: string;
-  /** The letter on it */
+  /** The letter on it: one ink for every metal, the same near-black as the rim */
   ink: string;
 }
 
@@ -31,7 +31,7 @@ export const GRADES: GradeMeta[] = [
     rating: 9.5,
     chip: "border-[#dcf1ff] bg-[#dcf1ff] text-black",
     fill: "#dcf1ff",
-    ink: "#000",
+    ink: "var(--background)",
   },
   {
     value: Grade.A,
@@ -42,7 +42,7 @@ export const GRADES: GradeMeta[] = [
     rating: 8.5,
     chip: "border-[#ffcf4a] bg-[#ffcf4a] text-black",
     fill: "#ffcf4a",
-    ink: "#000",
+    ink: "var(--background)",
   },
   {
     value: Grade.B,
@@ -53,7 +53,7 @@ export const GRADES: GradeMeta[] = [
     rating: 7.5,
     chip: "border-[#cfd3d8] bg-[#cfd3d8] text-black",
     fill: "#cfd3d8",
-    ink: "#000",
+    ink: "var(--background)",
   },
   {
     value: Grade.C,
@@ -64,7 +64,7 @@ export const GRADES: GradeMeta[] = [
     rating: 6.5,
     chip: "border-[#d9975f] bg-[#d9975f] text-black",
     fill: "#d9975f",
-    ink: "#000",
+    ink: "var(--background)",
   },
   {
     value: Grade.D,
@@ -73,9 +73,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 4,
     rating: 5,
-    chip: "border-[#7c8089] bg-[#7c8089] text-white",
-    fill: "#7c8089",
-    ink: "#fff",
+    chip: "border-[#8a8f97] bg-[#8a8f97] text-black",
+    fill: "#8a8f97",
+    ink: "var(--background)",
   },
   {
     value: Grade.F,
@@ -84,9 +84,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 0,
     rating: 2.5,
-    chip: "border-signal bg-signal text-white",
+    chip: "border-signal bg-signal text-black",
     fill: "#ff2b2b",
-    ink: "#fff",
+    ink: "var(--background)",
   },
 ];
 
