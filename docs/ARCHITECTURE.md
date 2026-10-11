@@ -168,6 +168,6 @@ on any of them from the command line (`bun run scripts/enqueue.ts sync-catalog f
 ## Operations
 
 - **First full walk**: `bun run scripts/enqueue.ts sync-catalog full` in the librarian. ~350k
-  games at ~32 games/s ≈ 3 hours; the database grows to ~9 GB. Drop `idx_game_name_trgm` and
-  `idx_game_search_names_trgm` before, recreate them and `VACUUM ANALYZE` after.
+  games at ~32 games/s ≈ 3 hours; the database grows to ~9 GB. Keep the trigram indexes in place
+  (dropping and rebuilding them saves little) and run `VACUUM ANALYZE` afterwards.
 - **Deployment**: see `CATALOG_MIRROR_PLAN.md` (homelab Kubernetes section).

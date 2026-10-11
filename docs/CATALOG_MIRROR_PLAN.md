@@ -164,8 +164,10 @@ tables stop being mirrored by hand.
   the expanded sub-object in the same transaction (name + slug), so junctions never hit a missing FK.
 - `similar_games` are written to `game.similar_game_ids` (no FK). `GET /games/:id` reads the array;
   `game_to_similar_game`, the `process-similar-games` queue and `SIMILAR_GAMES_MAX_DEPTH` go away.
-- Before the first full load drop `idx_game_name_trgm` (and the new `search_names` index); recreate
-  them and `VACUUM ANALYZE` afterwards.
+- The two trigram GIN indexes (`idx_game_name_trgm`, `idx_game_search_names_trgm`) could be
+  dropped before a full load and rebuilt after it, but on the first walk that saves ~30 minutes
+  of 3 hours at the cost of manual DDL and an unindexed search meanwhile: not worth it. Run
+  `VACUUM ANALYZE` after the walk.
 - Sizing: ~700 IGDB requests for games (minutes of API time), tens of minutes of writes. With `raw`
   and media tables the DB grows to roughly 9 GB. `raw` is TOASTed and compressed by Postgres;
   keep it out of `select *` paths in the API.
@@ -189,8 +191,8 @@ What landed (2026-10-11):
   page including the write, ~32 games/s, so a full walk of ~350k games takes about 3 hours and
   the `game` table lands at ~20 KB per row (~7 GB) plus ~1–2 GB of child tables. Size the
   production volume at 30Gi, not 20Gi.
-- Not automated: dropping the trigram indexes before the first full walk and `VACUUM ANALYZE`
-  after it. Do that by hand around the first production run.
+- Not automated: `VACUUM ANALYZE` after the first full walk. The trigram indexes stay in place
+  during the walk (decided 2026-10-11: the saving is minor, the manual DDL is not).
 
 ### Phase 5. Webhooks — done
 
@@ -281,9 +283,9 @@ All code phases are in. What remains, in order:
    `WEBHOOK_BASE_URL` set, registers the webhooks, runs `sync-lookups`.
 2. Tune on the deployed stack (resources, CNPG parameters, probes) with the small catalog the
    lazy `fetch-by-ids` path produces.
-3. **Only then** the first full walk: `bun run scripts/enqueue.ts sync-catalog full`, at night,
-   after dropping the two trigram indexes; recreate them and `VACUUM ANALYZE` when it is done.
-   The daily incremental sync takes over from there.
+3. **Only then** the first full walk: `bun run scripts/enqueue.ts sync-catalog full` in the
+   librarian pod, indexes left in place, `VACUUM ANALYZE` when it is done. The daily incremental
+   sync takes over from there.
 4. Validate `user_games_game_id_game_id_fk` is already done by the Phase 7 migration (missing
    games get stub rows that `refresh-stale-games` fills in).
 
