@@ -254,8 +254,8 @@
     "games_one": "{{formatted}} game",
     "games_other": "{{formatted}} games",
     "blurb": {
-      "best": "Top rated by everyone else, 50+ ratings",
-      "popular": "Most rated by everyone else",
+      "best": "Top rated overall, 50+ ratings",
+      "popular": "Most rated overall",
       "upcoming": "Soonest first",
       "members": "By members of this site"
     }
@@ -267,11 +267,11 @@
       "reports_one": "{{count}} report",
       "reports_other": "{{count}} reports",
       "members": "Members",
-      "everyoneElse": "Everyone else",
+      "everyoneElse": "Overall",
       "ratings": "{{ratings}} ratings",
       "grades_one": "{{count}} grade from members",
       "grades_other": "{{count}} grades from members",
-      "alsoEveryoneElse": "everyone else",
+      "alsoEveryoneElse": "overall",
       "alsoMembers_one": "{{count}} member here",
       "alsoMembers_other": "{{count}} members here",
       "noMembersYet": "No grades here yet. Be first.",
