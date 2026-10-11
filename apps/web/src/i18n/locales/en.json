@@ -559,7 +559,6 @@
     },
     "tiers": {
       "saving": "Saving…",
-      "noMatches": "No matching games.",
       "pool": "Pool",
       "filterPool": "Filter pool…",
       "boardHint": "Drag a game into a tier, or select a game and tap a tier label.",

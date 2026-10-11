@@ -1,6 +1,7 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
+import { Gamepad2Icon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -210,15 +211,17 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
           </div>
           <div
             className={cn(
-              "flex min-h-20 flex-wrap content-start gap-1 bg-card p-1",
+              "flex min-h-20 flex-wrap content-start gap-1 p-1",
+              pool.length
+                ? "bg-card"
+                : "items-center justify-center border border-dashed border-border",
               draggedId !== null && "ring-1 ring-inset ring-border",
             )}
+            aria-label={pool.length ? undefined : t("profile.tiers.emptyPool")}
           >
             {pool.map(tile)}
             {!pool.length && (
-              <p className="self-center px-3 py-5 text-sm text-dimmed">
-                {query ? t("profile.tiers.noMatches") : t("profile.tiers.emptyPool")}
-              </p>
+              <Gamepad2Icon className="size-5 text-dimmed/50" strokeWidth={1.5} aria-hidden />
             )}
           </div>
         </section>
