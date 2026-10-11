@@ -6,8 +6,8 @@ import { gradeMeta } from "@/lib/grade";
 import { statusMeta, type LibraryStatus } from "@/lib/statuses";
 
 const SEAL_SIZE: Record<PillSize, string> = {
-  [PillSize.Sm]: "size-8",
-  [PillSize.Md]: "size-10",
+  [PillSize.Sm]: "size-9",
+  [PillSize.Md]: "size-11",
   [PillSize.Lg]: "size-14",
   [PillSize.Xl]: "size-24",
 };
