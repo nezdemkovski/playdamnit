@@ -73,9 +73,9 @@ export const GRADES: GradeMeta[] = [
     },
     min: 4,
     rating: 5,
-    chip: "border-[#6f7077] bg-[#6f7077] text-white",
-    fill: "#6f7077",
-    ink: "#fff",
+    chip: "border-[#9aa0a8] bg-[#9aa0a8] text-black",
+    fill: "#9aa0a8",
+    ink: "#000",
   },
   {
     value: Grade.F,

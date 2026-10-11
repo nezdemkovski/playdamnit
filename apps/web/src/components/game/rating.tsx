@@ -40,12 +40,15 @@ export function GradeBadge({
   size = PillSize.Sm,
   className,
   pressed = false,
+  onArt = false,
 }: {
   grade: Grade | null | undefined;
   size?: PillSize;
   className?: string;
   /** Play the "pressed on" animation (the moment of giving the grade) */
   pressed?: boolean;
+  /** Add the light outer rim: for seals that sit on cover art, not on a dark panel */
+  onArt?: boolean;
 }) {
   if (!grade) return null;
   const meta = gradeMeta(grade);
@@ -61,14 +64,26 @@ export function GradeBadge({
       style={{ color: meta.fill }}
     >
       <svg viewBox="0 0 100 100" className="block size-full overflow-visible" aria-hidden="true">
-        <polygon
-          points={SCALLOPS}
-          fill="currentColor"
-          stroke="var(--background)"
-          strokeWidth="7"
-          strokeLinejoin="round"
-          className={cn("origin-center", pressed && "seal-spin")}
-        />
+        <g className={cn("origin-center", pressed && "seal-spin")}>
+          {/* On art: a light rim outside the dark one, so the seal separates from any cover */}
+          {onArt && (
+            <polygon
+              points={SCALLOPS}
+              fill="none"
+              stroke="var(--foreground)"
+              strokeWidth="14"
+              strokeLinejoin="round"
+              opacity="0.9"
+            />
+          )}
+          <polygon
+            points={SCALLOPS}
+            fill="currentColor"
+            stroke="var(--background)"
+            strokeWidth="8"
+            strokeLinejoin="round"
+          />
+        </g>
         <text
           x="50"
           y="52"
