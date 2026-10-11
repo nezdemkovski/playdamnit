@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { EyeOffIcon, SmilePlusIcon, TrophyIcon } from "lucide-react";
 import { cn } from "cn";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { RatingValue, StatusPill } from "@/components/game/rating";
@@ -25,6 +26,7 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const navigate = useNavigate();
   const { toggle, isPending } = useReviewReaction();
@@ -92,7 +94,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
             <StatusPill status={review.status} />
             {review.mastered && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-semibold text-warning">
-                <TrophyIcon className="size-3" /> Mastered
+                <TrophyIcon className="size-3" /> {t("review.mastered")}
               </span>
             )}
             {review.endedAt && (
@@ -107,7 +109,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
                 onClick={() => setRevealed(true)}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 py-4 text-sm text-dimmed hover:bg-white/5 hover:text-white"
               >
-                <EyeOffIcon className="size-4" /> This review contains spoilers. Click to reveal.
+                <EyeOffIcon className="size-4" /> {t("review.spoiler")}
               </button>
             ) : (
               <Markdown>{review.review}</Markdown>
@@ -139,7 +141,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    aria-label="Add a reaction"
+                    aria-label={t("review.addReaction")}
                     className="rounded-full text-dimmed"
                   >
                     <SmilePlusIcon />
@@ -170,7 +172,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
               </Popover>
             ) : (
               review.reactions.length === 0 && (
-                <span className="text-xs text-dimmed">Reactions are off</span>
+                <span className="text-xs text-dimmed">{t("review.reactionsOff")}</span>
               )
             )}
           </div>

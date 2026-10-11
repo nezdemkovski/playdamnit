@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { CommunityStats } from "@/components/game/community-stats";
 import { GameCard, GameRail } from "@/components/game/game-card";
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/games/$id")({
 });
 
 function GamePage() {
+  const { t } = useTranslation();
   const { id } = Route.useParams();
   const gameId = Number(id);
   const {
@@ -57,10 +59,10 @@ function GamePage() {
   if (!Number.isInteger(gameId) || gameId <= 0 || error) {
     return (
       <div className="panel mt-10 p-16 text-center text-dimmed">
-        This game isn't in the catalog.
+        {t("game.notInCatalog")}
         <div className="mt-4">
           <Link to="/" className="font-semibold text-white hover:underline">
-            Back home
+            {t("notFound.back")}
           </Link>
         </div>
       </div>
@@ -88,6 +90,7 @@ const DetailRow = ({ label, children }: { label: string; children: React.ReactNo
 );
 
 function GameDetail({ game }: { game: Game }) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const { byGameId } = useMyLibrary();
   const entry = byGameId.get(game.id)?.userGameData ?? null;
@@ -127,7 +130,7 @@ function GameDetail({ game }: { game: Game }) {
               loading="eager"
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
-              <Stat label="IGDB">
+              <Stat label={t("game.stats.igdb")}>
                 {igdbRating ? (
                   <RatingValue value={igdbRating} className="text-2xl" />
                 ) : (
@@ -138,16 +141,17 @@ function GameDetail({ game }: { game: Game }) {
                 </span>
               </Stat>
               {game.timeToBeat?.normally ? (
-                <Stat label="To finish">
+                <Stat label={t("game.stats.toFinish")}>
                   <span className="text-2xl font-bold">
                     {formatHours(game.timeToBeat.normally)}
                   </span>
                   <span className="flex items-center gap-1 text-xs text-dimmed">
-                    <ClockIcon className="size-3" /> {game.timeToBeat.count ?? 0} reports
+                    <ClockIcon className="size-3" />{" "}
+                    {t("game.stats.reports", { count: game.timeToBeat.count ?? 0 })}
                   </span>
                 </Stat>
               ) : null}
-              <Stat label="Members">
+              <Stat label={t("game.stats.members")}>
                 <span
                   className={cn(
                     "text-2xl font-bold",
@@ -157,7 +161,8 @@ function GameDetail({ game }: { game: Game }) {
                   {community.ratingAverage?.toFixed(1) ?? community.total}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-dimmed">
-                  <UsersIcon className="size-3" /> {community.total} in lists
+                  <UsersIcon className="size-3" />{" "}
+                  {t("game.stats.inLists", { count: community.total })}
                 </span>
               </Stat>
             </dl>
@@ -172,7 +177,7 @@ function GameDetail({ game }: { game: Game }) {
               />
               <div className="min-w-0 flex-1">
                 <div className="mb-1.5 text-xs text-dimmed">
-                  {entry ? "In your list" : "Your rating"}
+                  {entry ? t("game.yourList") : t("game.yourRating")}
                 </div>
                 <LogGameButton game={game} entry={entry} />
               </div>
@@ -186,7 +191,7 @@ function GameDetail({ game }: { game: Game }) {
               <ManageListsButton gameId={game.id} gameName={game.name} />
               {community.lists > 0 && (
                 <span className="text-xs text-dimmed">
-                  in {community.lists} public {community.lists === 1 ? "list" : "lists"}
+                  {t("game.publicLists", { count: community.lists })}
                 </span>
               )}
             </div>
@@ -197,7 +202,7 @@ function GameDetail({ game }: { game: Game }) {
       <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-3xl font-bold tracking-tight">{game.name}</h1>
         {typeName && <Badge variant="secondary">{typeName}</Badge>}
-        {game.deleted && <Badge variant="destructive">Removed from IGDB</Badge>}
+        {game.deleted && <Badge variant="destructive">{t("game.removedFromIgdb")}</Badge>}
       </div>
       {date && <div className="mt-1 text-dimmed">{date}</div>}
       {entry && (
@@ -214,16 +219,18 @@ function GameDetail({ game }: { game: Game }) {
       )}
       {game.storyline && (
         <div className="mt-5 max-w-3xl">
-          <h2 className="mb-1 font-bold">Story</h2>
+          <h2 className="mb-1 font-bold">{t("game.story")}</h2>
           <p className="whitespace-pre-line leading-relaxed text-white/80">{game.storyline}</p>
         </div>
       )}
       {entry?.review && (
         <div className="panel mt-6 max-w-3xl p-5">
           <div className="mb-2 flex items-center gap-2 text-sm">
-            <span className="font-semibold">Your review</span>
+            <span className="font-semibold">{t("game.yourReview")}</span>
             <RatingValue value={entry.rating} />
-            {entry.spoilers && <span className="text-xs text-dimmed">marked as spoilers</span>}
+            {entry.spoilers && (
+              <span className="text-xs text-dimmed">{t("game.markedSpoilers")}</span>
+            )}
           </div>
           <Markdown>{entry.review}</Markdown>
         </div>
@@ -233,36 +240,54 @@ function GameDetail({ game }: { game: Game }) {
 
       <dl className="mt-8 grid gap-x-8 gap-y-2 md:grid-cols-2">
         {game.developers?.length ? (
-          <DetailRow label="Developers">{game.developers.map((c) => c.name).join(", ")}</DetailRow>
+          <DetailRow label={t("game.details.developers")}>
+            {game.developers.map((c) => c.name).join(", ")}
+          </DetailRow>
         ) : null}
         {game.publishers?.length ? (
-          <DetailRow label="Publishers">{game.publishers.map((c) => c.name).join(", ")}</DetailRow>
+          <DetailRow label={t("game.details.publishers")}>
+            {game.publishers.map((c) => c.name).join(", ")}
+          </DetailRow>
         ) : null}
         {game.genres.length > 0 && (
-          <DetailRow label="Genres">{game.genres.map((g) => g.name).join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.genres")}>
+            {game.genres.map((g) => g.name).join(" · ")}
+          </DetailRow>
         )}
         {game.platforms.length > 0 && (
-          <DetailRow label="Platforms">{game.platforms.map((p) => p.name).join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.platforms")}>
+            {game.platforms.map((p) => p.name).join(" · ")}
+          </DetailRow>
         )}
         {game.themes?.length ? (
-          <DetailRow label="Themes">{game.themes.map((t) => t.name).join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.themes")}>
+            {game.themes.map((th) => th.name).join(" · ")}
+          </DetailRow>
         ) : null}
         {game.gameModes?.length ? (
-          <DetailRow label="Modes">{game.gameModes.map((m) => m.name).join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.modes")}>
+            {game.gameModes.map((m) => m.name).join(" · ")}
+          </DetailRow>
         ) : null}
         {game.collections?.length ? (
-          <DetailRow label="Series">{game.collections.map((c) => c.name).join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.series")}>
+            {game.collections.map((c) => c.name).join(" · ")}
+          </DetailRow>
         ) : null}
         {game.alternativeNames.length > 0 && (
-          <DetailRow label="Also known as">{game.alternativeNames.join(" · ")}</DetailRow>
+          <DetailRow label={t("game.details.alsoKnownAs")}>
+            {game.alternativeNames.join(" · ")}
+          </DetailRow>
         )}
         {game.timeToBeat && (game.timeToBeat.hastily || game.timeToBeat.completely) ? (
-          <DetailRow label="Time to beat">
+          <DetailRow label={t("game.details.timeToBeat")}>
             {[
-              game.timeToBeat.hastily && `${formatHours(game.timeToBeat.hastily)} rushed`,
-              game.timeToBeat.normally && `${formatHours(game.timeToBeat.normally)} normal`,
+              game.timeToBeat.hastily &&
+                t("game.details.rushed", { hours: formatHours(game.timeToBeat.hastily) }),
+              game.timeToBeat.normally &&
+                t("game.details.normal", { hours: formatHours(game.timeToBeat.normally) }),
               game.timeToBeat.completely &&
-                `${formatHours(game.timeToBeat.completely)} completionist`,
+                t("game.details.completionist", { hours: formatHours(game.timeToBeat.completely) }),
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -272,18 +297,26 @@ function GameDetail({ game }: { game: Game }) {
 
       {(links.length > 0 || stores.length > 0) && (
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="eyebrow">Links</span>
+          <span className="eyebrow">{t("game.links")}</span>
           {links.map((w) => (
-            <LinkChip key={`w${w.id}`} href={w.url} label={w.type ?? "Website"} />
+            <LinkChip key={`w${w.id}`} href={w.url} label={w.type ?? t("game.website")} />
           ))}
           {stores.map((s) => (
-            <LinkChip key={`s${s.id}`} href={s.url!} label={s.source ?? s.name ?? "Store"} />
+            <LinkChip
+              key={`s${s.id}`}
+              href={s.url!}
+              label={s.source ?? s.name ?? t("game.store")}
+            />
           ))}
         </div>
       )}
 
       {game.screenshots && game.screenshots.length > 0 && (
-        <Section title="Screenshots" icon={CameraIcon} count={game.screenshots.length}>
+        <Section
+          title={t("game.sections.screenshots")}
+          icon={CameraIcon}
+          count={game.screenshots.length}
+        >
           <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
             {game.screenshots.map((shot) => (
               <a
@@ -306,7 +339,7 @@ function GameDetail({ game }: { game: Game }) {
       )}
 
       {game.videos && game.videos.length > 0 && (
-        <Section title="Videos" icon={PlayIcon} count={game.videos.length}>
+        <Section title={t("game.sections.videos")} icon={PlayIcon} count={game.videos.length}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {game.videos.map((video) => (
               <a
@@ -340,7 +373,7 @@ function GameDetail({ game }: { game: Game }) {
       )}
 
       {related.length > 0 && (
-        <Section title="Editions and add-ons" icon={LayersIcon} count={related.length}>
+        <Section title={t("game.sections.editions")} icon={LayersIcon} count={related.length}>
           <GameRail>
             {related.map((r) => (
               <div key={r.id}>
@@ -358,7 +391,11 @@ function GameDetail({ game }: { game: Game }) {
       )}
 
       {game.similarGames && game.similarGames.length > 0 && (
-        <Section title="Similar games" icon={SparklesIcon} count={game.similarGames.length}>
+        <Section
+          title={t("game.sections.similar")}
+          icon={SparklesIcon}
+          count={game.similarGames.length}
+        >
           <GameRail>
             {game.similarGames.map((g) => (
               <div key={g.id}>
@@ -371,7 +408,7 @@ function GameDetail({ game }: { game: Game }) {
       )}
 
       <Section
-        title="Reviews"
+        title={t("game.sections.reviews")}
         icon={MessageSquareTextIcon}
         count={community.reviews}
         action={
@@ -386,7 +423,7 @@ function GameDetail({ game }: { game: Game }) {
                   reviewSort === sort ? "bg-white/10 text-white" : "text-dimmed hover:text-white",
                 )}
               >
-                {sort === "top" ? "Most reacted" : "Latest"}
+                {t(`game.reviewSort.${sort}`)}
               </button>
             ))}
           </div>
@@ -395,10 +432,7 @@ function GameDetail({ game }: { game: Game }) {
         {reviews.isPending && <Skeleton className="h-32 rounded-card" />}
         {reviews.data?.results.length === 0 && (
           <div className="panel p-10 text-center text-sm text-dimmed">
-            No reviews yet.{" "}
-            {entry
-              ? "Edit your entry to write one."
-              : "Add the game to your list and write the first."}
+            {entry ? t("game.noReviewsEdit") : t("game.noReviewsAdd")}
           </div>
         )}
         <div className="space-y-3">
@@ -409,7 +443,11 @@ function GameDetail({ game }: { game: Game }) {
       </Section>
 
       {game.localizedCovers && game.localizedCovers.length > 0 && (
-        <Section title="Regional covers" icon={UsersIcon} count={game.localizedCovers.length}>
+        <Section
+          title={t("game.sections.regional")}
+          icon={UsersIcon}
+          count={game.localizedCovers.length}
+        >
           <GameRail>
             {game.localizedCovers.map((c) => (
               <div key={c.id}>

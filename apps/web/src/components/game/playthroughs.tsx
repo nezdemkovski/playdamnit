@@ -4,6 +4,7 @@ import {
 } from "@playdamnit/api-client";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ export function Playthroughs({
   platforms,
   defaultPlatformId,
 }: PlaythroughsProps) {
+  const { t } = useTranslation();
   const runs = useGetApiUserByUsernameGamesByIdPlaythroughs(username, gameId);
   const mutations = usePlaythroughMutations(gameId);
   const [adding, setAdding] = useState(false);
@@ -60,17 +62,15 @@ export function Playthroughs({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Playthroughs</Label>
+        <Label>{t("playthrough.title")}</Label>
         {!adding && (
           <Button type="button" variant="ghost" size="xs" onClick={() => setAdding(true)}>
-            <PlusIcon /> Log a playthrough
+            <PlusIcon /> {t("playthrough.log")}
           </Button>
         )}
       </div>
       {runs.data?.length === 0 && !adding && (
-        <p className="text-xs text-dimmed">
-          No playthroughs logged. Replays, hours and dates go here.
-        </p>
+        <p className="text-xs text-dimmed">{t("playthrough.empty")}</p>
       )}
       <ul className="space-y-1.5">
         {runs.data?.map((run) => (
@@ -81,8 +81,10 @@ export function Playthroughs({
             <div className="min-w-0 flex-1">
               <div>
                 {[shortDate(run.startedAt), shortDate(run.endedAt)].filter(Boolean).join(" → ") ||
-                  "Undated"}
-                {run.hours ? <span className="text-dimmed"> · {run.hours}h</span> : null}
+                  t("playthrough.undated")}
+                {run.hours ? (
+                  <span className="text-dimmed"> · {t("units.hours", { value: run.hours })}</span>
+                ) : null}
                 {run.platform && (
                   <span className="text-dimmed">
                     {" "}
@@ -96,7 +98,7 @@ export function Playthroughs({
               type="button"
               variant="ghost"
               size="icon-xs"
-              aria-label="Delete playthrough"
+              aria-label={t("playthrough.deleteAria")}
               className="text-dimmed hover:text-destructive"
               onClick={() => mutations.remove(run.id)}
             >
@@ -112,7 +114,7 @@ export function Playthroughs({
         >
           <div className="space-y-1">
             <Label htmlFor="pt-start" className="text-xs">
-              Started
+              {t("playthrough.started")}
             </Label>
             <Input
               id="pt-start"
@@ -123,7 +125,7 @@ export function Playthroughs({
           </div>
           <div className="space-y-1">
             <Label htmlFor="pt-end" className="text-xs">
-              Finished
+              {t("playthrough.finished")}
             </Label>
             <Input
               id="pt-end"
@@ -134,7 +136,7 @@ export function Playthroughs({
           </div>
           <div className="space-y-1">
             <Label htmlFor="pt-hours" className="text-xs">
-              Hours
+              {t("playthrough.hours")}
             </Label>
             <Input
               id="pt-hours"
@@ -146,10 +148,10 @@ export function Playthroughs({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Platform</Label>
+            <Label className="text-xs">{t("log.platform")}</Label>
             <Select value={platformId} onValueChange={setPlatformId}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Platform" />
+                <SelectValue placeholder={t("log.platform")} />
               </SelectTrigger>
               <SelectContent>
                 {platforms.map((p) => (
@@ -162,22 +164,22 @@ export function Playthroughs({
           </div>
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="pt-note" className="text-xs">
-              Note
+              {t("playthrough.note")}
             </Label>
             <Input
               id="pt-note"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Replay on hard, 100% run…"
+              placeholder={t("playthrough.notePlaceholder")}
               maxLength={1000}
             />
           </div>
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" size="sm" disabled={mutations.isPending}>
-              Save
+              {t("common.save")}
             </Button>
           </div>
         </form>

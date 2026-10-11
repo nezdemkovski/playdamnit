@@ -1,5 +1,6 @@
 import type { GameListInput, GameListSummary } from "@playdamnit/api-client";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ interface ListFormDialogProps {
 }
 
 export function ListFormDialog({ open, onOpenChange, list, onSubmit }: ListFormDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -51,12 +53,12 @@ export function ListFormDialog({ open, onOpenChange, list, onSubmit }: ListFormD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-card border-white/5 bg-popover">
         <DialogHeader>
-          <DialogTitle>{list ? "Edit list" : "New list"}</DialogTitle>
-          <DialogDescription>Games in the order you say.</DialogDescription>
+          <DialogTitle>{list ? t("lists.form.editTitle") : t("lists.form.newTitle")}</DialogTitle>
+          <DialogDescription>{t("lists.form.description")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="list-name">Name</Label>
+            <Label htmlFor="list-name">{t("lists.form.name")}</Label>
             <Input
               id="list-name"
               value={name}
@@ -67,7 +69,7 @@ export function ListFormDialog({ open, onOpenChange, list, onSubmit }: ListFormD
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="list-description">Description</Label>
+            <Label htmlFor="list-description">{t("lists.form.descriptionLabel")}</Label>
             <Textarea
               id="list-description"
               value={description}
@@ -77,11 +79,11 @@ export function ListFormDialog({ open, onOpenChange, list, onSubmit }: ListFormD
           </div>
           <div className="flex items-center gap-3">
             <Switch id="list-public" checked={isPublic} onCheckedChange={setIsPublic} />
-            <Label htmlFor="list-public">Public</Label>
+            <Label htmlFor="list-public">{t("lists.form.public")}</Label>
           </div>
           <div className="flex justify-end">
             <Button type="submit" disabled={busy || !name.trim()}>
-              {list ? "Save" : "Create"}
+              {list ? t("common.save") : t("common.create")}
             </Button>
           </div>
         </form>

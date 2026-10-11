@@ -5,6 +5,8 @@ import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { useMemo } from "react";
 
+import { t } from "@/i18n";
+
 interface HistogramProps {
   /** Counts per 1..10 rating bucket */
   buckets: number[];
@@ -12,7 +14,8 @@ interface HistogramProps {
   highlight?: number | null;
   height?: number;
   ariaLabel: string;
-  noun?: string;
+  /** Which tooltip wording to use */
+  noun?: "games" | "ratings";
 }
 
 const GREY = "rgba(241,241,240,.22)";
@@ -47,7 +50,7 @@ export function Histogram({
         tooltip: {
           use: tooltip,
           format: (point) =>
-            `${point.datum.bucket}/10 · ${point.datum.count} ${point.datum.count === 1 ? noun.replace(/s$/, "") : noun}`,
+            t(`histogram.${noun}`, { bucket: point.datum.bucket, count: point.datum.count }),
         },
       },
     );

@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 
+import { t } from "@/i18n";
+
 interface Badge {
   id: string;
   label: string;
@@ -29,67 +31,38 @@ export const computeBadges = (entries: UserGameWithUserData[], reviews: number):
   const thisYear = entries.filter(
     (e) => e.userGameData.endedAt && new Date(e.userGameData.endedAt).getFullYear() === year,
   ).length;
+  const make = (
+    id:
+      | "first"
+      | "collector"
+      | "hoarder"
+      | "finisher"
+      | "closer"
+      | "critic"
+      | "writer"
+      | "completionist",
+    icon: LucideIcon,
+    earned: boolean,
+  ): Badge => ({
+    id,
+    label: t(`badges.${id}.label`),
+    description: t(`badges.${id}.description`),
+    icon,
+    earned,
+  });
   return [
-    {
-      id: "first",
-      label: "First log",
-      description: "Added a game to the list",
-      icon: Gamepad2Icon,
-      earned: entries.length >= 1,
-    },
-    {
-      id: "collector",
-      label: "Collector",
-      description: "50 games in the list",
-      icon: BookOpenIcon,
-      earned: entries.length >= 50,
-    },
-    {
-      id: "hoarder",
-      label: "Hoarder",
-      description: "200 games in the list",
-      icon: SparklesIcon,
-      earned: entries.length >= 200,
-    },
-    {
-      id: "finisher",
-      label: "Finisher",
-      description: "Finished 10 games",
-      icon: FlagIcon,
-      earned: finished >= 10,
-    },
-    {
-      id: "closer",
-      label: "Closer",
-      description: "Finished 50 games",
-      icon: AwardIcon,
-      earned: finished >= 50,
-    },
-    {
-      id: "critic",
-      label: "Critic",
-      description: "Rated 25 games",
-      icon: StarIcon,
-      earned: rated >= 25,
-    },
-    {
-      id: "writer",
-      label: "Writer",
-      description: "Wrote 10 reviews",
-      icon: PenLineIcon,
-      earned: reviews >= 10,
-    },
-    {
-      id: "completionist",
-      label: "Completionist",
-      description: "Mastered 5 games",
-      icon: TrophyIcon,
-      earned: mastered >= 5,
-    },
+    make("first", Gamepad2Icon, entries.length >= 1),
+    make("collector", BookOpenIcon, entries.length >= 50),
+    make("hoarder", SparklesIcon, entries.length >= 200),
+    make("finisher", FlagIcon, finished >= 10),
+    make("closer", AwardIcon, finished >= 50),
+    make("critic", StarIcon, rated >= 25),
+    make("writer", PenLineIcon, reviews >= 10),
+    make("completionist", TrophyIcon, mastered >= 5),
     {
       id: "year",
-      label: `${year} grind`,
-      description: `Finished 12 games in ${year}`,
+      label: t("badges.year.label", { year }),
+      description: t("badges.year.description", { year }),
       icon: FlagIcon,
       earned: thisYear >= 12,
     },

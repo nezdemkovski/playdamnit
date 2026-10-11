@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { Trans, useTranslation } from "react-i18next";
 
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
@@ -25,21 +26,22 @@ export const Route = createFileRoute("/$username")({
 
 const TABS: {
   to: string;
-  label: string;
+  label: "profile" | "games" | "journal" | "reviews" | "lists" | "friends" | "likes";
   icon: LucideIcon;
   count?: "games" | "reviews" | "lists";
 }[] = [
-  { to: "", label: "Profile", icon: UserIcon },
-  { to: "/games", label: "Games", icon: LibraryIcon, count: "games" },
-  { to: "/journal", label: "Journal", icon: BookOpenIcon },
-  { to: "/reviews", label: "Reviews", icon: MessageSquareTextIcon, count: "reviews" },
-  { to: "/lists", label: "Lists", icon: LayersIcon, count: "lists" },
-  { to: "/friends", label: "Friends", icon: UsersIcon },
-  { to: "/likes", label: "Likes", icon: HeartIcon },
+  { to: "", label: "profile", icon: UserIcon },
+  { to: "/games", label: "games", icon: LibraryIcon, count: "games" },
+  { to: "/journal", label: "journal", icon: BookOpenIcon },
+  { to: "/reviews", label: "reviews", icon: MessageSquareTextIcon, count: "reviews" },
+  { to: "/lists", label: "lists", icon: LayersIcon, count: "lists" },
+  { to: "/friends", label: "friends", icon: UsersIcon },
+  { to: "/likes", label: "likes", icon: HeartIcon },
 ];
 
 /** Profile header (avatar, bio, links, follow) and the tab bar; tabs render in the outlet */
 function ProfileLayout() {
+  const { t } = useTranslation();
   const { username } = Route.useParams();
   const profile = useGetApiUserByUsername(username);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -48,10 +50,14 @@ function ProfileLayout() {
   if (profile.error) {
     return (
       <div className="panel mt-10 p-16 text-center text-dimmed">
-        No user called <span className="font-semibold text-white">@{username}</span>.
+        <Trans
+          i18nKey="profile.notFound"
+          values={{ username }}
+          components={{ n: <span className="font-semibold text-white" /> }}
+        />
         <div className="mt-4">
           <Link to="/" className="font-semibold text-white hover:underline">
-            Back home
+            {t("notFound.back")}
           </Link>
         </div>
       </div>
@@ -78,10 +84,14 @@ function ProfileLayout() {
               <h1 className="truncate text-2xl font-bold">{user.name || user.username}</h1>
               <span className="text-sm text-dimmed">@{user.username}</span>
               {user.followsYou && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">Follows you</span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
+                  {t("profile.followsYou")}
+                </span>
               )}
               {!user.listPublic && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">Private list</span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
+                  {t("profile.privateList")}
+                </span>
               )}
             </div>
             {user.bio && <p className="mt-2 max-w-2xl text-sm text-white/80">{user.bio}</p>}
@@ -102,7 +112,10 @@ function ProfileLayout() {
             )}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <span>
-                <b>{user.counts.games}</b> <span className="text-dimmed">games</span>
+                <b>{user.counts.games}</b>{" "}
+                <span className="text-dimmed">
+                  {t("profile.counts.games", { count: user.counts.games })}
+                </span>
               </span>
               <Link
                 to="/$username/friends"
@@ -110,7 +123,10 @@ function ProfileLayout() {
                 search={{ tab: "followers" }}
                 className="hover:underline"
               >
-                <b>{user.counts.followers}</b> <span className="text-dimmed">followers</span>
+                <b>{user.counts.followers}</b>{" "}
+                <span className="text-dimmed">
+                  {t("profile.counts.followers", { count: user.counts.followers })}
+                </span>
               </Link>
               <Link
                 to="/$username/friends"
@@ -118,7 +134,8 @@ function ProfileLayout() {
                 search={{ tab: "following" }}
                 className="hover:underline"
               >
-                <b>{user.counts.following}</b> <span className="text-dimmed">following</span>
+                <b>{user.counts.following}</b>{" "}
+                <span className="text-dimmed">{t("profile.counts.following")}</span>
               </Link>
             </div>
           </div>
@@ -126,7 +143,7 @@ function ProfileLayout() {
             {user.isOwn ? (
               <Button asChild variant="outline" size="sm">
                 <Link to="/$username/settings" params={{ username }}>
-                  <SettingsIcon /> Edit profile
+                  <SettingsIcon /> {t("profile.editProfile")}
                 </Link>
               </Button>
             ) : (
@@ -157,7 +174,7 @@ function ProfileLayout() {
               )}
             >
               <tab.icon className="size-4" />
-              {tab.label}
+              {t(`profile.tabs.${tab.label}`)}
               {count !== undefined && count > 0 && (
                 <span className="text-xs text-dimmed">{count}</span>
               )}

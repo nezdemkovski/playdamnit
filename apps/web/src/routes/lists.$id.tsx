@@ -10,6 +10,7 @@ import {
   XIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCard } from "@/components/game/game-card";
 import { GameCover } from "@/components/game/game-cover";
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/lists/$id")({
 });
 
 function ListPage() {
+  const { t } = useTranslation();
   const { id } = Route.useParams();
   const { user } = useSession();
   const navigate = useNavigate();
@@ -59,10 +61,10 @@ function ListPage() {
   if (list.error) {
     return (
       <div className="panel mt-10 p-16 text-center text-dimmed">
-        This list doesn't exist or is private.
+        {t("lists.page.notFound")}
         <div className="mt-4">
           <Link to="/" className="font-semibold text-white hover:underline">
-            Back home
+            {t("notFound.back")}
           </Link>
         </div>
       </div>
@@ -114,7 +116,7 @@ function ListPage() {
                   {data.user.name || username}
                 </Link>
               )}
-              <span>· {data.gamesCount} games</span>
+              <span>· {t("lists.games", { count: data.gamesCount })}</span>
             </div>
             {data.description && (
               <Markdown className="mt-3 max-w-2xl text-white/80">{data.description}</Markdown>
@@ -123,7 +125,7 @@ function ListPage() {
           {isOwn && (
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <PencilIcon /> Edit
+                <PencilIcon /> {t("common.edit")}
               </Button>
               <Button
                 variant="secondary"
@@ -131,7 +133,7 @@ function ListPage() {
                 onClick={() => setArranging((v) => !v)}
                 disabled={data.games.length < 2}
               >
-                {arranging ? "Done arranging" : "Arrange"}
+                {arranging ? t("lists.page.doneArranging") : t("lists.page.arrange")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -140,18 +142,18 @@ function ListPage() {
                     size="sm"
                     className="text-destructive hover:text-destructive"
                   >
-                    <Trash2Icon /> Delete
+                    <Trash2Icon /> {t("common.delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-card">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete “{data.name}”?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      The list goes away; the games stay in the catalog and your library.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>
+                      {t("lists.page.deleteTitle", { name: data.name })}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>{t("lists.page.deleteText")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Keep</AlertDialogCancel>
+                    <AlertDialogCancel>{t("common.keep")}</AlertDialogCancel>
                     <AlertDialogAction
                       className="bg-destructive text-white hover:bg-destructive/90"
                       onClick={async () => {
@@ -159,7 +161,7 @@ function ListPage() {
                         navigate({ to: "/$username", params: { username } });
                       }}
                     >
-                      Delete
+                      {t("common.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -176,7 +178,7 @@ function ListPage() {
             onPick={(gameId) => mutations.addGame(id, gameId)}
           >
             <Button variant="outline" size="sm">
-              <PlusIcon /> Add a game
+              <PlusIcon /> {t("lists.page.addGame")}
             </Button>
           </AddGamePicker>
         </div>
@@ -199,7 +201,7 @@ function ListPage() {
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Move up"
+                aria-label={t("lists.page.moveUp")}
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
               >
@@ -208,7 +210,7 @@ function ListPage() {
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Move down"
+                aria-label={t("lists.page.moveDown")}
                 onClick={() => move(i, 1)}
                 disabled={i === order.length - 1}
               >
@@ -217,7 +219,7 @@ function ListPage() {
               <Button
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Remove"
+                aria-label={t("common.remove")}
                 className="text-dimmed hover:text-destructive"
                 onClick={() => setOrder(order.filter((g) => g.id !== game.id))}
               >
@@ -234,15 +236,15 @@ function ListPage() {
                 setArranging(false);
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button size="sm" onClick={saveOrder} disabled={mutations.isPending}>
-              Save order
+              {t("lists.page.saveOrder")}
             </Button>
           </div>
         </div>
       ) : data.games.length === 0 ? (
-        <div className="panel mt-6 p-12 text-center text-dimmed">This list is empty.</div>
+        <div className="panel mt-6 p-12 text-center text-dimmed">{t("lists.page.empty")}</div>
       ) : (
         <ol className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {data.games.map((game, i) => (

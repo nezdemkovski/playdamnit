@@ -4,6 +4,7 @@ import {
 } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { cn } from "cn";
+import { useTranslation } from "react-i18next";
 
 import { FollowButton } from "@/components/social/follow-button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/$username/friends")({
 });
 
 function ProfileFriends() {
+  const { t } = useTranslation();
   const { username } = useProfileContext();
   const { tab } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -36,26 +38,24 @@ function ProfileFriends() {
   return (
     <>
       <div className="flex gap-1">
-        {(["followers", "following"] as const).map((t) => (
+        {(["followers", "following"] as const).map((name) => (
           <button
-            key={t}
+            key={name}
             type="button"
-            onClick={() => navigate({ search: { tab: t } })}
+            onClick={() => navigate({ search: { tab: name } })}
             className={cn(
-              "rounded-full px-4 py-1.5 text-sm font-semibold capitalize",
-              tab === t ? "bg-primary text-primary-foreground" : "text-dimmed hover:text-white",
+              "rounded-full px-4 py-1.5 text-sm font-semibold",
+              tab === name ? "bg-primary text-primary-foreground" : "text-dimmed hover:text-white",
             )}
           >
-            {t}
+            {t(`profile.friends.${name}`)}
           </button>
         ))}
       </div>
       <div className="mt-4 space-y-2">
         {query.isPending && <Skeleton className="h-16 rounded-card" />}
         {query.data?.results.length === 0 && (
-          <div className="panel p-12 text-center text-dimmed">
-            Nobody here yet. Follow someone and it stops being awkward.
-          </div>
+          <div className="panel p-12 text-center text-dimmed">{t("profile.friends.empty")}</div>
         )}
         {query.data?.results.map((member) => (
           <div key={member.id} className="panel flex items-center gap-3 p-3">

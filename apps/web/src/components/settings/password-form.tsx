@@ -1,5 +1,6 @@
 import { Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   AlertDialog,
@@ -20,6 +21,7 @@ import type { SessionUser } from "@/lib/authClient";
 
 /** Account tab: email, password and the way out */
 export function PasswordForm({ user }: { user: SessionUser }) {
+  const { t } = useTranslation();
   const change = useChangePassword();
   const changeEmail = useChangeEmail();
   const deleteAccount = useDeleteAccount();
@@ -37,9 +39,9 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           changeEmail.mutate(email.trim());
         }}
       >
-        <h3 className="font-semibold">Email</h3>
+        <h3 className="font-semibold">{t("settings.account.email")}</h3>
         <div className="space-y-2">
-          <Label htmlFor="email">Address</Label>
+          <Label htmlFor="email">{t("settings.account.address")}</Label>
           <Input
             id="email"
             type="email"
@@ -50,8 +52,8 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           />
           <p className="text-xs text-dimmed">
             {user.emailVerified
-              ? "Verified. A new address gets a confirmation link before it takes over."
-              : "Not verified."}
+              ? t("settings.account.verified")
+              : t("settings.account.notVerified")}
           </p>
         </div>
         <Button
@@ -60,7 +62,7 @@ export function PasswordForm({ user }: { user: SessionUser }) {
             changeEmail.isPending || email.trim().toLowerCase() === user.email.toLowerCase()
           }
         >
-          Change email
+          {t("settings.account.changeEmail")}
         </Button>
       </form>
 
@@ -79,9 +81,9 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           );
         }}
       >
-        <h3 className="font-semibold">Change password</h3>
+        <h3 className="font-semibold">{t("settings.account.changePassword")}</h3>
         <div className="space-y-2">
-          <Label htmlFor="current-password">Current password</Label>
+          <Label htmlFor="current-password">{t("settings.account.currentPassword")}</Label>
           <Input
             id="current-password"
             type="password"
@@ -92,7 +94,7 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="new-password">New password</Label>
+          <Label htmlFor="new-password">{t("settings.account.newPassword")}</Label>
           <Input
             id="new-password"
             type="password"
@@ -104,21 +106,16 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           />
         </div>
         <Button type="submit" disabled={change.isPending}>
-          Update password
+          {t("settings.account.updatePassword")}
         </Button>
-        <p className="text-xs text-dimmed">
-          Other sessions are signed out when the password changes.
-        </p>
+        <p className="text-xs text-dimmed">{t("settings.account.otherSessions")}</p>
       </form>
 
       <section className="max-w-sm space-y-4 rounded-card border border-destructive/30 p-5">
-        <h3 className="font-semibold text-destructive">Delete account</h3>
-        <p className="text-sm text-dimmed">
-          Your list, reviews, lists, playthroughs, likes and follows are deleted immediately. There
-          is no undo; export your list first if you want to keep it.
-        </p>
+        <h3 className="font-semibold text-destructive">{t("settings.account.deleteTitle")}</h3>
+        <p className="text-sm text-dimmed">{t("settings.account.deleteText")}</p>
         <div className="space-y-2">
-          <Label htmlFor="delete-password">Confirm with your password</Label>
+          <Label htmlFor="delete-password">{t("settings.account.confirmPassword")}</Label>
           <Input
             id="delete-password"
             type="password"
@@ -130,23 +127,25 @@ export function PasswordForm({ user }: { user: SessionUser }) {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" disabled={!deletePassword || deleteAccount.isPending}>
-              <Trash2Icon /> Delete my account
+              <Trash2Icon /> {t("settings.account.deleteButton")}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent className="rounded-card">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete @{user.username}?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("settings.account.deleteDialogTitle", { username: user.username })}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Everything you logged on PlayDamnIt is removed for good.
+                {t("settings.account.deleteDialogText")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Keep my account</AlertDialogCancel>
+              <AlertDialogCancel>{t("settings.account.keepAccount")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-white hover:bg-destructive/90"
                 onClick={() => deleteAccount.mutate(deletePassword)}
               >
-                Delete everything
+                {t("settings.account.deleteEverything")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

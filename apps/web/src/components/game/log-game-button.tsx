@@ -1,6 +1,7 @@
 import type { Game, UserGameData } from "@playdamnit/api-client";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { LogGameDialog } from "./log-game-dialog";
@@ -20,6 +21,7 @@ export function LogGameButton({
   size = "default",
   variant = "default",
 }: LogGameButtonProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -31,7 +33,7 @@ export function LogGameButton({
         </Button>
       ) : (
         <Button variant={variant} size={size} onClick={() => setOpen(true)}>
-          <PlusIcon /> Add game
+          <PlusIcon /> {t("log.add")}
         </Button>
       )}
       <LogGameDialog game={game} entry={entry} open={open} onOpenChange={setOpen} />

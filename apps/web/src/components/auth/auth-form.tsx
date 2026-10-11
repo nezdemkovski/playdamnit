@@ -1,5 +1,6 @@
 import { FingerprintIcon, Loader2Icon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ const USERNAME_PATTERN = "^[a-zA-Z0-9_.]{3,30}$";
 
 /** Sign-in (password or passkey) and sign-up, in one card */
 export function AuthForm() {
+  const { t } = useTranslation();
   const signIn = useSignIn();
   const signUp = useSignUp();
 
@@ -28,18 +30,18 @@ export function AuthForm() {
       <div className="mb-6 flex items-center gap-3">
         <img src="/logo.svg" alt="" className="size-10" />
         <div>
-          <h1 className="text-xl font-bold">PlayDamnIt</h1>
-          <p className="text-sm text-dimmed">Log it. Rate it. Get judged.</p>
+          <h1 className="text-xl font-bold">{t("app.name")}</h1>
+          <p className="text-sm text-dimmed">{t("auth.tagline")}</p>
         </div>
       </div>
 
       <Tabs defaultValue="sign-in">
         <TabsList className="w-full">
           <TabsTrigger value="sign-in" className="flex-1">
-            Sign in
+            {t("auth.tabSignIn")}
           </TabsTrigger>
           <TabsTrigger value="sign-up" className="flex-1">
-            Create account
+            {t("auth.tabSignUp")}
           </TabsTrigger>
         </TabsList>
 
@@ -52,7 +54,7 @@ export function AuthForm() {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="identifier">Email or username</Label>
+              <Label htmlFor="identifier">{t("auth.identifier")}</Label>
               <Input
                 id="identifier"
                 autoComplete="username"
@@ -62,7 +64,7 @@ export function AuthForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -73,12 +75,13 @@ export function AuthForm() {
               />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={busy}>
-              {signIn.password.isPending && <Loader2Icon className="animate-spin" />} Sign in
+              {signIn.password.isPending && <Loader2Icon className="animate-spin" />}{" "}
+              {t("auth.signIn")}
             </Button>
           </form>
           <div className="my-4 flex items-center gap-3 text-xs text-dimmed">
             <span className="h-px flex-1 bg-white/10" />
-            or
+            {t("common.or")}
             <span className="h-px flex-1 bg-white/10" />
           </div>
           <Button
@@ -89,7 +92,7 @@ export function AuthForm() {
             disabled={busy}
             onClick={() => signIn.passkey.mutate()}
           >
-            <FingerprintIcon /> Sign in with a passkey
+            <FingerprintIcon /> {t("auth.passkey")}
           </Button>
         </TabsContent>
 
@@ -108,7 +111,7 @@ export function AuthForm() {
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Display name</Label>
+                <Label htmlFor="name">{t("auth.displayName")}</Label>
                 <Input
                   id="name"
                   autoComplete="name"
@@ -118,20 +121,20 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("auth.username")}</Label>
                 <Input
                   id="username"
                   autoComplete="username"
                   required
                   pattern={USERNAME_PATTERN}
-                  title="3–30 letters, digits, dots or underscores"
+                  title={t("auth.usernameHint")}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -142,7 +145,7 @@ export function AuthForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-password">Password</Label>
+              <Label htmlFor="new-password">{t("auth.password")}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -154,7 +157,8 @@ export function AuthForm() {
               />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={busy}>
-              {signUp.isPending && <Loader2Icon className="animate-spin" />} Create account
+              {signUp.isPending && <Loader2Icon className="animate-spin" />}{" "}
+              {t("auth.createAccount")}
             </Button>
           </form>
         </TabsContent>

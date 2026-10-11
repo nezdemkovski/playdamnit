@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
+import { t } from "@/i18n";
 import { authClient } from "@/lib/authClient";
 
 const SESSION_KEY = ["session"] as const;
@@ -12,7 +13,7 @@ const errorMessage = (error: unknown, fallback: string) =>
 
 /** Unwrap Better Auth's `{ data, error }` result into a thrown error so mutations fail loudly */
 const unwrap = <T>(result: { data: T; error: { message?: string } | null }): T => {
-  if (result.error) throw new Error(result.error.message ?? "Request failed");
+  if (result.error) throw new Error(result.error.message ?? t("toast.requestFailed"));
   return result.data;
 };
 
@@ -48,13 +49,13 @@ export const useSignIn = () => {
         ? unwrap(await authClient.signIn.email({ email: identifier, password: secret }))
         : unwrap(await authClient.signIn.username({ username: identifier, password: secret })),
     onSuccess: invalidate,
-    onError: (error) => toast.error(errorMessage(error, "Could not sign in")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.signInFailed"))),
   });
 
   const passkey = useMutation({
     mutationFn: async () => unwrap(await authClient.signIn.passkey()),
     onSuccess: invalidate,
-    onError: (error) => toast.error(errorMessage(error, "Passkey sign-in failed")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.passkeySignInFailed"))),
   });
 
   return { password, passkey };
@@ -70,7 +71,7 @@ export const useSignUp = () => {
       username: string;
     }) => unwrap(await authClient.signUp.email(input)),
     onSuccess: invalidate,
-    onError: (error) => toast.error(errorMessage(error, "Could not create the account")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.signUpFailed"))),
   });
 };
 
@@ -94,9 +95,9 @@ export const useUpdateProfile = () => {
       unwrap(await authClient.updateUser(input)),
     onSuccess: () => {
       invalidate();
-      toast.success("Profile saved");
+      toast.success(t("toast.profileSaved"));
     },
-    onError: (error) => toast.error(errorMessage(error, "Could not save the profile")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.profileSaveFailed"))),
   });
 };
 
@@ -104,8 +105,8 @@ export const useChangePassword = () =>
   useMutation({
     mutationFn: async (input: { currentPassword: string; newPassword: string }) =>
       unwrap(await authClient.changePassword({ ...input, revokeOtherSessions: true })),
-    onSuccess: () => toast.success("Password changed"),
-    onError: (error) => toast.error(errorMessage(error, "Could not change the password")),
+    onSuccess: () => toast.success(t("toast.passwordChanged")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.passwordChangeFailed"))),
   });
 
 export const useChangeEmail = () => {
@@ -119,9 +120,9 @@ export const useChangeEmail = () => {
     },
     onSuccess: (applied) => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY });
-      toast.success(applied ? "Email updated" : "Check the new address for a confirmation link.");
+      toast.success(applied ? t("toast.emailUpdated") : t("toast.emailConfirm"));
     },
-    onError: (error) => toast.error(errorMessage(error, "Could not change the email")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.emailChangeFailed"))),
   });
 };
 
@@ -132,10 +133,10 @@ export const useDeleteAccount = () => {
     mutationFn: async (password: string) => unwrap(await authClient.deleteUser({ password })),
     onSuccess: async () => {
       queryClient.clear();
-      toast.success("Your account is gone. Take care.");
+      toast.success(t("toast.accountDeleted"));
       navigate({ to: "/" });
     },
-    onError: (error) => toast.error(errorMessage(error, "Could not delete the account")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.accountDeleteFailed"))),
   });
 };
 
@@ -152,9 +153,9 @@ export const useAddPasskey = () => {
     mutationFn: async (name?: string) => unwrap(await authClient.passkey.addPasskey({ name })),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PASSKEYS_KEY });
-      toast.success("Passkey added");
+      toast.success(t("toast.passkeyAdded"));
     },
-    onError: (error) => toast.error(errorMessage(error, "Could not add the passkey")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.passkeyAddFailed"))),
   });
 };
 
@@ -164,8 +165,8 @@ export const useDeletePasskey = () => {
     mutationFn: async (id: string) => unwrap(await authClient.passkey.deletePasskey({ id })),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PASSKEYS_KEY });
-      toast.success("Passkey removed");
+      toast.success(t("toast.passkeyRemoved"));
     },
-    onError: (error) => toast.error(errorMessage(error, "Could not remove the passkey")),
+    onError: (error) => toast.error(errorMessage(error, t("toast.passkeyRemoveFailed"))),
   });
 };

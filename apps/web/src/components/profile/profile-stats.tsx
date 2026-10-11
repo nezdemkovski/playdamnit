@@ -1,6 +1,7 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
 import { cn } from "cn";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Histogram } from "@/components/charts/histogram";
 import { ratingColor } from "@/lib/format";
@@ -14,6 +15,7 @@ export function ProfileStats({
   entries: UserGameWithUserData[];
   own?: boolean;
 }) {
+  const { t } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
   const ratings = useMemo(() => {
     const buckets = Array.from({ length: 10 }, () => 0);
@@ -34,30 +36,34 @@ export function ProfileStats({
     <div className="border border-border">
       <dl className="grid grid-cols-2 sm:grid-cols-4">
         <Stat
-          label="Added"
+          label={t("profile.stats.added")}
           value={s.total}
-          note={own ? addedLine(s) : `${s.addedThisWeek} this week`}
+          note={own ? addedLine(s) : t("profile.stats.addedThisWeek", { count: s.addedThisWeek })}
         />
         <Stat
-          label="Finished"
+          label={t("profile.stats.finished")}
           value={s.finished}
           tone={s.finished === 0 && s.total > 0 ? "bad" : undefined}
-          note={own ? finishedLine(entries) : `${s.finishedThisMonth} this month`}
+          note={
+            own
+              ? finishedLine(entries)
+              : t("profile.stats.finishedThisMonth", { count: s.finishedThisMonth })
+          }
         />
         <Stat
-          label='"Playing"'
+          label={t("profile.stats.playing")}
           value={s.playing}
-          note={own ? playingLine(s) : `${s.dropped} dropped`}
+          note={own ? playingLine(s) : t("profile.stats.dropped", { count: s.dropped })}
         />
         <Stat
-          label="Backlog"
+          label={t("profile.stats.backlog")}
           value={s.backlog}
-          note={own ? backlogLine(s) : `${s.dropped} dropped`}
+          note={own ? backlogLine(s) : t("profile.stats.dropped", { count: s.dropped })}
         />
       </dl>
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4 border-t border-border px-4 py-3 sm:px-5">
         <div>
-          <div className="eyebrow">Completion</div>
+          <div className="eyebrow">{t("profile.stats.completion")}</div>
           <div className="num mt-1 text-xl font-extrabold">
             {s.completion.toFixed(1)}
             <span className="text-sm text-dimmed">%</span>
@@ -71,26 +77,28 @@ export function ProfileStats({
         </div>
         <div className={cn("eyebrow", s.completion < 25 ? "text-signal" : "text-done")}>
           {s.total === 0
-            ? "nothing yet"
+            ? t("profile.stats.nothingYet")
             : s.completion < 25
-              ? "guilty"
+              ? t("profile.stats.guilty")
               : s.completion < 60
-                ? "working on it"
-                : "respect"}
+                ? t("profile.stats.workingOnIt")
+                : t("profile.stats.respect")}
         </div>
       </div>
       {ratings.rated > 0 && (
         <div className="flex items-end gap-4 border-t border-border px-4 py-3 sm:px-5">
           <div className="shrink-0">
-            <div className="eyebrow">Average</div>
+            <div className="eyebrow">{t("profile.stats.average")}</div>
             <div className={cn("num mt-1 text-xl font-extrabold", ratingColor(ratings.average))}>
               {ratings.average.toFixed(1)}
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <Histogram buckets={ratings.buckets} ariaLabel="Rating distribution" />
+            <Histogram buckets={ratings.buckets} ariaLabel={t("profile.stats.distribution")} />
           </div>
-          <div className="eyebrow shrink-0">{ratings.rated} rated</div>
+          <div className="eyebrow shrink-0">
+            {t("profile.stats.rated", { count: ratings.rated })}
+          </div>
         </div>
       )}
     </div>

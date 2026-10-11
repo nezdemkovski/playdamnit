@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { RatingValue } from "@/components/game/rating";
@@ -25,11 +26,11 @@ import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
 
 const TABS = [
-  { value: "popular", label: "Popular", icon: FlameIcon, sort: "popular" },
-  { value: "best", label: "Best", icon: StarIcon, sort: "rating" },
-  { value: "wanted", label: "Wanted", icon: SparklesIcon, sort: "wanted" },
-  { value: "played", label: "Most played", icon: UsersIcon, sort: "played" },
-  { value: "upcoming", label: "Upcoming", icon: CalendarIcon, sort: "upcoming" },
+  { value: "popular", icon: FlameIcon, sort: "popular" },
+  { value: "best", icon: StarIcon, sort: "rating" },
+  { value: "wanted", icon: SparklesIcon, sort: "wanted" },
+  { value: "played", icon: UsersIcon, sort: "played" },
+  { value: "upcoming", icon: CalendarIcon, sort: "upcoming" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 const PAGE = 50;
@@ -40,7 +41,7 @@ const YEARS = Array.from(
 
 export const Route = createFileRoute("/charts")({
   validateSearch: (raw: Record<string, unknown>) => ({
-    tab: (TABS.some((t) => t.value === raw.tab) ? raw.tab : "popular") as Tab,
+    tab: (TABS.some((tb) => tb.value === raw.tab) ? raw.tab : "popular") as Tab,
     genreId: typeof raw.genreId === "number" ? raw.genreId : undefined,
     platformId: typeof raw.platformId === "number" ? raw.platformId : undefined,
     year: typeof raw.year === "number" ? raw.year : undefined,
@@ -54,11 +55,12 @@ const ALL = "all";
 
 /** Ranked catalog tables with genre / platform / year / type filters */
 function ChartsPage() {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/charts" });
   const { byGameId } = useMyLibrary();
   const lookups = useGetApiCatalog();
-  const tab = TABS.find((t) => t.value === search.tab)!;
+  const tab = TABS.find((tb) => tb.value === search.tab)!;
 
   const query = useGetApiGames(
     {
@@ -79,16 +81,16 @@ function ChartsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Charts</h1>
+      <h1 className="text-2xl font-bold">{t("charts.title")}</h1>
       <div className="no-scrollbar mt-4 flex gap-1 overflow-x-auto">
-        {TABS.map((t) => (
+        {TABS.map((tb) => (
           <TabButton
-            key={t.value}
-            icon={t.icon}
-            active={t.value === search.tab}
-            onClick={() => set({ tab: t.value })}
+            key={tb.value}
+            icon={tb.icon}
+            active={tb.value === search.tab}
+            onClick={() => set({ tab: tb.value })}
           >
-            {t.label}
+            {t(`charts.tabs.${tb.value}`)}
           </TabButton>
         ))}
       </div>
@@ -99,10 +101,10 @@ function ChartsPage() {
           onValueChange={(v) => set({ genreId: v === ALL ? undefined : Number(v) })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Genre" />
+            <SelectValue placeholder={t("charts.genre")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All genres</SelectItem>
+            <SelectItem value={ALL}>{t("charts.allGenres")}</SelectItem>
             {lookups.data?.genres.map((g) => (
               <SelectItem key={g.id} value={String(g.id)}>
                 {g.name}
@@ -115,10 +117,10 @@ function ChartsPage() {
           onValueChange={(v) => set({ platformId: v === ALL ? undefined : Number(v) })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Platform" />
+            <SelectValue placeholder={t("charts.platform")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All platforms</SelectItem>
+            <SelectItem value={ALL}>{t("charts.allPlatforms")}</SelectItem>
             {lookups.data?.platforms.map((p) => (
               <SelectItem key={p.id} value={String(p.id)}>
                 {p.name}
@@ -131,10 +133,10 @@ function ChartsPage() {
           onValueChange={(v) => set({ year: v === ALL ? undefined : Number(v) })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Year" />
+            <SelectValue placeholder={t("charts.year")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Any year</SelectItem>
+            <SelectItem value={ALL}>{t("charts.anyYear")}</SelectItem>
             {YEARS.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
@@ -147,13 +149,13 @@ function ChartsPage() {
           onValueChange={(v) => set({ type: v === ALL ? undefined : Number(v) })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder={t("charts.type")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Any type</SelectItem>
-            {lookups.data?.types.map((t) => (
-              <SelectItem key={t.id} value={String(t.id)}>
-                {t.type}
+            <SelectItem value={ALL}>{t("charts.anyType")}</SelectItem>
+            {lookups.data?.types.map((tp) => (
+              <SelectItem key={tp.id} value={String(tp.id)}>
+                {gameTypeName(tp.id, tp.type)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -162,19 +164,19 @@ function ChartsPage() {
 
       <div className="mt-6 flex items-baseline justify-between">
         <h2 className="text-lg font-bold">
-          {tab.label}
+          {t(`charts.tabs.${tab.value}`)}
           <span className="ml-2 text-sm font-semibold text-dimmed">
-            {query.data ? `${compactNumber(total)} games` : ""}
+            {query.data ? t("charts.games", { count: total, formatted: compactNumber(total) }) : ""}
           </span>
         </h2>
         <span className="text-xs text-dimmed">
           {tab.value === "best"
-            ? "By IGDB rating, 50+ votes"
+            ? t("charts.blurb.best")
             : tab.value === "popular"
-              ? "By IGDB rating count"
+              ? t("charts.blurb.popular")
               : tab.value === "upcoming"
-                ? "Soonest first"
-                : "By members of this site"}
+                ? t("charts.blurb.upcoming")
+                : t("charts.blurb.members")}
         </span>
       </div>
 
@@ -200,18 +202,16 @@ function ChartsPage() {
             disabled={search.page <= 1}
             onClick={() => navigate({ search: { ...search, page: search.page - 1 } })}
           >
-            Previous
+            {t("common.previous")}
           </Button>
-          <span className="text-dimmed">
-            {search.page} / {pages}
-          </span>
+          <span className="text-dimmed">{t("common.pageOf", { page: search.page, pages })}</span>
           <Button
             variant="secondary"
             size="sm"
             disabled={search.page >= pages}
             onClick={() => navigate({ search: { ...search, page: search.page + 1 } })}
           >
-            Next
+            {t("common.next")}
           </Button>
         </div>
       )}

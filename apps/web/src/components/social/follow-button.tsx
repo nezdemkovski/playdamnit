@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { UserMinusIcon, UserPlusIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
@@ -12,6 +13,7 @@ interface FollowButtonProps {
 }
 
 export function FollowButton({ username, isFollowing, size = "sm" }: FollowButtonProps) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const navigate = useNavigate();
   const { follow, unfollow, isPending } = useFollow(username);
@@ -30,7 +32,7 @@ export function FollowButton({ username, isFollowing, size = "sm" }: FollowButto
       disabled={isPending}
     >
       {isFollowing ? <UserMinusIcon /> : <UserPlusIcon />}
-      {isFollowing ? "Following" : "Follow"}
+      {isFollowing ? t("follow.following") : t("follow.follow")}
     </Button>
   );
 }

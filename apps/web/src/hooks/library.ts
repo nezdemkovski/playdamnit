@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
+import { t } from "@/i18n";
 import { summarize, toastFor } from "@/lib/voice";
 import { useSession } from "./auth";
 
@@ -60,7 +61,7 @@ export const useLibraryMutations = () => {
         refresh(vars.data.gameId);
         toast.success(voice("add", vars.data.status));
       },
-      onError: (error) => toast.error(apiError(error, "Could not add the game")),
+      onError: (error) => toast.error(apiError(error, t("toast.addGameFailed"))),
     },
   });
 
@@ -70,7 +71,7 @@ export const useLibraryMutations = () => {
         refresh(vars.id);
         toast.success(voice("update", vars.data.status));
       },
-      onError: (error) => toast.error(apiError(error, "Could not save the changes")),
+      onError: (error) => toast.error(apiError(error, t("toast.saveGameFailed"))),
     },
   });
 
@@ -80,7 +81,7 @@ export const useLibraryMutations = () => {
         refresh(vars.id);
         toast.success(voice("remove"));
       },
-      onError: (error) => toast.error(apiError(error, "Could not remove the game")),
+      onError: (error) => toast.error(apiError(error, t("toast.removeGameFailed"))),
     },
   });
 
@@ -91,10 +92,14 @@ export const useLibraryMutations = () => {
           queryKey: getGetApiUserByUsernameGamesQueryKey(username),
         });
         toast.success(
-          `Imported ${result.imported}, skipped ${result.skipped}, failed ${result.errors}. The backlog just grew.`,
+          t("toast.imported", {
+            imported: result.imported,
+            skipped: result.skipped,
+            errors: result.errors,
+          }),
         );
       },
-      onError: (error) => toast.error(apiError(error, "Import failed")),
+      onError: (error) => toast.error(apiError(error, t("toast.importFailed"))),
     },
   });
 

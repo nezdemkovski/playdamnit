@@ -1,6 +1,7 @@
 import { useGetApiGamesSearch } from "@playdamnit/api-client";
 import { PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { Button } from "@/components/ui/button";
@@ -17,11 +18,12 @@ interface AddGamePickerProps {
 /** A small search popover for adding games to a list */
 export function AddGamePicker({ exclude, onPick, children }: AddGamePickerProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [q, setQ] = useState("");
   useEffect(() => {
-    const t = setTimeout(() => setQ(query.trim()), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setQ(query.trim()), 250);
+    return () => clearTimeout(timer);
   }, [query]);
   const results = useGetApiGamesSearch(
     { q, limit: 8 },
@@ -35,7 +37,7 @@ export function AddGamePicker({ exclude, onPick, children }: AddGamePickerProps)
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search games…"
+          placeholder={t("lists.picker.placeholder")}
           autoFocus
           className="rounded-full"
         />
@@ -61,7 +63,7 @@ export function AddGamePicker({ exclude, onPick, children }: AddGamePickerProps)
                   size="icon-xs"
                   variant={added ? "secondary" : "default"}
                   disabled={added}
-                  aria-label="Add"
+                  aria-label={t("lists.picker.addAria")}
                   onClick={() => onPick(game.id)}
                 >
                   <PlusIcon />
@@ -70,7 +72,7 @@ export function AddGamePicker({ exclude, onPick, children }: AddGamePickerProps)
             );
           })}
           {q.length >= 2 && results.data?.results.length === 0 && (
-            <li className="px-2 py-4 text-center text-xs text-dimmed">No games found.</li>
+            <li className="px-2 py-4 text-center text-xs text-dimmed">{t("lists.picker.empty")}</li>
           )}
         </ul>
       </PopoverContent>

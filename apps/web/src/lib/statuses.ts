@@ -10,6 +10,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { t } from "@/i18n";
+
 export type LibraryStatus = StatusEnum;
 
 export interface StatusMeta {
@@ -29,7 +31,9 @@ export interface StatusMeta {
 export const STATUSES: StatusMeta[] = [
   {
     value: "finished",
-    label: "Finished",
+    get label() {
+      return t("status.finished");
+    },
     icon: FlagIcon,
     text: "text-status-finished",
     bg: "bg-status-finished",
@@ -39,7 +43,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "playing",
-    label: "Playing",
+    get label() {
+      return t("status.playing");
+    },
     icon: GamepadIcon,
     text: "text-status-playing",
     bg: "bg-status-playing",
@@ -49,7 +55,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "dropped",
-    label: "Dropped",
+    get label() {
+      return t("status.dropped");
+    },
     icon: CircleXIcon,
     text: "text-status-dropped",
     bg: "bg-status-dropped",
@@ -59,7 +67,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "want_to_play",
-    label: "Want",
+    get label() {
+      return t("status.want_to_play");
+    },
     icon: SparklesIcon,
     text: "text-status-want_to_play",
     bg: "bg-status-want_to_play",
@@ -69,7 +79,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "on_hold",
-    label: "On hold",
+    get label() {
+      return t("status.on_hold");
+    },
     icon: PauseIcon,
     text: "text-status-on_hold",
     bg: "bg-status-on_hold",
@@ -79,7 +91,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "backlog",
-    label: "Backlog",
+    get label() {
+      return t("status.backlog");
+    },
     icon: BookmarkIcon,
     text: "text-status-backlog",
     bg: "bg-status-backlog",
@@ -89,7 +103,9 @@ export const STATUSES: StatusMeta[] = [
   },
   {
     value: "online",
-    label: "Online",
+    get label() {
+      return t("status.online");
+    },
     icon: GlobeIcon,
     text: "text-status-online",
     bg: "bg-status-online",

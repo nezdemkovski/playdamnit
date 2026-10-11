@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { BellIcon, UserPlusIcon } from "lucide-react";
 import { cn } from "cn";
 import { useEffect } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/notifications")({
 });
 
 function NotificationsPage() {
+  const { t } = useTranslation();
   const { user, isLoading } = useSession();
   const navigate = useNavigate();
   const notifications = useNotifications(!!user);
@@ -32,15 +34,13 @@ function NotificationsPage() {
   return (
     <>
       <h1 className="flex items-center gap-2 text-2xl font-bold">
-        <BellIcon className="size-6 text-dimmed" /> Notifications
+        <BellIcon className="size-6 text-dimmed" /> {t("notifications.title")}
       </h1>
       <div className="mt-6 space-y-2">
         {notifications.isPending &&
           Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-16 rounded-card" />)}
         {notifications.data?.results.length === 0 && (
-          <div className="panel p-12 text-center text-dimmed">
-            Nothing yet. Follow someone, write something, get reacted to.
-          </div>
+          <div className="panel p-12 text-center text-dimmed">{t("notifications.empty")}</div>
         )}
         {notifications.data?.results.map((n) => {
           const username = n.actor.username ?? "";
@@ -60,20 +60,25 @@ function NotificationsPage() {
                   {n.actor.name || username}
                 </Link>{" "}
                 {n.type === "follow" ? (
-                  <span className="text-white/80">started following you</span>
+                  <span className="text-white/80">{t("notifications.followed")}</span>
                 ) : (
                   <span className="text-white/80">
-                    reacted {n.emoji ?? "❤️"} to your review of{" "}
                     {n.game ? (
-                      <Link
-                        to="/games/$id"
-                        params={{ id: String(n.game.id) }}
-                        className="font-semibold hover:underline"
-                      >
-                        {n.game.name}
-                      </Link>
+                      <Trans
+                        i18nKey="notifications.reacted"
+                        values={{ emoji: n.emoji ?? "❤️", name: n.game.name }}
+                        components={{
+                          game: (
+                            <Link
+                              to="/games/$id"
+                              params={{ id: String(n.game.id) }}
+                              className="font-semibold hover:underline"
+                            />
+                          ),
+                        }}
+                      />
                     ) : (
-                      "a game"
+                      t("notifications.reactedUnknown", { emoji: n.emoji ?? "❤️" })
                     )}
                   </span>
                 )}

@@ -2,6 +2,7 @@ import { useGetApiGamesByIdLists } from "@playdamnit/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { ListPlusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { useListMutations } from "@/hooks/social";
 
 /** Toggle the game in each of the viewer's lists, or create a new list with it */
 export function ManageListsButton({ gameId, gameName }: { gameId: number; gameName: string }) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -40,17 +42,19 @@ export function ManageListsButton({ gameId, gameName }: { gameId: number; gameNa
         size="sm"
         onClick={() => (user ? setOpen(true) : navigate({ to: "/auth" }))}
       >
-        <ListPlusIcon /> Lists
+        <ListPlusIcon /> {t("manageLists.button")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-card border-white/5 bg-popover">
           <DialogHeader>
-            <DialogTitle>Manage lists</DialogTitle>
-            <DialogDescription>Add {gameName} to your lists.</DialogDescription>
+            <DialogTitle>{t("manageLists.title")}</DialogTitle>
+            <DialogDescription>
+              {t("manageLists.description", { name: gameName })}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             {lists.data?.length === 0 && (
-              <p className="text-sm text-dimmed">You have no lists yet.</p>
+              <p className="text-sm text-dimmed">{t("manageLists.none")}</p>
             )}
             {lists.data?.map((list) => (
               <label
@@ -59,7 +63,9 @@ export function ManageListsButton({ gameId, gameName }: { gameId: number; gameNa
               >
                 <span className="truncate">
                   {list.name}
-                  {!list.isPublic && <span className="ml-2 text-xs text-dimmed">private</span>}
+                  {!list.isPublic && (
+                    <span className="ml-2 text-xs text-dimmed">{t("manageLists.private")}</span>
+                  )}
                 </span>
                 <Switch
                   checked={list.contains}
@@ -81,14 +87,14 @@ export function ManageListsButton({ gameId, gameName }: { gameId: number; gameNa
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="New list name"
+              placeholder={t("manageLists.newPlaceholder")}
               maxLength={100}
             />
             <Button
               type="submit"
               size="icon"
               disabled={!newName.trim() || mutations.isPending}
-              aria-label="Create list"
+              aria-label={t("manageLists.createAria")}
             >
               <PlusIcon />
             </Button>

@@ -1,5 +1,6 @@
 import { DownloadIcon, UploadIcon } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,6 +10,7 @@ import { useLibraryMutations } from "@/hooks/library";
 
 /** Export the list as JSON or CSV, import a file exported here (or a hand-made one) */
 export function DataSettings({ username }: { username: string }) {
+  const { t } = useTranslation();
   const library = useLibraryMutations();
   const [overwrite, setOverwrite] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -29,11 +31,9 @@ export function DataSettings({ username }: { username: string }) {
     <div className="grid gap-8 md:grid-cols-2">
       <section className="panel space-y-4 p-5">
         <h3 className="flex items-center gap-2 font-semibold">
-          <DownloadIcon className="size-4 text-dimmed" /> Export
+          <DownloadIcon className="size-4 text-dimmed" /> {t("settings.data.export")}
         </h3>
-        <p className="text-sm text-dimmed">
-          Download your whole list with ratings, statuses, reviews and dates.
-        </p>
+        <p className="text-sm text-dimmed">{t("settings.data.exportText")}</p>
         <div className="flex gap-2">
           <Button asChild variant="secondary">
             <a href={exportUrl("json")}>JSON</a>
@@ -45,15 +45,12 @@ export function DataSettings({ username }: { username: string }) {
       </section>
       <section className="panel space-y-4 p-5">
         <h3 className="flex items-center gap-2 font-semibold">
-          <UploadIcon className="size-4 text-dimmed" /> Import
+          <UploadIcon className="size-4 text-dimmed" /> {t("settings.data.import")}
         </h3>
-        <p className="text-sm text-dimmed">
-          A JSON or CSV file in the export format (IGDB game ids, status, rating, platform). Up to
-          1000 games.
-        </p>
+        <p className="text-sm text-dimmed">{t("settings.data.importText")}</p>
         <div className="flex items-center gap-3">
           <Switch id="overwrite" checked={overwrite} onCheckedChange={setOverwrite} />
-          <Label htmlFor="overwrite">Overwrite games already in the list</Label>
+          <Label htmlFor="overwrite">{t("settings.data.overwrite")}</Label>
         </div>
         <input
           ref={fileInput}
@@ -63,7 +60,7 @@ export function DataSettings({ username }: { username: string }) {
           onChange={(e) => upload(e.target.files?.[0])}
         />
         <Button onClick={() => fileInput.current?.click()} disabled={library.importPending}>
-          {library.importPending ? "Importing…" : "Choose a file"}
+          {library.importPending ? t("settings.data.importing") : t("settings.data.chooseFile")}
         </Button>
       </section>
     </div>

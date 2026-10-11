@@ -6,9 +6,12 @@ import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { scalePoint } from "@tanstack/charts/scales/point";
 import { tooltip } from "@tanstack/charts/tooltip";
 import type { UserGameWithUserData } from "@playdamnit/api-client";
-import { differenceInCalendarDays, format, startOfWeek, subDays } from "date-fns";
+import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
 import { useMemo } from "react";
+
+import { t } from "@/i18n";
+import { format } from "@/i18n/date";
 
 const DAYS = 364;
 const MONTHS = 12;
@@ -77,7 +80,10 @@ const useYear = (entries: UserGameWithUserData[]) =>
         week: Math.floor(differenceInCalendarDays(date, gridStart) / 7),
         weekday: WEEKDAYS[(date.getDay() + 6) % 7],
         cell: cellValue,
-        label: `${format(date, "MMM d")} · ${cellValue}`,
+        label: t("profile.evenings.dayLabel", {
+          date: format(date, "MMM d"),
+          state: t(`profile.evenings.cell.${cellValue}`),
+        }),
       });
     }
     const months: MonthRow[] = [];
@@ -163,7 +169,11 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
           tooltip: {
             use: tooltip,
             format: (point) =>
-              `${point.datum.month} · ${point.datum.added} added · ${point.datum.finished} finished`,
+              t("profile.evenings.trendTip", {
+                month: point.datum.month,
+                added: point.datum.added,
+                finished: point.datum.finished,
+              }),
           },
         },
       ),
@@ -175,7 +185,7 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
       <div className="bg-background p-5">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-lg">
-            {DAYS} days. {greenDays} of them green.
+            {t("profile.evenings.title", { days: DAYS, green: greenDays })}
           </h3>
           <span className="eyebrow">
             {format(first, "MMM yyyy")} → {format(new Date(), "MMM yyyy")}
@@ -186,30 +196,26 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
             definition={heat}
             aspectRatio={53 / 7}
             initialWidth={640}
-            ariaLabel="Days with activity over the last year"
+            ariaLabel={t("profile.evenings.heatAria")}
           />
         </div>
         <div className="eyebrow mt-2 flex flex-wrap gap-4 normal-case tracking-normal">
-          <Legend color={CELL_COLORS.none}>nothing</Legend>
-          <Legend color={CELL_COLORS.touched}>touched</Legend>
-          <Legend color={CELL_COLORS.added}>added</Legend>
-          <Legend color={CELL_COLORS.finished}>finished</Legend>
+          <Legend color={CELL_COLORS.none}>{t("profile.evenings.cell.none")}</Legend>
+          <Legend color={CELL_COLORS.touched}>{t("profile.evenings.cell.touched")}</Legend>
+          <Legend color={CELL_COLORS.added}>{t("profile.evenings.cell.added")}</Legend>
+          <Legend color={CELL_COLORS.finished}>{t("profile.evenings.cell.finished")}</Legend>
         </div>
       </div>
       <div className="bg-background p-5">
-        <div className="eyebrow">Added vs finished · 12 months</div>
+        <div className="eyebrow">{t("profile.evenings.trendTitle")}</div>
         <div className="mt-2 text-dimmed [&_text]:fill-current [&_text]:font-mono [&_text]:text-[10px]">
-          <Chart
-            definition={trend}
-            height={150}
-            ariaLabel="Games added versus games finished per month"
-          />
+          <Chart definition={trend} height={150} ariaLabel={t("profile.evenings.trendAria")} />
         </div>
         <dl className="mt-3 grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 gap-y-1.5 text-sm">
-          <dt className="text-dimmed">Added</dt>
+          <dt className="text-dimmed">{t("profile.evenings.added")}</dt>
           <dd className="border-b border-dotted border-border" />
           <dd className="num font-extrabold text-signal">{totalAdded}</dd>
-          <dt className="text-dimmed">Finished</dt>
+          <dt className="text-dimmed">{t("profile.evenings.finished")}</dt>
           <dd className="border-b border-dotted border-border" />
           <dd className="num font-extrabold text-done">{totalFinished}</dd>
         </dl>

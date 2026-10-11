@@ -1,6 +1,7 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function Verdict({
   username: string;
   entries: UserGameWithUserData[];
 }) {
+  const { t, i18n } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
   const added = useCountUp(s.total);
   const finished = useCountUp(s.finished);
@@ -44,30 +46,39 @@ export function Verdict({
   return (
     <section className="grid border-b border-border md:grid-cols-[1.3fr_1fr]">
       <div className="py-10 md:py-12">
-        <div className="eyebrow">Status report · @{username}</div>
+        <div className="eyebrow">{t("home.verdict.report", { username })}</div>
         <h1 className="mt-4 text-4xl leading-[.95] sm:text-5xl lg:text-6xl">
-          You've added <span className="num font-extrabold">{added}</span> games.
+          <Trans
+            i18nKey="home.verdict.added"
+            count={s.total}
+            values={{ shown: added }}
+            components={{ n: <span className="num font-extrabold" /> }}
+          />
           <br />
-          You've finished <span className="num font-extrabold text-signal">{finished}</span>.
+          <Trans
+            i18nKey="home.verdict.finished"
+            values={{ shown: finished }}
+            components={{ n: <span className="num font-extrabold text-signal" /> }}
+          />
         </h1>
         <p className="mt-5 max-w-[44ch] text-lg text-dimmed">{verdictLine(s)}</p>
         <div className="mt-7 flex flex-wrap gap-2">
           {exhibit ? (
             <Button asChild variant="destructive">
               <Link to="/games/$id" params={{ id: String(exhibit.id) }}>
-                Pick one and play it
+                {t("home.verdict.pick")}
               </Link>
             </Button>
           ) : (
             <Button asChild variant="destructive">
               <Link to="/search" search={{ q: "", page: 1, editions: false }}>
-                Add your first game
+                {t("home.verdict.addFirst")}
               </Link>
             </Button>
           )}
           <Button asChild variant="outline">
             <Link to="/$username" params={{ username }}>
-              Show the damage
+              {t("home.verdict.damage")}
             </Link>
           </Button>
         </div>
@@ -75,10 +86,10 @@ export function Verdict({
       {exhibit && (
         <div className="relative border-t border-border py-8 md:border-t-0 md:border-l md:py-12 md:pl-10">
           <div className="eyebrow">
-            {s.longestIdle ? "Exhibit A · longest ignored" : 'Exhibit A · stalest "playing"'}
+            {s.longestIdle ? t("home.verdict.exhibitLongest") : t("home.verdict.exhibitStale")}
           </div>
           <div className="num absolute top-8 right-0 bg-signal px-2 py-1 text-[11px] font-extrabold text-black md:top-12">
-            {idleDays(exhibit)}D
+            {t("home.verdict.daysBadge", { count: idleDays(exhibit) })}
           </div>
           <h2 className="mt-3 pr-20 text-2xl">{exhibit.name}</h2>
           <div className="mt-4 flex gap-4">
@@ -87,16 +98,16 @@ export function Verdict({
             </Link>
             <div className="text-sm text-dimmed">
               <p>
-                Added{" "}
-                <b className="text-foreground">
-                  {new Date(exhibit.userGameData.addedAt ?? Date.now()).toLocaleDateString("en", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </b>
-                . Opened{" "}
-                <b className="text-foreground">{s.longestIdle ? "never" : "a while ago"}</b>. It's
-                not going to play itself.
+                <Trans
+                  i18nKey={s.longestIdle ? "home.verdict.neverOpened" : "home.verdict.openedBefore"}
+                  values={{
+                    date: new Date(exhibit.userGameData.addedAt ?? Date.now()).toLocaleDateString(
+                      i18n.language,
+                      { month: "short", day: "numeric" },
+                    ),
+                  }}
+                  components={{ b: <b className="text-foreground" /> }}
+                />
               </p>
               <div className="mt-3 h-1.5 bg-card">
                 <i
@@ -105,7 +116,7 @@ export function Verdict({
                 />
               </div>
               <div className="num mt-1.5 text-[11px] text-dimmed">
-                {idleDays(exhibit)} days of its life in your backlog
+                {t("home.verdict.life", { count: idleDays(exhibit) })}
               </div>
             </div>
           </div>

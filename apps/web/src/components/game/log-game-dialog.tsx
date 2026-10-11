@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronDownIcon, Trash2Icon } from "lucide-react";
 import { cn } from "cn";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   AlertDialog,
@@ -60,6 +61,7 @@ const toDateInput = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) 
  * finish date and a review. Mirrors the reference "Add game" sheet.
  */
 export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialogProps) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const navigate = useNavigate();
   const library = useLibraryMutations();
@@ -140,14 +142,14 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
           <GameCover url={game.cover?.url} name={game.name} className="w-16 shrink-0" />
           <div className="min-w-0">
             <DialogTitle className="text-xl font-bold">{game.name}</DialogTitle>
-            <DialogDescription>{entry ? "Edit your entry" : "Add to your list"}</DialogDescription>
+            <DialogDescription>{entry ? t("log.editEntry") : t("log.addToList")}</DialogDescription>
           </div>
         </DialogHeader>
 
         <form onSubmit={submit} className="mt-2 space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Your rating</Label>
+              <Label>{t("log.rating")}</Label>
               <span
                 className={cn(
                   "text-2xl font-bold tabular-nums",
@@ -163,16 +165,16 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               min={0}
               max={10}
               step={0.1}
-              aria-label="Rating"
+              aria-label={t("log.ratingAria")}
             />
             <div className="flex justify-between text-xs text-dimmed">
-              <span>Not rated</span>
+              <span>{t("log.notRated")}</span>
               <span>10</span>
             </div>
           </div>
 
           <div className="space-y-3">
-            <Label>Status</Label>
+            <Label>{t("log.status")}</Label>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {STATUSES.map((s) => {
                 const Icon = s.icon;
@@ -200,17 +202,17 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
 
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <CollapsibleTrigger className="flex items-center gap-1 text-sm font-semibold">
-              Details
+              {t("log.details")}
               <ChevronDownIcon
                 className={cn("size-4 transition-transform", detailsOpen && "rotate-180")}
               />
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-3 grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="platform">Platform</Label>
+                <Label htmlFor="platform">{t("log.platform")}</Label>
                 <Select value={platformId} onValueChange={setPlatformId}>
                   <SelectTrigger id="platform" className="w-full">
-                    <SelectValue placeholder="Pick a platform" />
+                    <SelectValue placeholder={t("log.pickPlatform")} />
                   </SelectTrigger>
                   <SelectContent>
                     {platforms.map((p) => (
@@ -224,7 +226,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               {showEnded && (
                 <div className="space-y-2">
                   <Label htmlFor="endedAt">
-                    {status === "dropped" ? "Dropped on" : "Finished on"}
+                    {status === "dropped" ? t("log.droppedOn") : t("log.finishedOn")}
                   </Label>
                   <Input
                     id="endedAt"
@@ -237,7 +239,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               )}
               <div className="flex items-center gap-3 sm:col-span-2">
                 <Switch id="mastered" checked={mastered} onCheckedChange={setMastered} />
-                <Label htmlFor="mastered">Mastered (100%, platinum, true ending)</Label>
+                <Label htmlFor="mastered">{t("log.mastered")}</Label>
               </div>
               {entry && user?.username && (
                 <div className="sm:col-span-2">
@@ -253,23 +255,23 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
           </Collapsible>
 
           <div className="space-y-2">
-            <Label htmlFor="review">Review</Label>
+            <Label htmlFor="review">{t("log.review")}</Label>
             <Textarea
               id="review"
               value={review}
               onChange={(e) => setReview(e.target.value.slice(0, MAX_REVIEW))}
-              placeholder={`Write your review in less than ${MAX_REVIEW} characters…`}
+              placeholder={t("log.reviewPlaceholder", { max: MAX_REVIEW })}
               className="min-h-28"
             />
             <div className="flex items-center justify-between gap-3 text-xs text-dimmed">
-              <span>Markdown works: **bold**, *italic*, [links](url), lists.</span>
+              <span>{t("log.markdownHint")}</span>
               <span>
                 {review.length} / {MAX_REVIEW}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Switch id="spoilers" checked={spoilers} onCheckedChange={setSpoilers} />
-              <Label htmlFor="spoilers">Contains spoilers</Label>
+              <Label htmlFor="spoilers">{t("log.spoilers")}</Label>
             </div>
             <div className="flex items-center gap-3">
               <Switch
@@ -277,7 +279,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                 checked={allowReactions}
                 onCheckedChange={setAllowReactions}
               />
-              <Label htmlFor="allow-reactions">Allow reactions on this review</Label>
+              <Label htmlFor="allow-reactions">{t("log.allowReactions")}</Label>
             </div>
           </div>
 
@@ -290,23 +292,21 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
                   >
-                    <Trash2Icon /> Remove
+                    <Trash2Icon /> {t("log.remove")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="rounded-card">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove {game.name}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Your rating, status and review for this game will be deleted.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{t("log.removeTitle", { name: game.name })}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("log.removeText")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Keep</AlertDialogCancel>
+                    <AlertDialogCancel>{t("common.keep")}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={remove}
                       className="bg-destructive text-white hover:bg-destructive/90"
                     >
-                      Remove
+                      {t("log.remove")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -315,7 +315,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               <span />
             )}
             <Button type="submit" size="lg" disabled={library.isPending || !platformId}>
-              {entry ? "Save" : "Add game"}
+              {entry ? t("common.save") : t("log.add")}
             </Button>
           </div>
         </form>

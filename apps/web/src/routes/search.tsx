@@ -2,6 +2,7 @@ import { useGetApiGamesSearch } from "@playdamnit/api-client";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCard } from "@/components/game/game-card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/search")({
 });
 
 function SearchPage() {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/search" });
   const [input, setInput] = useState(search.q);
@@ -54,20 +56,18 @@ function SearchPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Search games…"
+            placeholder={t("search.placeholder")}
             className="h-11 rounded-full pl-11 text-base"
             autoFocus
           />
         </div>
         <Button type="submit" size="lg">
-          Search
+          {t("common.search")}
         </Button>
       </form>
 
       <div className="mt-4 flex items-center justify-between gap-4 text-sm text-dimmed">
-        <div>
-          {enabled && data ? `${total} results for “${q}”` : "Two characters. We know you can."}
-        </div>
+        <div>{enabled && data ? t("search.results", { count: total, q }) : t("search.hint")}</div>
         <div className="flex items-center gap-2">
           <Switch
             id="editions"
@@ -75,7 +75,7 @@ function SearchPage() {
             onCheckedChange={(v) => navigate({ search: { ...search, editions: v, page: 1 } })}
           />
           <Label htmlFor="editions" className="text-dimmed">
-            Show editions
+            {t("search.editions")}
           </Label>
         </div>
       </div>
@@ -106,18 +106,16 @@ function SearchPage() {
             disabled={search.page <= 1}
             onClick={() => navigate({ search: { ...search, page: search.page - 1 } })}
           >
-            Previous
+            {t("common.previous")}
           </Button>
-          <span className="text-dimmed">
-            {search.page} / {pages}
-          </span>
+          <span className="text-dimmed">{t("common.pageOf", { page: search.page, pages })}</span>
           <Button
             variant="secondary"
             size="sm"
             disabled={search.page >= pages}
             onClick={() => navigate({ search: { ...search, page: search.page + 1 } })}
           >
-            Next
+            {t("common.next")}
           </Button>
         </div>
       )}

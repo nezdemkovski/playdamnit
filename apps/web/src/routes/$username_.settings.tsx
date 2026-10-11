@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DatabaseIcon, FingerprintIcon, KeyRoundIcon, UserIcon } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { DataSettings } from "@/components/settings/data-settings";
 import { PasskeySettings } from "@/components/settings/passkeys";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/$username_/settings")({
 });
 
 function SettingsPage() {
+  const { t } = useTranslation();
   const { username } = Route.useParams();
   const { user, isLoading } = useSession();
   const navigate = useNavigate();
@@ -36,24 +38,22 @@ function SettingsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <p className="mt-1 text-sm text-dimmed">
-        Who you are, how you sign in, what you take with you.
-      </p>
+      <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+      <p className="mt-1 text-sm text-dimmed">{t("settings.subtitle")}</p>
 
       <Tabs defaultValue="profile" className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="profile">
-            <UserIcon /> Profile
+            <UserIcon /> {t("settings.tabs.profile")}
           </TabsTrigger>
           <TabsTrigger value="account">
-            <KeyRoundIcon /> Account
+            <KeyRoundIcon /> {t("settings.tabs.account")}
           </TabsTrigger>
           <TabsTrigger value="passkeys">
-            <FingerprintIcon /> Passkeys
+            <FingerprintIcon /> {t("settings.tabs.passkeys")}
           </TabsTrigger>
           <TabsTrigger value="data">
-            <DatabaseIcon /> Data
+            <DatabaseIcon /> {t("settings.tabs.data")}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="profile" className="mt-8">

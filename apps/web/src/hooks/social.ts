@@ -42,6 +42,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { t } from "@/i18n";
 import { useSession } from "./auth";
 
 const apiError = (error: unknown, fallback: string) =>
@@ -61,10 +62,10 @@ export const useFollow = (username: string) => {
     queryClient.invalidateQueries({ queryKey: ["/api/me/feed"] });
   };
   const follow = usePostApiUserByUsernameFollow({
-    mutation: { onSuccess: refresh, onError: onError("Could not follow") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.followFailed")) },
   });
   const unfollow = useDeleteApiUserByUsernameFollow({
-    mutation: { onSuccess: refresh, onError: onError("Could not unfollow") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.unfollowFailed")) },
   });
   return {
     isPending: follow.isPending || unfollow.isPending,
@@ -85,10 +86,10 @@ export const useGameLike = (gameId: number) => {
     }
   };
   const like = usePostApiGamesByIdLike({
-    mutation: { onSuccess: refresh, onError: onError("Could not like") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.likeFailed")) },
   });
   const unlike = useDeleteApiGamesByIdLike({
-    mutation: { onSuccess: refresh, onError: onError("Could not unlike") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.unlikeFailed")) },
   });
   return {
     isPending: like.isPending || unlike.isPending,
@@ -105,9 +106,11 @@ export const useReviewReaction = () => {
     queryClient.invalidateQueries({ queryKey: getGetApiReviewsQueryKey() });
     queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).endsWith("/reviews") });
   };
-  const react = usePutApiReviewsByIdReaction({ mutation: { onError: onError("Could not react") } });
+  const react = usePutApiReviewsByIdReaction({
+    mutation: { onError: onError(t("toast.reactFailed")) },
+  });
   const clear = useDeleteApiReviewsByIdReaction({
-    mutation: { onError: onError("Could not remove the reaction") },
+    mutation: { onError: onError(t("toast.reactionRemoveFailed")) },
   });
   return {
     isPending: react.isPending || clear.isPending,
@@ -136,22 +139,22 @@ export const useProfileUpdate = () => {
     mutation: {
       onSuccess: () => {
         refresh();
-        toast.success("Profile saved");
+        toast.success(t("toast.profileSaved"));
       },
-      onError: onError("Could not save the profile"),
+      onError: onError(t("toast.profileSaveFailed")),
     },
   });
   const upload = usePostApiMeAvatar({
     mutation: {
       onSuccess: () => {
         refresh();
-        toast.success("Avatar updated");
+        toast.success(t("toast.avatarUpdated"));
       },
-      onError: onError("Could not upload the avatar"),
+      onError: onError(t("toast.avatarUploadFailed")),
     },
   });
   const clear = useDeleteApiMeAvatar({
-    mutation: { onSuccess: refresh, onError: onError("Could not remove the avatar") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.avatarRemoveFailed")) },
   });
   return {
     save: (data: ProfileUpdateRequest) => patch.mutateAsync({ data }),
@@ -189,33 +192,33 @@ export const useListMutations = () => {
     }
   };
   const create = usePostApiUserByUsernameLists({
-    mutation: { onSuccess: () => refresh(), onError: onError("Could not create the list") },
+    mutation: { onSuccess: () => refresh(), onError: onError(t("toast.listCreateFailed")) },
   });
   const update = usePatchApiListsById({
-    mutation: { onSuccess: (_d, v) => refresh(v.id), onError: onError("Could not save the list") },
+    mutation: { onSuccess: (_d, v) => refresh(v.id), onError: onError(t("toast.listSaveFailed")) },
   });
   const remove = useDeleteApiListsById({
     mutation: {
       onSuccess: () => {
         refresh();
-        toast.success("List deleted");
+        toast.success(t("toast.listDeleted"));
       },
-      onError: onError("Could not delete the list"),
+      onError: onError(t("toast.listDeleteFailed")),
     },
   });
   const setGames = usePutApiListsByIdGames({
-    mutation: { onSuccess: (_d, v) => refresh(v.id), onError: onError("Could not save the list") },
+    mutation: { onSuccess: (_d, v) => refresh(v.id), onError: onError(t("toast.listSaveFailed")) },
   });
   const addGame = usePostApiListsByIdGames({
     mutation: {
       onSuccess: (_d, v) => refresh(v.id, v.data.gameId),
-      onError: onError("Could not add the game"),
+      onError: onError(t("toast.listAddGameFailed")),
     },
   });
   const removeGame = useDeleteApiListsByIdGamesByGameId({
     mutation: {
       onSuccess: (_d, v) => refresh(v.id, v.gameId),
-      onError: onError("Could not remove the game"),
+      onError: onError(t("toast.listRemoveGameFailed")),
     },
   });
   return {
@@ -240,13 +243,13 @@ export const usePlaythroughMutations = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameJournalQueryKey(username) });
   };
   const add = usePostApiUserByUsernameGamesByIdPlaythroughs({
-    mutation: { onSuccess: refresh, onError: onError("Could not log the playthrough") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.playthroughLogFailed")) },
   });
   const update = usePatchApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId({
-    mutation: { onSuccess: refresh, onError: onError("Could not save the playthrough") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.playthroughSaveFailed")) },
   });
   const remove = useDeleteApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId({
-    mutation: { onSuccess: refresh, onError: onError("Could not delete the playthrough") },
+    mutation: { onSuccess: refresh, onError: onError(t("toast.playthroughDeleteFailed")) },
   });
   return {
     isPending: add.isPending || update.isPending || remove.isPending,

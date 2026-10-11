@@ -1,5 +1,6 @@
 import type { GameCommunity } from "@playdamnit/api-client";
 import { cn } from "cn";
+import { useTranslation } from "react-i18next";
 
 import { Histogram } from "@/components/charts/histogram";
 import { STATUSES } from "@/lib/statuses";
@@ -16,11 +17,12 @@ export function CommunityStats({
   mine?: number | null;
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className={cn("panel p-4 sm:p-5", className)}>
       <div className="flex items-end gap-4">
         <div>
-          <div className="eyebrow">Members' rating</div>
+          <div className="eyebrow">{t("community.rating")}</div>
           <div
             className={cn(
               "num mt-1 text-3xl font-extrabold",
@@ -29,14 +31,16 @@ export function CommunityStats({
           >
             {community.ratingAverage?.toFixed(1) ?? "–"}
           </div>
-          <div className="text-xs text-dimmed">{community.ratingCount} ratings</div>
+          <div className="text-xs text-dimmed">
+            {t("community.ratings", { count: community.ratingCount })}
+          </div>
         </div>
         <div className="min-w-0 flex-1">
           <Histogram
             buckets={community.histogram}
             highlight={mine ? Math.min(10, Math.max(1, Math.ceil(mine))) : null}
             height={56}
-            ariaLabel="Members' rating distribution"
+            ariaLabel={t("community.histogramLabel")}
             noun="ratings"
           />
         </div>
@@ -56,13 +60,11 @@ export function CommunityStats({
         })}
         {community.mastered > 0 && (
           <span>
-            <span className="text-dimmed">Mastered</span>{" "}
+            <span className="text-dimmed">{t("community.mastered")}</span>{" "}
             <span className="font-semibold">{community.mastered}</span>
           </span>
         )}
-        {community.total === 0 && (
-          <span className="text-dimmed">Nobody's logged this yet. First one sets the tone.</span>
-        )}
+        {community.total === 0 && <span className="text-dimmed">{t("community.nobody")}</span>}
       </div>
     </div>
   );

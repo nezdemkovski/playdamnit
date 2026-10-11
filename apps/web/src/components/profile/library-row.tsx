@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import { cn } from "cn";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { LogGameDialog } from "@/components/game/log-game-dialog";
@@ -21,6 +22,7 @@ const IDLE_FULL = 180;
 
 /** One list entry: rank, cover, title and metadata, idle time with a bar, rating, status */
 export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const data = entry.userGameData;
   const status = data.status;
@@ -74,7 +76,7 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
         {data.rating ? (
           <RatingValue value={data.rating} className="text-2xl" />
         ) : (
-          <span className="eyebrow">unrated</span>
+          <span className="eyebrow">{t("profile.library.unrated")}</span>
         )}
       </div>
       <div className="flex items-center justify-end gap-2 sm:justify-start">
@@ -87,7 +89,7 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
             variant="ghost"
             size="icon-xs"
             onClick={() => setOpen(true)}
-            aria-label="Edit entry"
+            aria-label={t("profile.library.editEntry")}
             className="text-dimmed"
           >
             <PencilIcon />

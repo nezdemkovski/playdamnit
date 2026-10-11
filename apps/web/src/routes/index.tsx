@@ -5,7 +5,7 @@ import {
   type Game,
 } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format } from "date-fns";
+import { format } from "@/i18n/date";
 import {
   ActivityIcon,
   CalendarIcon,
@@ -15,6 +15,7 @@ import {
   MessageSquareTextIcon,
   TrophyIcon,
 } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { GameCover } from "@/components/game/game-cover";
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/")({
 const RAIL = 20;
 
 function Home() {
+  const { t } = useTranslation();
   const { user } = useSession();
   const { byGameId, entries, isLoading: libraryLoading } = useMyLibrary();
   const popular = useGetApiGames({ sort: "popular", limit: RAIL });
@@ -60,33 +62,28 @@ function Home() {
       ) : (
         <section className="grid border-b border-border py-12 md:grid-cols-[1.3fr_1fr]">
           <div>
-            <div className="eyebrow">A game list with opinions</div>
+            <div className="eyebrow">{t("home.guest.eyebrow")}</div>
             <h1 className="mt-4 text-4xl leading-[.95] sm:text-5xl lg:text-6xl">
-              Your backlog has a mouth now.
+              {t("home.guest.title")}
             </h1>
-            <p className="mt-5 max-w-[44ch] text-lg text-dimmed">
-              Track what you play, rate it, write a few honest words. Then get told the truth about
-              the games you "will definitely get to".
-            </p>
+            <p className="mt-5 max-w-[44ch] text-lg text-dimmed">{t("home.guest.text")}</p>
             <div className="mt-7 flex flex-wrap gap-2">
               <Button asChild variant="destructive">
-                <Link to="/auth">Start your list</Link>
+                <Link to="/auth">{t("home.guest.start")}</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link to="/search" search={{ q: "", page: 1, editions: false }}>
-                  <Gamepad2Icon /> Browse games
+                  <Gamepad2Icon /> {t("home.guest.browse")}
                 </Link>
               </Button>
             </div>
           </div>
-          <div className="eyebrow mt-8 self-end md:mt-0 md:text-right">
-            Free · no ads · export anytime · the whole IGDB catalog
-          </div>
+          <div className="eyebrow mt-8 self-end md:mt-0 md:text-right">{t("home.guest.fine")}</div>
         </section>
       )}
 
       {playing.length > 0 && (
-        <Section title="Now playing" icon={Gamepad2Icon} count={playing.length}>
+        <Section title={t("home.sections.nowPlaying")} icon={Gamepad2Icon} count={playing.length}>
           <GameRail>
             {playing.map((g) => (
               <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
@@ -97,7 +94,7 @@ function Home() {
 
       {feed.data && feed.data.results.length > 0 && (
         <Section
-          title="Friends activity"
+          title={t("home.sections.friends")}
           icon={ActivityIcon}
           action={
             <Link
@@ -105,7 +102,7 @@ function Home() {
               search={{ q: "", sort: "games", page: 1 }}
               className="text-sm text-dimmed hover:text-white"
             >
-              Community
+              {t("home.sections.community")}
             </Link>
           }
         >
@@ -116,22 +113,29 @@ function Home() {
                   <UserAvatar user={item.user} className="size-8" textClassName="text-xs" />
                 </Link>
                 <div className="min-w-0 flex-1 truncate">
-                  <Link
-                    to="/$username"
-                    params={{ username: item.user.username ?? "" }}
-                    className="font-semibold hover:underline"
-                  >
-                    {item.user.name || item.user.username}
-                  </Link>
-                  <span className="text-dimmed"> {item.isNew ? "added" : "updated"} </span>
-                  <Link
-                    to="/games/$id"
-                    params={{ id: String(item.game.id) }}
-                    className="font-semibold hover:underline"
-                  >
-                    {item.game.name}
-                  </Link>
-                  {item.hasReview && <span className="text-dimmed"> · reviewed</span>}
+                  <Trans
+                    i18nKey={item.isNew ? "home.feed.added" : "home.feed.updated"}
+                    values={{ name: item.user.name || item.user.username, game: item.game.name }}
+                    components={{
+                      user: (
+                        <Link
+                          to="/$username"
+                          params={{ username: item.user.username ?? "" }}
+                          className="font-semibold hover:underline"
+                        />
+                      ),
+                      game: (
+                        <Link
+                          to="/games/$id"
+                          params={{ id: String(item.game.id) }}
+                          className="font-semibold hover:underline"
+                        />
+                      ),
+                    }}
+                  />
+                  {item.hasReview && (
+                    <span className="text-dimmed"> {t("home.feed.reviewed")}</span>
+                  )}
                 </div>
                 {item.mastered && <TrophyIcon className="size-4 text-warning" />}
                 <RatingValue value={item.rating} />
@@ -159,7 +163,7 @@ function Home() {
 
       {week.data && week.data.results.length > 0 && (
         <Section
-          title="This week"
+          title={t("home.sections.thisWeek")}
           icon={CalendarIcon}
           action={
             <Link
@@ -167,7 +171,7 @@ function Home() {
               search={{ month: format(new Date(), "yyyy-MM"), hot: false, mine: false }}
               className="text-sm text-dimmed hover:text-white"
             >
-              Open the calendar
+              {t("home.sections.openCalendar")}
             </Link>
           }
         >
@@ -185,7 +189,7 @@ function Home() {
       )}
 
       <Section
-        title="Trending"
+        title={t("home.sections.trending")}
         icon={FlameIcon}
         action={
           <Link
@@ -200,7 +204,7 @@ function Home() {
             }}
             className="text-sm text-dimmed hover:text-white"
           >
-            Charts
+            {t("home.sections.charts")}
           </Link>
         }
       >
@@ -208,7 +212,7 @@ function Home() {
       </Section>
 
       {freshReviews.data && freshReviews.data.results.length > 0 && (
-        <Section title="Fresh reviews" icon={MessageSquareTextIcon}>
+        <Section title={t("home.sections.freshReviews")} icon={MessageSquareTextIcon}>
           <div className="grid gap-3 md:grid-cols-2">
             {freshReviews.data.results.map((review) => (
               <ReviewCard key={review.id} review={review} withGame />
@@ -217,12 +221,12 @@ function Home() {
         </Section>
       )}
 
-      <Section title="New releases" icon={CalendarIcon}>
+      <Section title={t("home.sections.newReleases")} icon={CalendarIcon}>
         <Rail games={recent.data?.results} byGameId={byGameId} />
       </Section>
 
       {latest.length > 0 && (
-        <Section title="Recently added to your list" icon={LibraryIcon}>
+        <Section title={t("home.sections.recentlyAdded")} icon={LibraryIcon}>
           <GameRail>
             {latest.map((g) => (
               <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
@@ -241,6 +245,7 @@ function Rail({
   games: Game[] | undefined;
   byGameId: ReturnType<typeof useMyLibrary>["byGameId"];
 }) {
+  const { t } = useTranslation();
   if (!games) {
     return (
       <GameRail>
@@ -250,8 +255,7 @@ function Rail({
       </GameRail>
     );
   }
-  if (games.length === 0)
-    return <p className="text-sm text-dimmed">The catalog is still filling up.</p>;
+  if (games.length === 0) return <p className="text-sm text-dimmed">{t("home.catalogFilling")}</p>;
   return (
     <GameRail>
       {games.map((g) => (

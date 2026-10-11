@@ -3,6 +3,7 @@ import { DefaultChatTransport } from "ai";
 import { Loader2Icon, SendIcon, SparklesIcon } from "lucide-react";
 import { cn } from "cn";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface AssistantDialogProps {
 
 /** Chat with the API's game-search agent; found games render as cards */
 export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
+  const { t } = useTranslation();
   const [showOnlyGames, setShowOnlyGames] = useState(true);
   const showOnlyGamesRef = useRef(showOnlyGames);
   showOnlyGamesRef.current = showOnlyGames;
@@ -63,18 +65,16 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
       <DialogContent className="flex h-[85dvh] flex-col gap-0 rounded-card border-white/5 bg-popover p-0 sm:max-w-2xl">
         <DialogHeader className="border-b border-white/5 p-5 text-left">
           <DialogTitle className="flex items-center gap-2">
-            <SparklesIcon className="size-5" /> AI assistant
+            <SparklesIcon className="size-5" /> {t("nav.aiAssistant")}
           </DialogTitle>
-          <DialogDescription>
-            Ask for games by mood, genre, platform or anything else.
-          </DialogDescription>
+          <DialogDescription>{t("assistant.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-dimmed">
               <SparklesIcon className="size-8 opacity-40" />
-              Try “cozy farming games on Switch” or “something like Hades”.
+              {t("assistant.empty")}
             </div>
           )}
           {messages.map((message) => (
@@ -99,8 +99,8 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
                     if (part.state !== "output-available") {
                       return (
                         <div key={i} className="flex items-center gap-2 text-dimmed">
-                          <Loader2Icon className="size-3.5 animate-spin" /> Searching “
-                          {part.input?.query}”…
+                          <Loader2Icon className="size-3.5 animate-spin" />{" "}
+                          {t("assistant.searching", { query: part.input?.query ?? "" })}
                         </div>
                       );
                     }
@@ -108,7 +108,7 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
                     if (games.length === 0)
                       return (
                         <p key={i} className="text-dimmed">
-                          Nothing found.
+                          {t("assistant.nothing")}
                         </p>
                       );
                     return (
@@ -137,18 +137,23 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Message…"
+              placeholder={t("assistant.placeholder")}
               autoFocus
               className="rounded-full"
             />
-            <Button type="submit" size="icon" disabled={busy || !input.trim()} aria-label="Send">
+            <Button
+              type="submit"
+              size="icon"
+              disabled={busy || !input.trim()}
+              aria-label={t("assistant.send")}
+            >
               {busy ? <Loader2Icon className="animate-spin" /> : <SendIcon />}
             </Button>
           </div>
           <div className="flex items-center gap-2">
             <Switch id="only-games" checked={showOnlyGames} onCheckedChange={setShowOnlyGames} />
             <Label htmlFor="only-games" className="text-xs text-dimmed">
-              Only main games, remakes and remasters
+              {t("assistant.onlyGames")}
             </Label>
           </div>
         </form>

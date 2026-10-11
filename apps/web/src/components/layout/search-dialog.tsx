@@ -2,6 +2,7 @@ import { useGetApiGamesSearch } from "@playdamnit/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRightIcon, Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Command,
@@ -37,6 +38,7 @@ interface SearchDialogProps {
 
 /** ⌘K search over the catalog; picking a result opens its page */
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const q = useDebounced(query.trim(), 250);
@@ -64,22 +66,26 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Search games</DialogTitle>
-          <DialogDescription>Find a game in the catalog</DialogDescription>
+          <DialogTitle>{t("layout.searchDialog.title")}</DialogTitle>
+          <DialogDescription>{t("layout.searchDialog.description")}</DialogDescription>
         </DialogHeader>
         {/* The API already ranks the results; cmdk must not filter them again */}
         <Command
           shouldFilter={false}
           className="bg-transparent **:data-[slot=command-input-wrapper]:h-14 [&_[cmdk-input]]:h-14 [&_[cmdk-input]]:text-base"
         >
-          <CommandInput value={query} onValueChange={setQuery} placeholder="Search games…" />
+          <CommandInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t("layout.searchDialog.placeholder")}
+          />
           <CommandList className="max-h-[60dvh]">
             {enabled && !isFetching && results.length === 0 && (
-              <CommandEmpty>No games found.</CommandEmpty>
+              <CommandEmpty>{t("layout.searchDialog.empty")}</CommandEmpty>
             )}
             {!enabled && (
               <div className="py-8 text-center text-sm text-dimmed">
-                Type at least two characters
+                {t("layout.searchDialog.hint")}
               </div>
             )}
             {isFetching && results.length === 0 && (
@@ -88,7 +94,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               </div>
             )}
             {results.length > 0 && (
-              <CommandGroup heading="Games">
+              <CommandGroup heading={t("layout.searchDialog.group")}>
                 {results.map((game) => (
                   <CommandItem
                     key={game.id}
@@ -127,7 +133,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                   }
                   className="justify-center gap-2 rounded-lg text-sm text-dimmed"
                 >
-                  All results for “{q}” <ArrowRightIcon className="size-4" />
+                  {t("layout.searchDialog.all", { q })} <ArrowRightIcon className="size-4" />
                 </CommandItem>
               </CommandGroup>
             )}

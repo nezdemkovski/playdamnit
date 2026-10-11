@@ -1,16 +1,18 @@
 import { useGetApiGames, type Game } from "@playdamnit/api-client";
 import { useQueries } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { addMonths, format, isToday, parse } from "date-fns";
+import { addMonths, isToday, parse } from "date-fns";
 import { ChevronLeftIcon, ChevronRightIcon, FlameIcon, LibraryIcon } from "lucide-react";
 import { cn } from "cn";
 import { useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { GameCard } from "@/components/game/game-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
+import { format } from "@/i18n/date";
 import { getApiGames, getGetApiGamesQueryKey } from "@playdamnit/api-client";
 
 const PAGE = 100;
@@ -40,6 +42,7 @@ const monthBounds = (month: string) => {
 
 /** Release calendar: every dated game of the month, grouped by day */
 function CalendarPage() {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/calendar" });
   const { user } = useSession();
@@ -85,13 +88,23 @@ function CalendarPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Release calendar</h1>
+        <h1 className="text-2xl font-bold">{t("calendar.title")}</h1>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => go(-1)} aria-label="Previous month">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => go(-1)}
+            aria-label={t("calendar.previousMonth")}
+          >
             <ChevronLeftIcon />
           </Button>
           <span className="min-w-36 text-center font-semibold">{format(start, "MMMM yyyy")}</span>
-          <Button variant="ghost" size="icon-sm" onClick={() => go(1)} aria-label="Next month">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => go(1)}
+            aria-label={t("calendar.nextMonth")}
+          >
             <ChevronRightIcon />
           </Button>
           <Button
@@ -101,7 +114,7 @@ function CalendarPage() {
               navigate({ search: { ...search, month: format(new Date(), "yyyy-MM") } })
             }
           >
-            Today
+            {t("common.today")}
           </Button>
         </div>
       </div>
@@ -112,7 +125,7 @@ function CalendarPage() {
           onClick={() => navigate({ search: { ...search, hot: !search.hot } })}
           icon={<FlameIcon className="size-3.5" />}
         >
-          Hot releases
+          {t("calendar.hot")}
         </FilterChip>
         {user && (
           <FilterChip
@@ -120,10 +133,12 @@ function CalendarPage() {
             onClick={() => navigate({ search: { ...search, mine: !search.mine } })}
             icon={<LibraryIcon className="size-3.5" />}
           >
-            My list only
+            {t("calendar.mine")}
           </FilterChip>
         )}
-        <span className="ml-auto text-dimmed">{first.data ? `${games.length} releases` : ""}</span>
+        <span className="ml-auto text-dimmed">
+          {first.data ? t("calendar.count", { count: games.length }) : ""}
+        </span>
       </div>
 
       {first.isPending ? (
@@ -136,9 +151,7 @@ function CalendarPage() {
           </div>
         </div>
       ) : days.length === 0 ? (
-        <div className="panel mt-6 p-12 text-center text-dimmed">
-          Nothing releases this month. Finish something instead.
-        </div>
+        <div className="panel mt-6 p-12 text-center text-dimmed">{t("calendar.empty")}</div>
       ) : (
         days.map(([day, list]) => {
           const date = parse(day, "yyyy-MM-dd", new Date());
@@ -147,7 +160,9 @@ function CalendarPage() {
               <h2 className="mb-3 flex items-baseline gap-2 text-lg font-bold">
                 {format(date, "MMMM d")}
                 {isToday(date) && (
-                  <span className="rounded-full bg-white/10 px-2 text-xs font-semibold">Today</span>
+                  <span className="rounded-full bg-white/10 px-2 text-xs font-semibold">
+                    {t("common.today")}
+                  </span>
                 )}
                 <span className="text-sm font-semibold text-dimmed">{list.length}</span>
               </h2>
@@ -162,21 +177,26 @@ function CalendarPage() {
       )}
       {total > PAGE * MAX_PAGES && (
         <p className="mt-6 text-center text-xs text-dimmed">
-          Showing the first {PAGE * MAX_PAGES} of {total} dated releases.{" "}
-          <Link
-            to="/charts"
-            search={{
-              tab: "upcoming",
-              genreId: undefined,
-              platformId: undefined,
-              year: undefined,
-              type: undefined,
-              page: 1,
+          <Trans
+            i18nKey="calendar.truncated"
+            values={{ shown: PAGE * MAX_PAGES, total }}
+            components={{
+              link: (
+                <Link
+                  to="/charts"
+                  search={{
+                    tab: "upcoming",
+                    genreId: undefined,
+                    platformId: undefined,
+                    year: undefined,
+                    type: undefined,
+                    page: 1,
+                  }}
+                  className="underline"
+                />
+              ),
             }}
-            className="underline"
-          >
-            Browse the charts
-          </Link>
+          />
         </p>
       )}
     </>

@@ -1,8 +1,9 @@
 import { useGetApiUserByUsernameJournal, type JournalItem } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format, parse } from "date-fns";
+import { parse } from "date-fns";
 import { RepeatIcon, TrophyIcon } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 import { RatingValue, StatusPill } from "@/components/game/rating";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
+import { format } from "@/i18n/date";
 
 export const Route = createFileRoute("/$username/journal")({
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -28,6 +30,7 @@ const ALL = "all";
 
 /** Playthroughs and finished entries by month, like Backloggd's journal */
 function ProfileJournal() {
+  const { t } = useTranslation();
   const { username } = useProfileContext();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -50,9 +53,7 @@ function ProfileJournal() {
   return (
     <>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-dimmed">
-          Every playthrough you logged and every game you finished or dropped, by month.
-        </p>
+        <p className="text-sm text-dimmed">{t("profile.journal.intro")}</p>
         <Select
           value={search.year !== undefined ? String(search.year) : ALL}
           onValueChange={(v) => navigate({ search: { year: v === ALL ? undefined : Number(v) } })}
@@ -61,7 +62,7 @@ function ProfileJournal() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>All years</SelectItem>
+            <SelectItem value={ALL}>{t("profile.journal.allYears")}</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
@@ -73,9 +74,7 @@ function ProfileJournal() {
 
       {journal.isPending && <Skeleton className="mt-4 h-40 rounded-card" />}
       {journal.data && months.length === 0 && (
-        <div className="panel mt-4 p-12 text-center text-dimmed">
-          Nothing logged yet. Finish something and it shows up here.
-        </div>
+        <div className="panel mt-4 p-12 text-center text-dimmed">{t("profile.journal.empty")}</div>
       )}
 
       {months.map(([month, items]) => (
@@ -114,13 +113,13 @@ function ProfileJournal() {
                       <>
                         <RepeatIcon className="mr-1 inline size-3" />
                         {[
-                          item.startedAt && `from ${item.startedAt}`,
+                          item.startedAt && t("profile.journal.from", { date: item.startedAt }),
                           item.hours && `${item.hours}h`,
                           item.platform?.name,
                           item.note,
                         ]
                           .filter(Boolean)
-                          .join(" · ") || "Playthrough"}
+                          .join(" · ") || t("profile.journal.playthrough")}
                       </>
                     ) : (
                       (item.platform?.name ?? "")

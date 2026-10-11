@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useTranslation } from "react-i18next";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
@@ -102,6 +103,7 @@ interface SidebarProps {
  * only from md, icons with labels from xl, a bottom bar on phones.
  */
 export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
+  const { t } = useTranslation();
   const { user } = useSession();
   const signOut = useSignOut();
   const { unread } = useNotifications(!!user);
@@ -112,21 +114,21 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
 
   const common = (
     <>
-      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem label={t("nav.home")} icon={HomeIcon} to="/" active={is("/")} />
       <RailItem
-        label="Calendar"
+        label={t("nav.calendar")}
         icon={CalendarDaysIcon}
         to="/calendar"
         active={pathname.startsWith("/calendar")}
       />
       <RailItem
-        label="Charts"
+        label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
         active={pathname.startsWith("/charts")}
       />
       <RailItem
-        label="Community"
+        label={t("nav.community")}
         icon={UsersIcon}
         to="/community"
         active={pathname.startsWith("/community")}
@@ -138,61 +140,61 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
     <>
       {common}
       <RailItem
-        label="My games"
+        label={t("nav.myGames")}
         icon={LibraryIcon}
         to="/$username"
         params={{ username }}
         active={pathname.startsWith(profilePath) && !is(`${profilePath}/settings`)}
       />
       <RailItem
-        label="Notifications"
+        label={t("nav.notifications")}
         icon={BellIcon}
         to="/notifications"
         active={is("/notifications")}
         badge={unread}
       />
-      <RailItem label="AI assistant" icon={SparklesIcon} onClick={onAssistant} />
+      <RailItem label={t("nav.aiAssistant")} icon={SparklesIcon} onClick={onAssistant} />
       <RailItem
-        label="Settings"
+        label={t("nav.settings")}
         icon={SettingsIcon}
         to="/$username/settings"
         params={{ username }}
         active={is(`${profilePath}/settings`)}
       />
-      <RailItem label="Sign out" icon={LogOutIcon} onClick={() => signOut.mutate()} />
+      <RailItem label={t("nav.signOut")} icon={LogOutIcon} onClick={() => signOut.mutate()} />
     </>
   ) : (
     <>
       {common}
-      <RailItem label="Sign in" icon={LogInIcon} to="/auth" active={is("/auth")} />
+      <RailItem label={t("nav.signIn")} icon={LogInIcon} to="/auth" active={is("/auth")} />
     </>
   );
 
   const mobile = user ? (
     <>
-      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem label={t("nav.home")} icon={HomeIcon} to="/" active={is("/")} />
       <RailItem
-        label="Charts"
+        label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
         active={pathname.startsWith("/charts")}
       />
       <RailItem
-        label="My games"
+        label={t("nav.myGames")}
         icon={LibraryIcon}
         to="/$username"
         params={{ username }}
         active={pathname.startsWith(profilePath)}
       />
       <RailItem
-        label="Notifications"
+        label={t("nav.notifications")}
         icon={BellIcon}
         to="/notifications"
         active={is("/notifications")}
         badge={unread}
       />
       <RailItem
-        label="Community"
+        label={t("nav.community")}
         icon={UsersIcon}
         to="/community"
         active={pathname.startsWith("/community")}
@@ -200,20 +202,20 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
     </>
   ) : (
     <>
-      <RailItem label="Home" icon={HomeIcon} to="/" active={is("/")} />
+      <RailItem label={t("nav.home")} icon={HomeIcon} to="/" active={is("/")} />
       <RailItem
-        label="Charts"
+        label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
         active={pathname.startsWith("/charts")}
       />
       <RailItem
-        label="Calendar"
+        label={t("nav.calendar")}
         icon={CalendarDaysIcon}
         to="/calendar"
         active={pathname.startsWith("/calendar")}
       />
-      <RailItem label="Sign in" icon={LogInIcon} to="/auth" active={is("/auth")} />
+      <RailItem label={t("nav.signIn")} icon={LogInIcon} to="/auth" active={is("/auth")} />
     </>
   );
 
@@ -223,7 +225,7 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         <Link
           to="/"
           className="mb-3 block self-center xl:self-start xl:px-1"
-          aria-label="PlayDamnIt"
+          aria-label={t("app.name")}
         >
           <img src="/logo.svg" alt="" className="size-9" />
         </Link>
@@ -240,12 +242,12 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
             </span>
           </Link>
         )}
-        <RailItem label="Search" icon={SearchIcon} onClick={onSearch} />
+        <RailItem label={t("nav.search")} icon={SearchIcon} onClick={onSearch} />
         <nav className="mt-2 flex flex-col items-center gap-1 xl:items-stretch">{rail}</nav>
       </aside>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-white/5 bg-sidebar/95 px-2 py-1.5 backdrop-blur md:hidden">
-        <RailItem label="Search" icon={SearchIcon} onClick={onSearch} />
+        <RailItem label={t("nav.search")} icon={SearchIcon} onClick={onSearch} />
         {mobile}
       </nav>
     </>

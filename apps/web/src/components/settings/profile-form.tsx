@@ -1,5 +1,6 @@
 import { ImageUpIcon, Trash2Icon } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { useUpdateProfile } from "@/hooks/auth";
 import { useProfileUpdate } from "@/hooks/social";
+import { t } from "@/i18n";
 import type { SessionUser } from "@/lib/authClient";
 
 const AVATAR_SIZE = 256;
@@ -29,7 +31,7 @@ const resizeAvatar = (file: File): Promise<File> =>
       canvas.width = AVATAR_SIZE;
       canvas.height = AVATAR_SIZE;
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas unavailable"));
+      if (!ctx) return reject(new Error(t("settings.profile.errors.canvas")));
       ctx.drawImage(
         img,
         (img.width - side) / 2,
@@ -45,16 +47,17 @@ const resizeAvatar = (file: File): Promise<File> =>
         (blob) =>
           blob
             ? resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" }))
-            : reject(new Error("Could not encode")),
+            : reject(new Error(t("settings.profile.errors.encode"))),
         "image/jpeg",
         0.88,
       );
     };
-    img.onerror = () => reject(new Error("Not an image"));
+    img.onerror = () => reject(new Error(t("settings.profile.errors.notImage")));
     img.src = url;
   });
 
 export function ProfileForm({ user }: { user: ProfileUser }) {
+  const { t } = useTranslation();
   const update = useUpdateProfile();
   const social = useProfileUpdate();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -114,7 +117,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           onClick={() => fileInput.current?.click()}
           disabled={social.isPending}
         >
-          <ImageUpIcon /> Upload avatar
+          <ImageUpIcon /> {t("settings.profile.uploadAvatar")}
         </Button>
         {user.image && (
           <Button
@@ -125,14 +128,14 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
             onClick={() => social.clearAvatar()}
             disabled={social.isPending}
           >
-            <Trash2Icon /> Remove
+            <Trash2Icon /> {t("common.remove")}
           </Button>
         )}
-        <div className="text-xs text-dimmed">JPG, PNG, WebP or GIF. Cropped to a square.</div>
+        <div className="text-xs text-dimmed">{t("settings.profile.avatarHint")}</div>
       </div>
       <div className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t("settings.profile.username")}</Label>
           <Input
             id="username"
             value={username}
@@ -140,26 +143,24 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
             pattern="^[a-zA-Z0-9_.]{3,30}$"
             required
           />
-          <p className="text-xs text-dimmed">
-            Your unique identifier. Appears in your profile URL.
-          </p>
+          <p className="text-xs text-dimmed">{t("settings.profile.usernameHint")}</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="name">Display name</Label>
+          <Label htmlFor="name">{t("settings.profile.displayName")}</Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your display name"
+            placeholder={t("settings.profile.displayNamePlaceholder")}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bio">Bio</Label>
+          <Label htmlFor="bio">{t("settings.profile.bio")}</Label>
           <Textarea
             id="bio"
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, MAX_BIO))}
-            placeholder="Something about yourself"
+            placeholder={t("settings.profile.bioPlaceholder")}
             className="min-h-20"
           />
           <div className="text-right text-xs text-dimmed">
@@ -167,7 +168,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Links</Label>
+          <Label>{t("settings.profile.links")}</Label>
           {links.map((link, i) => (
             <div key={i} className="flex gap-2">
               <Input
@@ -180,7 +181,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label="Remove link"
+                aria-label={t("settings.profile.removeLink")}
                 className="text-dimmed"
                 onClick={() => setLinks(links.length > 1 ? links.filter((_, j) => j !== i) : [""])}
               >
@@ -195,22 +196,20 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
               size="xs"
               onClick={() => setLinks([...links, ""])}
             >
-              + Add link
+              {t("settings.profile.addLink")}
             </Button>
           )}
         </div>
         <div className="flex items-center gap-3">
           <Switch id="list-public" checked={listPublic} onCheckedChange={setListPublic} />
-          <Label htmlFor="list-public">Public list</Label>
-          <span className="text-xs text-dimmed">
-            Off hides your games, reviews, journal and likes from others.
-          </span>
+          <Label htmlFor="list-public">{t("settings.profile.publicList")}</Label>
+          <span className="text-xs text-dimmed">{t("settings.profile.publicListHint")}</span>
         </div>
         <Button
           type="submit"
           disabled={(!changedAuth && !changedProfile) || update.isPending || social.isPending}
         >
-          Save changes
+          {t("settings.profile.save")}
         </Button>
       </div>
     </form>

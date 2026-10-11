@@ -2,6 +2,7 @@ import { useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AwardIcon, Gamepad2Icon, MessageSquareTextIcon } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { Badges, computeBadges } from "@/components/profile/badges";
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/$username/")({
 
 /** Overview tab: stats, badges, what's being played, latest reviews */
 function ProfileOverview() {
+  const { t } = useTranslation();
   const { username, entries, library, isPrivate, profile } = useProfileContext();
   const reviews = useGetApiUserByUsernameReviews(
     username,
@@ -50,7 +52,7 @@ function ProfileOverview() {
       )}
 
       <Section
-        title="Badges"
+        title={t("profile.overview.badges")}
         icon={AwardIcon}
         count={`${badges.filter((b) => b.earned).length} / ${badges.length}`}
         className="mt-8"
@@ -59,7 +61,12 @@ function ProfileOverview() {
       </Section>
 
       {playing.length > 0 && (
-        <Section title="Now playing" icon={Gamepad2Icon} count={playing.length} className="mt-8">
+        <Section
+          title={t("profile.overview.nowPlaying")}
+          icon={Gamepad2Icon}
+          count={playing.length}
+          className="mt-8"
+        >
           <GameRail>
             {playing.map((g) => (
               <GameCard key={g.id} game={g} rating={g.userGameData.rating} />
@@ -70,7 +77,7 @@ function ProfileOverview() {
 
       {recent.length > 0 && (
         <Section
-          title="Recently played"
+          title={t("profile.overview.recentlyPlayed")}
           icon={Gamepad2Icon}
           action={
             <Link
@@ -79,7 +86,7 @@ function ProfileOverview() {
               search={{ year: undefined }}
               className="text-sm text-dimmed hover:text-white"
             >
-              Journal
+              {t("profile.overview.journal")}
             </Link>
           }
           className="mt-8"
@@ -94,7 +101,7 @@ function ProfileOverview() {
 
       {reviews.data && reviews.data.results.length > 0 && (
         <Section
-          title="Recently reviewed"
+          title={t("profile.overview.recentlyReviewed")}
           icon={MessageSquareTextIcon}
           action={
             <Link
@@ -102,7 +109,7 @@ function ProfileOverview() {
               params={{ username }}
               className="text-sm text-dimmed hover:text-white"
             >
-              All reviews
+              {t("profile.overview.allReviews")}
             </Link>
           }
           className="mt-8"
@@ -116,7 +123,7 @@ function ProfileOverview() {
       )}
 
       {entries.length === 0 && (
-        <div className="panel mt-8 p-12 text-center text-dimmed">Nothing in the list yet.</div>
+        <div className="panel mt-8 p-12 text-center text-dimmed">{t("profile.overview.empty")}</div>
       )}
     </>
   );

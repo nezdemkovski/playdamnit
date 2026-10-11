@@ -1,5 +1,7 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
 
+import { t } from "@/i18n";
+
 /**
  * The site's voice: one-liners that only make sense next to the user's real numbers. Sarcasm
  * aims at the backlog, never at the person; praise exists and is rare.
@@ -72,55 +74,50 @@ export const summarize = (entries: UserGameWithUserData[]): LibrarySummary => {
 };
 
 export const verdictLine = (s: LibrarySummary): string => {
-  if (s.total === 0) return "Nothing here. Nothing to feel guilty about. Enjoy it while it lasts.";
-  if (s.finishedThisMonth >= 3)
-    return `${s.finishedThisMonth} finished this month. Who are you and what did you do with the backlog?`;
-  if (s.completion >= 50) return "More than half done. We're almost proud.";
-  if (s.finished === 0) return "We're not mad. Just disappointed.";
-  return "We're not mad. Just disappointed. Your backlog is bigger than your Steam library.";
+  if (s.total === 0) return t("voice.verdict.empty");
+  if (s.finishedThisMonth >= 3) return t("voice.verdict.streak", { count: s.finishedThisMonth });
+  if (s.completion >= 50) return t("voice.verdict.halfDone");
+  if (s.finished === 0) return t("voice.verdict.none");
+  return t("voice.verdict.default");
 };
 
 export const addedLine = (s: LibrarySummary): string =>
-  s.addedThisWeek > 0
-    ? `+${s.addedThisWeek} this week. Stop.`
-    : "Nothing new this week. Suspicious.";
+  s.addedThisWeek > 0 ? t("voice.added.some", { count: s.addedThisWeek }) : t("voice.added.none");
 
 export const finishedLine = (entries: UserGameWithUserData[]): string => {
   const last = entries
     .filter((e) => e.userGameData.status === "finished" && e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))[0];
-  if (!last) return "Never. We're counting.";
+  if (!last) return t("voice.finished.never");
   const d = daysSince(last.userGameData.endedAt);
-  return d < 7
-    ? "This week. Noted."
-    : d < 45
-      ? `${d} days ago. Acceptable.`
-      : `${d} days ago. We remember.`;
+  if (d < 7) return t("voice.finished.thisWeek");
+  return d < 45 ? t("voice.finished.recent", { count: d }) : t("voice.finished.old", { count: d });
 };
 
 export const playingLine = (s: LibrarySummary): string => {
-  if (!s.stalePlaying) return "Nothing. At least you're honest.";
+  if (!s.stalePlaying) return t("voice.playing.none");
   const d = idleDays(s.stalePlaying);
-  return d > 30 ? `One for ${d} days. Playing is a strong word.` : "Keep going.";
+  return d > 30 ? t("voice.playing.stale", { count: d }) : t("voice.playing.fine");
 };
 
 export const backlogLine = (s: LibrarySummary): string => {
   const hours = s.backlog * 46; // IGDB's median "normally" across the catalog, give or take
-  if (s.backlog === 0) return "Empty. Either discipline or denial.";
+  if (s.backlog === 0) return t("voice.backlog.empty");
   return hours > 1000
-    ? `≈ ${Math.round(hours / 100) * 100} hours. A year of evenings.`
-    : `≈ ${hours} hours. Doable, allegedly.`;
+    ? t("voice.backlog.huge", { hours: Math.round(hours / 100) * 100 })
+    : t("voice.backlog.ok", { hours });
 };
 
 export const idleLine = (entry: UserGameWithUserData): string => {
   const d = idleDays(entry);
   const status = entry.userGameData.status;
-  if (status === "finished") return "cleared";
-  if (status === "dropped") return "honest at least";
-  if (status === "playing") return d > 30 ? `${d} days as "playing"` : "in progress";
-  if (status === "on_hold") return `${d} days on hold`;
-  if (status === "online") return "no ending, no guilt";
-  return d === 0 ? "added today" : `${d} days, never opened`;
+  if (status === "finished") return t("voice.idle.finished");
+  if (status === "dropped") return t("voice.idle.dropped");
+  if (status === "playing")
+    return d > 30 ? t("voice.idle.playingStale", { count: d }) : t("voice.idle.playingFine");
+  if (status === "on_hold") return t("voice.idle.onHold", { count: d });
+  if (status === "online") return t("voice.idle.online");
+  return d === 0 ? t("voice.idle.today") : t("voice.idle.never", { count: d });
 };
 
 /** Toasts after a library write */
@@ -129,9 +126,9 @@ export const toastFor = (
   status: string | undefined,
   s: LibrarySummary,
 ): string => {
-  if (kind === "remove") return "Removed. One less thing to feel bad about.";
-  if (status === "finished") return `Finished. ${s.backlog} to go. We noticed.`;
-  if (status === "dropped") return "Dropped. Bold. Honest. We respect it.";
-  if (kind === "add") return `Added. That's ${s.total + 1} now. Just saying.`;
-  return "Saved. Recounted.";
+  if (kind === "remove") return t("voice.toast.removed");
+  if (status === "finished") return t("voice.toast.finished", { count: s.backlog });
+  if (status === "dropped") return t("voice.toast.dropped");
+  if (kind === "add") return t("voice.toast.added", { count: s.total + 1 });
+  return t("voice.toast.saved");
 };

@@ -2,6 +2,7 @@ import { useGetApiUsers } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Gamepad2Icon, SearchIcon, UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/community")({
 });
 
 function CommunityPage() {
+  const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/community" });
   const [input, setInput] = useState(search.q);
@@ -45,7 +47,7 @@ function CommunityPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">
-          Members{" "}
+          {t("community.title")}{" "}
           <span className="text-sm font-semibold text-dimmed">{query.data ? total : ""}</span>
         </h1>
         <Select
@@ -56,9 +58,9 @@ function CommunityPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="games">Most games</SelectItem>
-            <SelectItem value="followers">Most followers</SelectItem>
-            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="games">{t("community.sortGames")}</SelectItem>
+            <SelectItem value="followers">{t("community.sortFollowers")}</SelectItem>
+            <SelectItem value="newest">{t("community.sortNewest")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -73,7 +75,7 @@ function CommunityPage() {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Search by username"
+          placeholder={t("community.searchPlaceholder")}
           className="h-11 rounded-full pl-11"
         />
       </form>
@@ -109,7 +111,7 @@ function CommunityPage() {
               </div>
             ))}
         {query.data?.results.length === 0 && (
-          <div className="panel p-12 text-center text-dimmed">No members match.</div>
+          <div className="panel p-12 text-center text-dimmed">{t("community.empty")}</div>
         )}
       </div>
 
@@ -121,18 +123,16 @@ function CommunityPage() {
             disabled={search.page <= 1}
             onClick={() => navigate({ search: { ...search, page: search.page - 1 } })}
           >
-            Previous
+            {t("common.previous")}
           </Button>
-          <span className="text-dimmed">
-            {search.page} / {pages}
-          </span>
+          <span className="text-dimmed">{t("common.pageOf", { page: search.page, pages })}</span>
           <Button
             variant="secondary"
             size="sm"
             disabled={search.page >= pages}
             onClick={() => navigate({ search: { ...search, page: search.page + 1 } })}
           >
-            Next
+            {t("common.next")}
           </Button>
         </div>
       )}

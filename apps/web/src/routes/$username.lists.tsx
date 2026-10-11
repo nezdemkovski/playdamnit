@@ -2,6 +2,7 @@ import { useGetApiUserByUsernameLists } from "@playdamnit/api-client";
 import { createFileRoute } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ListCard } from "@/components/lists/list-card";
 import { ListFormDialog } from "@/components/lists/list-form-dialog";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/$username/lists")({
 });
 
 function ProfileLists() {
+  const { t } = useTranslation();
   const { username, isOwn } = useProfileContext();
   const lists = useGetApiUserByUsernameLists(username);
   const mutations = useListMutations();
@@ -25,15 +27,13 @@ function ProfileLists() {
       {isOwn && (
         <div className="mb-4 flex justify-end">
           <Button size="sm" onClick={() => setCreating(true)}>
-            <PlusIcon /> New list
+            <PlusIcon /> {t("profile.lists.new")}
           </Button>
         </div>
       )}
       {lists.isPending && <Skeleton className="h-40 rounded-card" />}
       {lists.data?.length === 0 && (
-        <div className="panel p-12 text-center text-dimmed">
-          No lists yet. "Top 10 of all time" is right there.
-        </div>
+        <div className="panel p-12 text-center text-dimmed">{t("profile.lists.empty")}</div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         {lists.data?.map((list) => (

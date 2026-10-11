@@ -1,11 +1,13 @@
 import type { GameListSummary } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { LockIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
 
 /** A list as a stack of its first covers plus name and size */
 export function ListCard({ list }: { list: GameListSummary }) {
+  const { t } = useTranslation();
   return (
     <Link
       to="/lists/$id"
@@ -32,7 +34,7 @@ export function ListCard({ list }: { list: GameListSummary }) {
         {!list.isPublic && <LockIcon className="size-3.5 text-dimmed" />}
       </div>
       <div className="text-xs text-dimmed">
-        {list.gamesCount} {list.gamesCount === 1 ? "game" : "games"}
+        {t("lists.games", { count: list.gamesCount })}
         {list.user?.username && <> · @{list.user.username}</>}
       </div>
       {list.description && (

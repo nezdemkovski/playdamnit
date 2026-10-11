@@ -2,6 +2,7 @@ import type { UserGameWithUserData } from "@playdamnit/api-client";
 import { ArrowDownUpIcon, LayoutGridIcon, ListIcon, SearchIcon } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -27,13 +28,7 @@ import { LibraryRow } from "./library-row";
 const ALL_YEARS = "all";
 
 type Sort = "shame" | "added" | "rating" | "name" | "release";
-const SORTS: { value: Sort; label: string }[] = [
-  { value: "shame", label: "Shame" },
-  { value: "added", label: "Date added" },
-  { value: "rating", label: "Rating" },
-  { value: "name", label: "Name" },
-  { value: "release", label: "Release year" },
-];
+const SORTS: Sort[] = ["shame", "added", "rating", "name", "release"];
 
 // Untouched backlog first, then stale "playing", finished games last
 const SHAME_RANK: Record<string, number> = {
@@ -63,6 +58,7 @@ interface LibraryListProps {
 
 /** Status tabs with counts, search-in-list, sort and the ranked rows */
 export function LibraryList({ entries, editable }: LibraryListProps) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<LibraryStatus | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("shame");
@@ -115,7 +111,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
     <div className="mt-4 space-y-3">
       <div className="no-scrollbar flex gap-1 overflow-x-auto px-1">
         <StatusTab
-          label="All"
+          label={t("profile.library.all")}
           count={entries.length}
           active={status === "all"}
           onClick={() => setStatus("all")}
@@ -138,7 +134,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search in list"
+            placeholder={t("profile.library.search")}
             className="rounded-full pl-9"
           />
         </div>
@@ -147,7 +143,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_YEARS}>All years</SelectItem>
+            <SelectItem value={ALL_YEARS}>{t("profile.library.allYears")}</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
@@ -159,7 +155,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
             size="icon-sm"
-            aria-label="List view"
+            aria-label={t("profile.library.listView")}
             aria-pressed={view === "list"}
             onClick={() => switchView("list")}
           >
@@ -168,7 +164,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
           <Button
             variant={view === "grid" ? "secondary" : "ghost"}
             size="icon-sm"
-            aria-label="Grid view"
+            aria-label={t("profile.library.gridView")}
             aria-pressed={view === "grid"}
             onClick={() => switchView("grid")}
           >
@@ -178,14 +174,14 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="sm">
-              {SORTS.find((s) => s.value === sort)?.label} <ArrowDownUpIcon />
+              {t(`profile.library.sort.${sort}`)} <ArrowDownUpIcon />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as Sort)}>
-              {SORTS.map((s) => (
-                <DropdownMenuRadioItem key={s.value} value={s.value}>
-                  {s.label}
+              {SORTS.map((value) => (
+                <DropdownMenuRadioItem key={value} value={value}>
+                  {t(`profile.library.sort.${value}`)}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
@@ -195,9 +191,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
 
       {visible.length === 0 ? (
         <div className="panel p-10 text-center text-sm text-dimmed">
-          {entries.length === 0
-            ? "Nothing in the list yet. Nothing to feel guilty about either."
-            : "No games match. Not even the ones you forgot about."}
+          {entries.length === 0 ? t("profile.library.emptyList") : t("profile.library.noMatch")}
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

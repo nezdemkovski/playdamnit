@@ -1,0 +1,661 @@
+{
+  "app": {
+    "name": "PlayDamnIt"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "delete": "Delete",
+    "edit": "Edit",
+    "keep": "Keep",
+    "next": "Next",
+    "previous": "Previous",
+    "remove": "Remove",
+    "save": "Save",
+    "search": "Search",
+    "today": "Today",
+    "or": "or",
+    "pageOf": "{{page}} / {{pages}}"
+  },
+  "nav": {
+    "home": "Home",
+    "calendar": "Calendar",
+    "charts": "Charts",
+    "community": "Community",
+    "myGames": "My games",
+    "notifications": "Notifications",
+    "aiAssistant": "AI assistant",
+    "settings": "Settings",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "search": "Search"
+  },
+  "footer": {
+    "copyright": "© {{year}} PlayDamnIt",
+    "credit": "Game data by <igdb>IGDB</igdb>"
+  },
+  "status": {
+    "finished": "Finished",
+    "playing": "Playing",
+    "dropped": "Dropped",
+    "want_to_play": "Want",
+    "on_hold": "On hold",
+    "backlog": "Backlog",
+    "online": "Online"
+  },
+  "gameType": {
+    "0": "Main Game",
+    "1": "DLC",
+    "2": "Expansion",
+    "3": "Bundle",
+    "4": "Standalone Expansion",
+    "5": "Mod",
+    "6": "Episode",
+    "7": "Season",
+    "8": "Remake",
+    "9": "Remaster",
+    "10": "Expanded Game",
+    "11": "Port",
+    "12": "Fork",
+    "13": "Pack",
+    "14": "Update"
+  },
+  "units": {
+    "hours": "{{value}}h"
+  },
+  "dates": {
+    "tbd": "TBD",
+    "quarter": "Q{{quarter}} {{year}}"
+  },
+  "voice": {
+    "verdict": {
+      "empty": "Nothing here. Nothing to feel guilty about. Enjoy it while it lasts.",
+      "halfDone": "More than half done. We're almost proud.",
+      "none": "We're not mad. Just disappointed.",
+      "default": "We're not mad. Just disappointed. Your backlog is bigger than your Steam library.",
+      "streak": "{{count}} finished this month. Who are you and what did you do with the backlog?"
+    },
+    "added": {
+      "some": "+{{count}} this week. Stop.",
+      "none": "Nothing new this week. Suspicious."
+    },
+    "finished": {
+      "never": "Never. We're counting.",
+      "thisWeek": "This week. Noted.",
+      "recent_one": "{{count}} day ago. Acceptable.",
+      "recent_other": "{{count}} days ago. Acceptable.",
+      "old_one": "{{count}} day ago. We remember.",
+      "old_other": "{{count}} days ago. We remember."
+    },
+    "playing": {
+      "none": "Nothing. At least you're honest.",
+      "stale_one": "One for {{count}} day. Playing is a strong word.",
+      "stale_other": "One for {{count}} days. Playing is a strong word.",
+      "fine": "Keep going."
+    },
+    "backlog": {
+      "empty": "Empty. Either discipline or denial.",
+      "huge": "≈ {{hours}} hours. A year of evenings.",
+      "ok": "≈ {{hours}} hours. Doable, allegedly."
+    },
+    "idle": {
+      "finished": "cleared",
+      "dropped": "honest at least",
+      "playingStale_one": "{{count}} day as \"playing\"",
+      "playingStale_other": "{{count}} days as \"playing\"",
+      "playingFine": "in progress",
+      "onHold_one": "{{count}} day on hold",
+      "onHold_other": "{{count}} days on hold",
+      "online": "no ending, no guilt",
+      "today": "added today",
+      "never_one": "{{count}} day, never opened",
+      "never_other": "{{count}} days, never opened"
+    },
+    "toast": {
+      "removed": "Removed. One less thing to feel bad about.",
+      "finished": "Finished. {{count}} to go. We noticed.",
+      "dropped": "Dropped. Bold. Honest. We respect it.",
+      "added": "Added. That's {{count}} now. Just saying.",
+      "saved": "Saved. Recounted."
+    }
+  },
+  "layout": {
+    "searchDialog": {
+      "title": "Search games",
+      "description": "Find a game in the catalog",
+      "placeholder": "Search games…",
+      "empty": "No games found.",
+      "hint": "Type at least two characters",
+      "group": "Games",
+      "all": "All results for “{{q}}”"
+    }
+  },
+  "notFound": {
+    "text": "This page doesn't exist. Unlike your backlog.",
+    "back": "Back home"
+  },
+  "home": {
+    "verdict": {
+      "report": "Status report · @{{username}}",
+      "added_one": "You've added <n>{{shown}}</n> game.",
+      "added_other": "You've added <n>{{shown}}</n> games.",
+      "finished": "You've finished <n>{{shown}}</n>.",
+      "pick": "Pick one and play it",
+      "addFirst": "Add your first game",
+      "damage": "Show the damage",
+      "exhibitLongest": "Exhibit A · longest ignored",
+      "exhibitStale": "Exhibit A · stalest \"playing\"",
+      "daysBadge": "{{count}}D",
+      "neverOpened": "Added <b>{{date}}</b>. Opened <b>never</b>. It's not going to play itself.",
+      "openedBefore": "Added <b>{{date}}</b>. Opened <b>a while ago</b>. It's not going to play itself.",
+      "life_one": "{{count}} day of its life in your backlog",
+      "life_other": "{{count}} days of its life in your backlog"
+    },
+    "guest": {
+      "eyebrow": "A game list with opinions",
+      "title": "Your backlog has a mouth now.",
+      "text": "Track what you play, rate it, write a few honest words. Then get told the truth about the games you \"will definitely get to\".",
+      "start": "Start your list",
+      "browse": "Browse games",
+      "fine": "Free · no ads · export anytime · the whole IGDB catalog"
+    },
+    "sections": {
+      "nowPlaying": "Now playing",
+      "friends": "Friends activity",
+      "community": "Community",
+      "thisWeek": "This week",
+      "openCalendar": "Open the calendar",
+      "trending": "Trending",
+      "charts": "Charts",
+      "freshReviews": "Fresh reviews",
+      "newReleases": "New releases",
+      "recentlyAdded": "Recently added to your list"
+    },
+    "feed": {
+      "added": "<user>{{name}}</user> added <game>{{game}}</game>",
+      "updated": "<user>{{name}}</user> updated <game>{{game}}</game>",
+      "reviewed": "· reviewed"
+    },
+    "catalogFilling": "The catalog is still filling up."
+  },
+  "auth": {
+    "tagline": "Log it. Rate it. Get judged.",
+    "tabSignIn": "Sign in",
+    "tabSignUp": "Create account",
+    "identifier": "Email or username",
+    "password": "Password",
+    "signIn": "Sign in",
+    "passkey": "Sign in with a passkey",
+    "displayName": "Display name",
+    "username": "Username",
+    "usernameHint": "3–30 letters, digits, dots or underscores",
+    "email": "Email",
+    "createAccount": "Create account"
+  },
+  "search": {
+    "placeholder": "Search games…",
+    "results_one": "{{count}} result for “{{q}}”",
+    "results_other": "{{count}} results for “{{q}}”",
+    "hint": "Two characters. We know you can.",
+    "editions": "Show editions"
+  },
+  "calendar": {
+    "title": "Release calendar",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "hot": "Hot releases",
+    "mine": "My list only",
+    "count_one": "{{count}} release",
+    "count_other": "{{count}} releases",
+    "empty": "Nothing releases this month. Finish something instead.",
+    "truncated": "Showing the first {{shown}} of {{total}} dated releases. <link>Browse the charts</link>"
+  },
+  "community": {
+    "title": "Members",
+    "sortGames": "Most games",
+    "sortFollowers": "Most followers",
+    "sortNewest": "Newest",
+    "searchPlaceholder": "Search by username",
+    "empty": "No members match.",
+    "rating": "Members' rating",
+    "ratings_one": "{{count}} rating",
+    "ratings_other": "{{count}} ratings",
+    "histogramLabel": "Members' rating distribution",
+    "mastered": "Mastered",
+    "nobody": "Nobody's logged this yet. First one sets the tone."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Nothing yet. Follow someone, write something, get reacted to.",
+    "followed": "started following you",
+    "reacted": "reacted {{emoji}} to your review of <game>{{name}}</game>",
+    "reactedUnknown": "reacted {{emoji}} to your review of a game"
+  },
+  "charts": {
+    "title": "Charts",
+    "tabs": {
+      "popular": "Popular",
+      "best": "Best",
+      "wanted": "Wanted",
+      "played": "Most played",
+      "upcoming": "Upcoming"
+    },
+    "genre": "Genre",
+    "allGenres": "All genres",
+    "platform": "Platform",
+    "allPlatforms": "All platforms",
+    "year": "Year",
+    "anyYear": "Any year",
+    "type": "Type",
+    "anyType": "Any type",
+    "games_one": "{{formatted}} game",
+    "games_other": "{{formatted}} games",
+    "blurb": {
+      "best": "By IGDB rating, 50+ votes",
+      "popular": "By IGDB rating count",
+      "upcoming": "Soonest first",
+      "members": "By members of this site"
+    }
+  },
+  "game": {
+    "notInCatalog": "This game isn't in the catalog.",
+    "stats": {
+      "igdb": "IGDB",
+      "toFinish": "To finish",
+      "reports_one": "{{count}} report",
+      "reports_other": "{{count}} reports",
+      "members": "Members",
+      "inLists": "{{count}} in lists"
+    },
+    "yourList": "In your list",
+    "yourRating": "Your rating",
+    "publicLists_one": "in {{count}} public list",
+    "publicLists_other": "in {{count}} public lists",
+    "removedFromIgdb": "Removed from IGDB",
+    "story": "Story",
+    "yourReview": "Your review",
+    "markedSpoilers": "marked as spoilers",
+    "details": {
+      "developers": "Developers",
+      "publishers": "Publishers",
+      "genres": "Genres",
+      "platforms": "Platforms",
+      "themes": "Themes",
+      "modes": "Modes",
+      "series": "Series",
+      "alsoKnownAs": "Also known as",
+      "timeToBeat": "Time to beat",
+      "rushed": "{{hours}} rushed",
+      "normal": "{{hours}} normal",
+      "completionist": "{{hours}} completionist"
+    },
+    "links": "Links",
+    "website": "Website",
+    "store": "Store",
+    "sections": {
+      "screenshots": "Screenshots",
+      "videos": "Videos",
+      "editions": "Editions and add-ons",
+      "similar": "Similar games",
+      "reviews": "Reviews",
+      "regional": "Regional covers"
+    },
+    "reviewSort": {
+      "latest": "Latest",
+      "top": "Most reacted"
+    },
+    "noReviewsEdit": "No reviews yet. Edit your entry to write one.",
+    "noReviewsAdd": "No reviews yet. Add the game to your list and write the first."
+  },
+  "histogram": {
+    "games_one": "{{bucket}}/10 · {{count}} game",
+    "games_other": "{{bucket}}/10 · {{count}} games",
+    "ratings_one": "{{bucket}}/10 · {{count}} rating",
+    "ratings_other": "{{bucket}}/10 · {{count}} ratings"
+  },
+  "log": {
+    "add": "Add game",
+    "editEntry": "Edit your entry",
+    "addToList": "Add to your list",
+    "rating": "Your rating",
+    "ratingAria": "Rating",
+    "notRated": "Not rated",
+    "status": "Status",
+    "details": "Details",
+    "platform": "Platform",
+    "pickPlatform": "Pick a platform",
+    "droppedOn": "Dropped on",
+    "finishedOn": "Finished on",
+    "mastered": "Mastered (100%, platinum, true ending)",
+    "review": "Review",
+    "reviewPlaceholder": "Write your review in less than {{max}} characters…",
+    "markdownHint": "Markdown works: **bold**, *italic*, [links](url), lists.",
+    "spoilers": "Contains spoilers",
+    "allowReactions": "Allow reactions on this review",
+    "remove": "Remove",
+    "removeTitle": "Remove {{name}}?",
+    "removeText": "Your rating, status and review for this game will be deleted."
+  },
+  "playthrough": {
+    "title": "Playthroughs",
+    "log": "Log a playthrough",
+    "empty": "No playthroughs logged. Replays, hours and dates go here.",
+    "undated": "Undated",
+    "deleteAria": "Delete playthrough",
+    "started": "Started",
+    "finished": "Finished",
+    "hours": "Hours",
+    "note": "Note",
+    "notePlaceholder": "Replay on hard, 100% run…"
+  },
+  "manageLists": {
+    "button": "Lists",
+    "title": "Manage lists",
+    "description": "Add {{name}} to your lists.",
+    "none": "You have no lists yet.",
+    "private": "private",
+    "newPlaceholder": "New list name",
+    "createAria": "Create list"
+  },
+  "review": {
+    "mastered": "Mastered",
+    "spoiler": "This review contains spoilers. Click to reveal.",
+    "addReaction": "Add a reaction",
+    "reactionsOff": "Reactions are off"
+  },
+  "follow": {
+    "follow": "Follow",
+    "following": "Following"
+  },
+  "lists": {
+    "games_one": "{{count}} game",
+    "games_other": "{{count}} games",
+    "form": {
+      "editTitle": "Edit list",
+      "newTitle": "New list",
+      "description": "Games in the order you say.",
+      "name": "Name",
+      "descriptionLabel": "Description",
+      "public": "Public"
+    },
+    "picker": {
+      "placeholder": "Search games…",
+      "empty": "No games found.",
+      "addAria": "Add"
+    },
+    "page": {
+      "notFound": "This list doesn't exist or is private.",
+      "arrange": "Arrange",
+      "doneArranging": "Done arranging",
+      "deleteTitle": "Delete “{{name}}”?",
+      "deleteText": "The list goes away; the games stay in the catalog and your library.",
+      "addGame": "Add a game",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "saveOrder": "Save order",
+      "empty": "This list is empty."
+    }
+  },
+  "assistant": {
+    "description": "Ask for games by mood, genre, platform or anything else.",
+    "empty": "Try “cozy farming games on Switch” or “something like Hades”.",
+    "searching": "Searching “{{query}}”…",
+    "nothing": "Nothing found.",
+    "placeholder": "Message…",
+    "send": "Send",
+    "onlyGames": "Only main games, remakes and remasters"
+  },
+  "badges": {
+    "first": {
+      "label": "First log",
+      "description": "Added a game to the list"
+    },
+    "collector": {
+      "label": "Collector",
+      "description": "50 games in the list"
+    },
+    "hoarder": {
+      "label": "Hoarder",
+      "description": "200 games in the list"
+    },
+    "finisher": {
+      "label": "Finisher",
+      "description": "Finished 10 games"
+    },
+    "closer": {
+      "label": "Closer",
+      "description": "Finished 50 games"
+    },
+    "critic": {
+      "label": "Critic",
+      "description": "Rated 25 games"
+    },
+    "writer": {
+      "label": "Writer",
+      "description": "Wrote 10 reviews"
+    },
+    "completionist": {
+      "label": "Completionist",
+      "description": "Mastered 5 games"
+    },
+    "year": {
+      "label": "{{year}} grind",
+      "description": "Finished 12 games in {{year}}"
+    }
+  },
+  "profile": {
+    "notFound": "No user called <n>@{{username}}</n>.",
+    "tabs": {
+      "profile": "Profile",
+      "games": "Games",
+      "journal": "Journal",
+      "reviews": "Reviews",
+      "lists": "Lists",
+      "friends": "Friends",
+      "likes": "Likes"
+    },
+    "followsYou": "Follows you",
+    "privateList": "Private list",
+    "counts": {
+      "games_one": "game",
+      "games_other": "games",
+      "followers_one": "follower",
+      "followers_other": "followers",
+      "following": "following"
+    },
+    "editProfile": "Edit profile",
+    "private": "This member keeps their list private.",
+    "overview": {
+      "badges": "Badges",
+      "nowPlaying": "Now playing",
+      "recentlyPlayed": "Recently played",
+      "journal": "Journal",
+      "recentlyReviewed": "Recently reviewed",
+      "allReviews": "All reviews",
+      "empty": "Nothing in the list yet."
+    },
+    "journal": {
+      "intro": "Every playthrough you logged and every game you finished or dropped, by month.",
+      "allYears": "All years",
+      "empty": "Nothing logged yet. Finish something and it shows up here.",
+      "from": "from {{date}}",
+      "playthrough": "Playthrough"
+    },
+    "reviews": {
+      "empty": "No reviews yet. Three words count."
+    },
+    "lists": {
+      "new": "New list",
+      "empty": "No lists yet. “Top 10 of all time” is right there."
+    },
+    "friends": {
+      "followers": "Followers",
+      "following": "Following",
+      "empty": "Nobody here yet. Follow someone and it stops being awkward."
+    },
+    "likes": {
+      "empty": "No liked games yet. Hearts are free, use them."
+    },
+    "library": {
+      "all": "All",
+      "search": "Search in list",
+      "allYears": "All years",
+      "listView": "List view",
+      "gridView": "Grid view",
+      "emptyList": "Nothing in the list yet. Nothing to feel guilty about either.",
+      "noMatch": "No games match. Not even the ones you forgot about.",
+      "unrated": "unrated",
+      "editEntry": "Edit entry",
+      "sort": {
+        "shame": "Shame",
+        "added": "Date added",
+        "rating": "Rating",
+        "name": "Name",
+        "release": "Release year"
+      }
+    },
+    "stats": {
+      "added": "Added",
+      "finished": "Finished",
+      "playing": "\"Playing\"",
+      "backlog": "Backlog",
+      "addedThisWeek": "{{count}} this week",
+      "finishedThisMonth": "{{count}} this month",
+      "dropped": "{{count}} dropped",
+      "completion": "Completion",
+      "nothingYet": "nothing yet",
+      "guilty": "guilty",
+      "workingOnIt": "working on it",
+      "respect": "respect",
+      "average": "Average",
+      "rated": "{{count}} rated",
+      "distribution": "Rating distribution"
+    },
+    "evenings": {
+      "title": "{{days}} days. {{green}} of them green.",
+      "cell": {
+        "none": "nothing",
+        "touched": "touched",
+        "added": "added",
+        "finished": "finished"
+      },
+      "dayLabel": "{{date}} · {{state}}",
+      "heatAria": "Days with activity over the last year",
+      "trendTitle": "Added vs finished · 12 months",
+      "trendAria": "Games added versus games finished per month",
+      "trendTip": "{{month}} · {{added}} added · {{finished}} finished",
+      "added": "Added",
+      "finished": "Finished"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Who you are, how you sign in, what you take with you.",
+    "tabs": {
+      "profile": "Profile",
+      "account": "Account",
+      "passkeys": "Passkeys",
+      "data": "Data"
+    },
+    "profile": {
+      "uploadAvatar": "Upload avatar",
+      "avatarHint": "JPG, PNG, WebP or GIF. Cropped to a square.",
+      "username": "Username",
+      "usernameHint": "Your unique identifier. Appears in your profile URL.",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Enter your display name",
+      "bio": "Bio",
+      "bioPlaceholder": "Something about yourself",
+      "links": "Links",
+      "removeLink": "Remove link",
+      "addLink": "+ Add link",
+      "publicList": "Public list",
+      "publicListHint": "Off hides your games, reviews, journal and likes from others.",
+      "save": "Save changes",
+      "errors": {
+        "canvas": "Canvas unavailable",
+        "encode": "Could not encode",
+        "notImage": "Not an image"
+      }
+    },
+    "account": {
+      "email": "Email",
+      "address": "Address",
+      "verified": "Verified. A new address gets a confirmation link before it takes over.",
+      "notVerified": "Not verified.",
+      "changeEmail": "Change email",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "updatePassword": "Update password",
+      "otherSessions": "Other sessions are signed out when the password changes.",
+      "deleteTitle": "Delete account",
+      "deleteText": "Your list, reviews, lists, playthroughs, likes and follows are deleted immediately. There is no undo; export your list first if you want to keep it.",
+      "confirmPassword": "Confirm with your password",
+      "deleteButton": "Delete my account",
+      "deleteDialogTitle": "Delete @{{username}}?",
+      "deleteDialogText": "Everything you logged on PlayDamnIt is removed for good.",
+      "keepAccount": "Keep my account",
+      "deleteEverything": "Delete everything"
+    },
+    "passkeys": {
+      "intro": "Passkeys let you sign in with Touch ID, Face ID or a security key instead of a password.",
+      "empty": "No passkeys yet.",
+      "fallbackName": "Passkey",
+      "added": "Added {{date}}",
+      "removeAria": "Remove passkey",
+      "add": "Add a passkey"
+    },
+    "data": {
+      "export": "Export",
+      "exportText": "Download your whole list with ratings, statuses, reviews and dates.",
+      "import": "Import",
+      "importText": "A JSON or CSV file in the export format (IGDB game ids, status, rating, platform). Up to 1000 games.",
+      "overwrite": "Overwrite games already in the list",
+      "importing": "Importing…",
+      "chooseFile": "Choose a file"
+    }
+  },
+  "toast": {
+    "requestFailed": "Request failed",
+    "signInFailed": "Could not sign in",
+    "passkeySignInFailed": "Passkey sign-in failed",
+    "signUpFailed": "Could not create the account",
+    "profileSaved": "Profile saved",
+    "profileSaveFailed": "Could not save the profile",
+    "passwordChanged": "Password changed",
+    "passwordChangeFailed": "Could not change the password",
+    "emailUpdated": "Email updated",
+    "emailConfirm": "Check the new address for a confirmation link.",
+    "emailChangeFailed": "Could not change the email",
+    "accountDeleted": "Your account is gone. Take care.",
+    "accountDeleteFailed": "Could not delete the account",
+    "passkeyAdded": "Passkey added",
+    "passkeyAddFailed": "Could not add the passkey",
+    "passkeyRemoved": "Passkey removed",
+    "passkeyRemoveFailed": "Could not remove the passkey",
+    "addGameFailed": "Could not add the game",
+    "saveGameFailed": "Could not save the changes",
+    "removeGameFailed": "Could not remove the game",
+    "imported": "Imported {{imported}}, skipped {{skipped}}, failed {{errors}}. The backlog just grew.",
+    "importFailed": "Import failed",
+    "followFailed": "Could not follow",
+    "unfollowFailed": "Could not unfollow",
+    "likeFailed": "Could not like",
+    "unlikeFailed": "Could not unlike",
+    "reactFailed": "Could not react",
+    "reactionRemoveFailed": "Could not remove the reaction",
+    "avatarUpdated": "Avatar updated",
+    "avatarUploadFailed": "Could not upload the avatar",
+    "avatarRemoveFailed": "Could not remove the avatar",
+    "listCreateFailed": "Could not create the list",
+    "listSaveFailed": "Could not save the list",
+    "listDeleted": "List deleted",
+    "listDeleteFailed": "Could not delete the list",
+    "listAddGameFailed": "Could not add the game",
+    "listRemoveGameFailed": "Could not remove the game",
+    "playthroughLogFailed": "Could not log the playthrough",
+    "playthroughSaveFailed": "Could not save the playthrough",
+    "playthroughDeleteFailed": "Could not delete the playthrough"
+  }
+}
