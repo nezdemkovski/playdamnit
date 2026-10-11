@@ -334,16 +334,13 @@ What exists (2026-10-11):
   clusterwide lists (API server egress, tunnel ingress, CNPG backup egress and operator ingress).
   `charts/cloudflared/values.yaml` routes `games.nezdemkovski.cloud` (`^/api/.*` → API, rest → web).
 
-State after the first reconcile (2026-10-11): CNPG cluster healthy, web live at
-https://games.nezdemkovski.cloud, librarian running (IGDB webhooks registered and already
-delivering, `sync-lookups` done in 94 s). The API pod crash-loops until `RESEND_API_KEY` is filled
-in the `playdamnit` 1Password item (production refuses to start without email); after filling it
-in, force the ExternalSecret to refresh and restart the deployment:
-
-```bash
-kubectl -n playdamnit annotate externalsecret playdamnit-api-env force-sync=$(date +%s) --overwrite
-kubectl -n playdamnit rollout restart deployment/playdamnit-api
-```
+State after the first reconcile (2026-10-11, release 0.1.1): CNPG cluster healthy, web and API
+live at https://games.nezdemkovski.cloud (`/api/*` → API), librarian running with the IGDB webhooks
+registered and `sync-lookups` done. The catalog is empty on purpose until the first full walk;
+webhooks and `drain-dirty` already fill in whatever IGDB touches meanwhile. `RESEND_API_KEY` is
+optional since 0.1.1: without it sign-up skips verification and password reset is disabled; adding
+the key to the `playdamnit` 1Password item turns both on after the next ExternalSecret refresh and a
+rollout restart.
 
 Gotchas met on the way: the tunnel's egress NetworkPolicy (`homelab-cloudflared-egress` in
 `workload-baseline.yaml`) lists the namespaces it may reach and needs every new app added; the
