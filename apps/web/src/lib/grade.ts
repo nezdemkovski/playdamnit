@@ -15,7 +15,7 @@ export interface GradeMeta {
   rating: number;
   /** The picker button when this grade is pressed */
   chip: string;
-  /** The seal's metal, tuned in OKLCH so the ink reads at APCA Lc 60+ and WCAG 7+ on each */
+  /** The seal's colour: the TierMaker row palette, the same one the tier board uses */
   fill: string;
   /** The letter on it: one ink for every metal, the same near-black as the rim */
   ink: string;
@@ -29,8 +29,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 9,
     rating: 9.5,
-    chip: "border-[#dcf1ff] bg-[#dcf1ff] text-black",
-    fill: "#dcf1ff",
+    chip: "border-[#ff7f7f] bg-[#ff7f7f] text-black",
+    fill: "#ff7f7f",
     ink: "var(--background)",
   },
   {
@@ -40,8 +40,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 8,
     rating: 8.5,
-    chip: "border-[#ffcf4a] bg-[#ffcf4a] text-black",
-    fill: "#ffcf4a",
+    chip: "border-[#ffbf7f] bg-[#ffbf7f] text-black",
+    fill: "#ffbf7f",
     ink: "var(--background)",
   },
   {
@@ -51,8 +51,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 7,
     rating: 7.5,
-    chip: "border-[#cfd3d8] bg-[#cfd3d8] text-black",
-    fill: "#cfd3d8",
+    chip: "border-[#ffdf7f] bg-[#ffdf7f] text-black",
+    fill: "#ffdf7f",
     ink: "var(--background)",
   },
   {
@@ -62,8 +62,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 6,
     rating: 6.5,
-    chip: "border-[#e4a169] bg-[#e4a169] text-black",
-    fill: "#e4a169",
+    chip: "border-[#ffff7f] bg-[#ffff7f] text-black",
+    fill: "#ffff7f",
     ink: "var(--background)",
   },
   {
@@ -73,8 +73,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 4,
     rating: 5,
-    chip: "border-[#abb0b8] bg-[#abb0b8] text-black",
-    fill: "#abb0b8",
+    chip: "border-[#bfff7f] bg-[#bfff7f] text-black",
+    fill: "#bfff7f",
     ink: "var(--background)",
   },
   {
@@ -84,8 +84,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 0,
     rating: 2.5,
-    chip: "border-[#ff9083] bg-[#ff9083] text-black",
-    fill: "#ff9083",
+    chip: "border-[#7fff7f] bg-[#7fff7f] text-black",
+    fill: "#7fff7f",
     ink: "var(--background)",
   },
 ];

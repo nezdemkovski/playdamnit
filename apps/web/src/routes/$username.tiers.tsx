@@ -15,15 +15,6 @@ import { GRADES, gradeOf, ratingOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/$username/tiers")({ component: ProfileTiers });
 
-const TIER_COLORS: Record<Grade, string> = {
-  [Grade.S]: "bg-[#ff7f7f]",
-  [Grade.A]: "bg-[#ffbf7f]",
-  [Grade.B]: "bg-[#ffdf7f]",
-  [Grade.C]: "bg-[#ffff7f]",
-  [Grade.D]: "bg-[#bfff7f]",
-  [Grade.F]: "bg-[#7fff7f]",
-};
-
 /** The whole tier board stays visible; the pool uses the same compact covers. */
 function ProfileTiers() {
   const { t } = useTranslation();
@@ -160,11 +151,11 @@ function ProfileTiers() {
                 type="button"
                 disabled={!isOwn || !selected || mutations.isPending}
                 onClick={() => void move(selectedId, meta.value)}
+                style={{ background: meta.fill }}
                 title={meta.name}
                 aria-label={t("profile.tiers.moveTo", { grade: meta.value })}
                 className={cn(
                   "flex min-h-[72px] items-center justify-center font-display text-xl text-black outline-none focus-visible:ring-2 focus-visible:ring-foreground sm:min-h-[78px]",
-                  TIER_COLORS[meta.value],
                   isOwn && selected && "cursor-pointer hover:brightness-110",
                 )}
               >
