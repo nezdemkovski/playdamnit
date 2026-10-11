@@ -75,15 +75,15 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
         </div>
         <div className="num mt-1.5 text-[11px] text-dimmed">{idleLine(entry)}</div>
       </div>
-      <div className="hidden text-right sm:block">
+      <div className="hidden items-center justify-center sm:flex">
         {grade ? (
-          <GradeBadge grade={grade} size={PillSize.Md} />
+          <GradeBadge grade={grade} size={PillSize.Md} className="block" />
         ) : (
           <span className="eyebrow">{t("profile.library.unrated")}</span>
         )}
       </div>
       <div className="flex items-center justify-end gap-2 sm:justify-start">
-        <GradeBadge grade={grade} size={PillSize.Md} className="sm:hidden" />
+        <GradeBadge grade={grade} size={PillSize.Md} className="block sm:hidden" />
         <StatusPill status={status} />
       </div>
       <div className="hidden sm:block">
