@@ -5,3 +5,5 @@ process.env.POSTGRES_URL =
 process.env.NODE_ENV = "test";
 // The webhook receiver reads its secret at import time; the webhook test uses this value
 process.env.IGDB_WEBHOOK_SECRET = "test-webhook-secret";
+// The catalog integration test exercises the librarian fallback path
+process.env.SEARCH_IGDB_FALLBACK = "true";

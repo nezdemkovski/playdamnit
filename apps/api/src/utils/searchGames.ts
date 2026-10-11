@@ -1,9 +1,10 @@
-import { count, desc, ilike, or, sql, type Column, type SQL } from "drizzle-orm";
+import { and, desc, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
 import { game, igdbSearchLog } from "@playdamnit/db/schema";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { requestIgdbSearch } from "@/utils/catalogRequests";
+import { getConfig } from "@/config";
 import { createLogger } from "@/utils/enhancedLogger";
 
 const logger = createLogger("games-search");
@@ -11,14 +12,19 @@ const logger = createLogger("games-search");
 export const MAX_QUERY_LENGTH = 100;
 export const MAX_SEARCH_LIMIT = 50;
 
-// Fewer substring matches than this means the local catalog probably lacks the game
+// Fallback only (SEARCH_IGDB_FALLBACK=true, before the catalog is a full mirror): fewer substring
+// matches than this means the local catalog probably lacks the game
 const MIN_STRICT_MATCHES = 3;
-// How long a query counts as "already searched in IGDB"
 const IGDB_SEARCH_COOLDOWN = "7 days";
-const IGDB_FRESH_SEARCH_COOLDOWN = "1 minute";
 
-// In-process dedup: concurrent identical searches share one execution
-const pendingSearches = new Map<string, Promise<SearchResult>>();
+export interface SearchOptions {
+  limit?: number;
+  offset?: number;
+  // Editions (`version_parent` set) are folded into their parent and hidden by default
+  includeEditions?: boolean;
+  // IGDB game_type ids to keep (0 = Main Game, 1 = DLC, ...); empty = every type
+  gameTypes?: number[];
+}
 
 export interface SearchResult {
   results: ReturnType<typeof transformGameResponse>[];
@@ -26,34 +32,42 @@ export interface SearchResult {
     total: number;
     source: "none" | "database" | "igdb";
     query_time_ms?: number;
-    deduplicated?: boolean;
   };
 }
 
 /** Escape LIKE wildcards so user input is matched literally. */
 export const escapeLike = (value: string) => value.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-const substringMatch = (name: Column, query: string) => ilike(name, `%${escapeLike(query)}%`);
+type GameTable = typeof game;
 
-// `%` is the pg_trgm similarity operator (threshold 0.3) and, unlike similarity(),
-// can use the GIN trigram index
-const fuzzyMatch = (name: Column, query: string) => sql`${name} % ${query}`;
-
-// RQB filters receive the (aliased) table, so conditions are built per query
-type GameFilter = (table: typeof game) => SQL;
+// `search_names` is the name plus every alternative name (so "Киберпанк" finds Cyberpunk 2077).
+// Substring match, or pg_trgm word similarity (`<%`, threshold 0.6) for typos; both use the GIN
+// trigram index on search_names.
+const matches = (table: GameTable, query: string): SQL =>
+  or(ilike(table.searchNames, `%${escapeLike(query)}%`), sql`${query} <% ${table.searchNames}`)!;
 
 const buildWhere =
-  (queries: string[]): GameFilter =>
-  (table) =>
-    or(...queries.flatMap((q) => [substringMatch(table.name, q), fuzzyMatch(table.name, q)]))!;
+  (queries: string[], opts: SearchOptions) =>
+  (table: GameTable): SQL =>
+    and(
+      isNull(table.deletedAt),
+      opts.includeEditions ? undefined : isNull(table.versionParentId),
+      opts.gameTypes?.length ? inArray(table.gameType, opts.gameTypes) : undefined,
+      or(...queries.map((q) => matches(table, q))),
+    )!;
 
-const fetchGames = (rankQuery: string, where: GameFilter, limit: number, offset: number) =>
+const fetchGames = (
+  rankQuery: string,
+  where: (table: GameTable) => SQL,
+  limit: number,
+  offset: number,
+) =>
   db.query.game.findMany({
     where: { RAW: where },
     orderBy: (table) => [
       sql`similarity(${table.name}, ${rankQuery}) DESC`,
       desc(table.isPopular),
-      sql`${table.totalRating} DESC NULLS LAST`,
+      sql`${table.totalRatingCount} DESC NULLS LAST`,
     ],
     limit,
     offset,
@@ -63,48 +77,54 @@ const fetchGames = (rankQuery: string, where: GameFilter, limit: number, offset:
 
 const countStrictMatches = async (queries: string[]) => {
   const [row] = await db
-    .select({ value: count() })
+    .select({ value: sql<number>`count(*)::int` })
     .from(game)
-    .where(or(...queries.map((q) => substringMatch(game.name, q))));
+    .where(or(...queries.map((q) => ilike(game.searchNames, `%${escapeLike(q)}%`))));
   return row.value;
 };
 
 /**
- * Atomically claim the right to search IGDB for this query. Returns false when the
- * query was searched recently (by this or another backend instance).
+ * Fallback mode only. Atomically claim the right to ask IGDB for this query; false when it was
+ * asked recently (by this or another API instance).
  */
-const claimIgdbSearch = async (query: string, forceFresh: boolean) => {
-  const cooldown = forceFresh ? IGDB_FRESH_SEARCH_COOLDOWN : IGDB_SEARCH_COOLDOWN;
+const claimIgdbSearch = async (query: string) => {
   const claimed = await db
     .insert(igdbSearchLog)
     .values({ query })
     .onConflictDoUpdate({
       target: igdbSearchLog.query,
       set: { searchedAt: sql`now()` },
-      setWhere: sql`${igdbSearchLog.searchedAt} < now() - ${cooldown}::interval`,
+      setWhere: sql`${igdbSearchLog.searchedAt} < now() - ${IGDB_SEARCH_COOLDOWN}::interval`,
     })
     .returning({ query: igdbSearchLog.query });
   return claimed.length > 0;
 };
 
-async function doSearch(
-  query: string,
-  limit: number,
-  offset: number,
-  forceFresh: boolean,
+export async function searchGames(
+  searchQuery: string,
+  opts: SearchOptions = {},
 ): Promise<SearchResult> {
+  const query = searchQuery?.trim().slice(0, MAX_QUERY_LENGTH) ?? "";
+  if (query.length === 0) {
+    return { results: [], meta: { total: 0, source: "none" } };
+  }
+
+  const limit = Math.min(Math.max(1, Math.trunc(opts.limit ?? MAX_SEARCH_LIMIT)), MAX_SEARCH_LIMIT);
+  const offset = Math.max(0, Math.trunc(opts.offset ?? 0));
   const startTime = Date.now();
+
   const cleanedQuery = query.replace(/[^\w\s]/gi, "").trim();
   const queries = cleanedQuery && cleanedQuery !== query ? [query, cleanedQuery] : [query];
-  const where = buildWhere(queries);
 
-  // Only the first page decides whether the catalog needs to grow
-  const shouldAskIgdb =
+  // Until the catalog is a full mirror, a thin first page may still ask the librarian
+  let source: SearchResult["meta"]["source"] = "database";
+  if (
+    getConfig().searchIgdbFallback &&
     offset === 0 &&
-    (forceFresh || (await countStrictMatches(queries)) < MIN_STRICT_MATCHES) &&
-    (await claimIgdbSearch(query.toLowerCase(), forceFresh));
-
-  if (shouldAskIgdb) {
+    (await countStrictMatches(queries)) < MIN_STRICT_MATCHES &&
+    (await claimIgdbSearch(query.toLowerCase()))
+  ) {
+    source = "igdb";
     logger.info(`Delegating IGDB search to librarian for "${query}"`);
     try {
       const outcome = await requestIgdbSearch(query, MAX_SEARCH_LIMIT);
@@ -117,44 +137,10 @@ async function doSearch(
     }
   }
 
-  const games = await fetchGames(query, where, limit, offset);
+  const games = await fetchGames(query, buildWhere(queries, opts), limit, offset);
 
   return {
     results: games.map(transformGameResponse),
-    meta: {
-      total: games.length,
-      source: shouldAskIgdb ? "igdb" : "database",
-      query_time_ms: Date.now() - startTime,
-    },
+    meta: { total: games.length, source, query_time_ms: Date.now() - startTime },
   };
-}
-
-export async function searchGamesWithCache(
-  searchQuery: string,
-  limit: number = MAX_SEARCH_LIMIT,
-  offset: number = 0,
-  forceFresh: boolean = false,
-): Promise<SearchResult> {
-  const query = searchQuery?.trim().slice(0, MAX_QUERY_LENGTH) ?? "";
-  if (query.length === 0) {
-    return { results: [], meta: { total: 0, source: "none" } };
-  }
-
-  const safeLimit = Math.min(Math.max(1, Math.trunc(limit)), MAX_SEARCH_LIMIT);
-  const safeOffset = Math.max(0, Math.trunc(offset));
-  const dedupKey = `${query.toLowerCase()}:${safeLimit}:${safeOffset}:${forceFresh}`;
-
-  const existing = pendingSearches.get(dedupKey);
-  if (existing) {
-    logger.info(`Deduplicating in-flight search for "${query}"`);
-    const result = await existing;
-    return { ...result, meta: { ...result.meta, deduplicated: true } };
-  }
-
-  const searchPromise = doSearch(query, safeLimit, safeOffset, forceFresh).finally(() => {
-    pendingSearches.delete(dedupKey);
-  });
-
-  pendingSearches.set(dedupKey, searchPromise);
-  return searchPromise;
 }

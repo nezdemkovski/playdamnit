@@ -13,18 +13,40 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   let fakeLibrarian: PgBoss;
   let pg: Client;
   let mod: {
-    searchGamesWithCache: typeof import("@/utils/searchGames").searchGamesWithCache;
+    searchGames: typeof import("@/utils/searchGames").searchGames;
+    GameService: typeof import("@/modules/game/service").GameService;
     UserGameService: typeof import("@/modules/userGame/service").UserGameService;
     notify: typeof import("@/utils/pgNotify");
     stopBoss: typeof import("@/utils/pgBoss").stopBoss;
   };
 
-  const insertGame = (id: number, name: string) =>
-    pg.query(`insert into game (id, name, slug) values ($1, $2, $3) on conflict do nothing`, [
-      id,
-      name,
-      `${name.toLowerCase().replace(/\W+/g, "-")}-${id}`,
-    ]);
+  // Mirrors what the librarian writes: search_names is the name plus alternative names
+  const insertGame = (
+    id: number,
+    name: string,
+    extra: {
+      gameType?: number;
+      alternativeNames?: string[];
+      versionParentId?: number;
+      parentGameId?: number;
+      deletedAt?: string;
+    } = {},
+  ) =>
+    pg.query(
+      `insert into game (id, name, slug, game_type, alternative_names, search_names, version_parent_id, parent_game_id, deleted_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict do nothing`,
+      [
+        id,
+        name,
+        `${name.toLowerCase().replace(/\W+/g, "-")}-${id}`,
+        extra.gameType ?? 0,
+        extra.alternativeNames ?? [],
+        [name, ...(extra.alternativeNames ?? [])].join(" "),
+        extra.versionParentId ?? null,
+        extra.parentGameId ?? null,
+        extra.deletedAt ?? null,
+      ],
+    );
 
   const notify = (requestId: string, ok: boolean) =>
     pg.query(`select pg_notify('game_catalog_updated', $1)`, [JSON.stringify({ requestId, ok })]);
@@ -62,7 +84,8 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     );
 
     mod = {
-      searchGamesWithCache: (await import("@/utils/searchGames")).searchGamesWithCache,
+      searchGames: (await import("@/utils/searchGames")).searchGames,
+      GameService: (await import("@/modules/game/service")).GameService,
       UserGameService: (await import("@/modules/userGame/service")).UserGameService,
       notify: await import("@/utils/pgNotify"),
       stopBoss: (await import("@/utils/pgBoss")).stopBoss,
@@ -78,18 +101,64 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   });
 
   test("a catalog miss is filled through the librarian, then served locally", async () => {
-    const first = await mod.searchGamesWithCache("Zzyzx");
+    const first = await mod.searchGames("Zzyzx");
     expect(first.meta.source).toBe("igdb");
     expect(first.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
 
-    const second = await mod.searchGamesWithCache("Zzyzx");
+    const second = await mod.searchGames("Zzyzx");
     expect(second.meta.source).toBe("database");
     expect(second.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
   }, 15_000);
 
   test("LIKE wildcards in the query are matched literally", async () => {
-    const result = await mod.searchGamesWithCache("%");
+    const result = await mod.searchGames("%");
     expect(result.results).toEqual([]);
+  }, 15_000);
+
+  test("search matches alternative names, hides deleted games and editions", async () => {
+    await insertGame(900010, "Nightwalk", { alternativeNames: ["Ночная прогулка"] });
+    await insertGame(900011, "Nightwalk: Deluxe Edition", { versionParentId: 900010 });
+    await insertGame(900012, "Nightwalk Remastered", { gameType: 9, deletedAt: "2026-01-01" });
+    await insertGame(900013, "Nightwalk: Shadows", { gameType: 1, parentGameId: 900010 });
+
+    const names = async (q: string, opts = {}) =>
+      (await mod.searchGames(q, opts)).results.map((g) => g.name).sort();
+
+    expect(await names("Ночная")).toEqual(["Nightwalk"]);
+    expect(await names("Nightwalk")).toEqual(["Nightwalk", "Nightwalk: Shadows"]);
+    expect(await names("Nightwalk", { includeEditions: true })).toEqual([
+      "Nightwalk",
+      "Nightwalk: Deluxe Edition",
+      "Nightwalk: Shadows",
+    ]);
+    expect(await names("Nightwalk", { gameTypes: [1] })).toEqual(["Nightwalk: Shadows"]);
+  }, 15_000);
+
+  test("the detail view adds companies, relatives and the deleted flag", async () => {
+    await pg.query(
+      `insert into company (id, name, slug) values (900100, 'Night Studio', 'night-studio') on conflict do nothing`,
+    );
+    await pg.query(
+      `insert into game_to_company (game_id, company_id, developer, publisher) values (900010, 900100, true, true) on conflict do nothing`,
+    );
+    await pg.query(
+      `insert into video (id, game_id, name, video_id) values (900200, 900010, 'Trailer', 'abc123') on conflict do nothing`,
+    );
+
+    const detail = await mod.GameService.findById(900010);
+    expect(detail.developers.map((c) => c.name)).toEqual(["Night Studio"]);
+    expect(detail.publishers.map((c) => c.name)).toEqual(["Night Studio"]);
+    expect(detail.videos[0]).toMatchObject({
+      videoId: "abc123",
+      url: "https://www.youtube.com/watch?v=abc123",
+    });
+    expect(detail.children.map((g) => g.name)).toEqual(["Nightwalk: Shadows"]);
+    expect(detail.editions.map((g) => g.name)).toEqual(["Nightwalk: Deluxe Edition"]);
+    expect(detail.alternativeNames).toEqual(["Ночная прогулка"]);
+    expect(detail.deleted).toBe(false);
+    expect((detail as Record<string, unknown>).raw).toBeUndefined();
+
+    expect((await mod.GameService.findById(900012)).deleted).toBe(true);
   }, 15_000);
 
   test("import fetches missing games and reports the ones IGDB doesn't have", async () => {
@@ -118,7 +187,7 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
   }, 30_000);
   test("the chat agent searches, streams full cards to the UI and a compact list to the model", async () => {
     // A DLC next to the main game, to exercise the "games only" filter
-    await insertGame(900002, "Zzyzx Quest Expansion");
+    await insertGame(900002, "Zzyzx Quest Expansion", { gameType: 1 });
     // Lookup ids are IGDB ids (1 = DLC)
     await pg.query(
       `insert into type (id, type) values (1, 'DLC') on conflict (id) do update set type = excluded.type`,

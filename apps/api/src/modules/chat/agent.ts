@@ -1,19 +1,19 @@
 import { isStepCount, tool, ToolLoopAgent, type InferAgentUIMessage, type LanguageModel } from "ai";
 import { z } from "zod";
 
-import { searchGamesWithCache } from "@/utils/searchGames";
+import { searchGames } from "@/utils/searchGames";
 
 const SEARCH_RESULT_LIMIT = 10;
 
 // The statuses the web app's add-game form offers
 const CHAT_STATUSES = ["finished", "playing", "dropped", "want_to_play"] as const;
 
-// IGDB game types that count as "games" for the assistant's "games only" filter
-const MAIN_GAME_TYPES = new Set(["Main Game", "Remake", "Remaster", "Expanded Game"]);
+// IGDB game_type ids that count as "games" for the assistant's "games only" filter:
+// Main Game, Remake, Remaster, Expanded Game
+const MAIN_GAME_TYPES = new Set([0, 8, 9, 10]);
 
-const isMainGame = (game: { types: unknown[] }) =>
-  game.types.length === 0 ||
-  game.types.some((t) => MAIN_GAME_TYPES.has((t as { type: string }).type));
+const isMainGame = (game: { gameType: number | null }) =>
+  game.gameType === null || MAIN_GAME_TYPES.has(game.gameType);
 
 const instructions = `You are a helpful gaming assistant that helps users track games they've played.
 When a user mentions a game they've played or want to play, call search_games to find it.
@@ -35,7 +35,7 @@ const createSearchGamesTool = (showOnlyGames: boolean) =>
       review: z.string().max(5000).optional().describe("The user's comments about the game"),
     }),
     execute: async ({ query, rating, status, review }) => {
-      const { results } = await searchGamesWithCache(query, SEARCH_RESULT_LIMIT);
+      const { results } = await searchGames(query, { limit: SEARCH_RESULT_LIMIT });
 
       return {
         results: showOnlyGames ? results.filter(isMainGame) : results,

@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path. Phases 1 to 5 landed on 2026-10-11.
+the lazy path. Phases 1 to 6 landed on 2026-10-11.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -226,7 +226,7 @@ What landed (2026-10-11):
   exercised against IGDB with a real URL: that happens with the first homelab deploy.
 - `refresh-stale-games` (`last_synced_at`) and the daily incremental sync stay as the safety net.
 
-### Phase 6. API switch (behind `SEARCH_IGDB_FALLBACK`, code removed after a day or two)
+### Phase 6. API switch — done (fallback still behind `SEARCH_IGDB_FALLBACK`, off by default)
 
 - `apps/api/src/utils/searchGames.ts`: remove `countStrictMatches`, `claimIgdbSearch`,
   `requestIgdbSearch`, `pendingSearches`, `forceFresh`. Match on `search_names` (name + alternative
@@ -244,6 +244,22 @@ What landed (2026-10-11):
 - `packages/api-client/spec.yaml`: drop `fresh`; add `deleted`, `alternativeNames`, `developers`,
   `publishers`, `videos`, `externalGames`, `collections`, `timeToBeat`, `parentGameId`,
   `versionParentId`, `localizedCovers`.
+
+What landed (2026-10-11):
+
+- `searchGames` matches `search_names` (ILIKE or `<%` word similarity), hides deleted games and
+  editions by default (`editions=1` shows them), filters by `types=` game_type ids. The
+  in-process dedup, the `fresh` flag and the "count strict matches" gate are gone from the
+  default path; the librarian fallback survives only behind `SEARCH_IGDB_FALLBACK=true` (tests
+  run with it on) and is removed in Phase 7 together with `igdb_search_log`.
+- `GET /api/games/:id` returns developers/publishers, videos, store links, collections, themes,
+  game modes, time to beat, localized covers, alternative names, `children` (DLC/expansions by
+  `parent_game_id`) and `editions` (by `version_parent_id`); deleted games come back with
+  `deleted: true`. Catalog lists exclude deleted games; libraries keep them.
+- The chat agent's "games only" filter uses `game_type` ids. The card still carries `types`
+  (junction) so the web app keeps working; it goes with `game_to_type` in Phase 7.
+- `spec.yaml` describes the new fields (`GameNamed`, `GameVideo`, `GameExternalGame`,
+  `GameTimeToBeat`, `GameLocalizedCover`, `GameRelated`).
 
 ### Phase 7. Cleanup
 

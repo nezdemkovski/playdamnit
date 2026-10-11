@@ -240,6 +240,87 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/GameSimilarGame"
+        totalRatingCount:
+          type: number
+          nullable: true
+        firstReleaseDatePrecision:
+          type: string
+          nullable: true
+          description: day, month, year, quarter or tbd
+        gameType:
+          type: number
+          nullable: true
+          description: IGDB game_type id (0 = Main Game, 1 = DLC, 8 = Remake, 9 = Remaster, ...)
+        parentGameId:
+          type: number
+          nullable: true
+          description: For DLC, expansions, updates and bundles, the game they belong to
+        versionParentId:
+          type: number
+          nullable: true
+          description: For editions (Deluxe, GOTY, ...), the game they are a version of
+        alternativeNames:
+          type: array
+          items:
+            type: string
+        deleted:
+          type: boolean
+          description: IGDB no longer has this game; it stays because libraries reference it
+        developers:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameCompany"
+        publishers:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameCompany"
+        videos:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameVideo"
+        externalGames:
+          type: array
+          description: Only present on GET /api/games/{id}; store and service listings
+          items:
+            $ref: "#/components/schemas/GameExternalGame"
+        collections:
+          type: array
+          description: Only present on GET /api/games/{id}; series the game belongs to
+          items:
+            $ref: "#/components/schemas/GameNamed"
+        themes:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameNamed"
+        gameModes:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameNamed"
+        timeToBeat:
+          description: Only present on GET /api/games/{id}; seconds
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/GameTimeToBeat"
+        localizedCovers:
+          type: array
+          description: Only present on GET /api/games/{id}
+          items:
+            $ref: "#/components/schemas/GameLocalizedCover"
+        children:
+          type: array
+          description: Only present on GET /api/games/{id}; DLC, expansions, updates, bundles
+          items:
+            $ref: "#/components/schemas/GameRelated"
+        editions:
+          type: array
+          description: Only present on GET /api/games/{id}; Deluxe / GOTY / regional versions
+          items:
+            $ref: "#/components/schemas/GameRelated"
       required:
         - id
         - name
@@ -249,9 +330,132 @@ components:
         - platforms
         - genres
         - types
+        - alternativeNames
+        - deleted
       description: >-
-        screenshots, websites and similarGames are only included by GET /api/games/{id};
-        list endpoints (search, catalog, library) omit them.
+        screenshots, websites, similarGames, developers, publishers, videos, externalGames,
+        collections, themes, gameModes, timeToBeat, localizedCovers, children and editions are
+        only included by GET /api/games/{id}; list endpoints (search, catalog, library) omit
+        them. Search hides deleted games and editions unless asked for.
+
+    GameNamed:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+
+    GameCompany:
+      $ref: "#/components/schemas/GameNamed"
+
+    GameVideo:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+          nullable: true
+        videoId:
+          type: string
+          description: YouTube video id
+        url:
+          type: string
+      required:
+        - id
+        - videoId
+        - url
+
+    GameExternalGame:
+      type: object
+      properties:
+        id:
+          type: number
+        source:
+          type: string
+          nullable: true
+          description: Steam, GOG, Epic Games Store, ...
+        name:
+          type: string
+          nullable: true
+        uid:
+          type: string
+          nullable: true
+          description: The game's id in that store
+        url:
+          type: string
+          nullable: true
+      required:
+        - id
+
+    GameTimeToBeat:
+      type: object
+      properties:
+        hastily:
+          type: number
+          nullable: true
+        normally:
+          type: number
+          nullable: true
+        completely:
+          type: number
+          nullable: true
+        count:
+          type: number
+          nullable: true
+
+    GameLocalizedCover:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+          nullable: true
+        regionId:
+          type: number
+          nullable: true
+        url:
+          type: string
+        width:
+          type: number
+          nullable: true
+        height:
+          type: number
+          nullable: true
+      required:
+        - id
+        - url
+
+    GameRelated:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+        gameType:
+          type: number
+          nullable: true
+        firstReleaseDate:
+          type: number
+          nullable: true
+        cover:
+          $ref: "#/components/schemas/GameCover"
+      required:
+        - id
+        - name
+        - slug
+        - cover
 
     GameScreenshot:
       type: object
@@ -297,6 +501,10 @@ components:
           type: number
         url:
           type: string
+        type:
+          type: string
+          nullable: true
+          description: Official Website, Steam, Discord, ...
         trusted:
           type: boolean
         typeId:
