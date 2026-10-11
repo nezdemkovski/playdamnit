@@ -72,13 +72,20 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
     const content = (
       <>
         <GameCover url={game.cover?.url} name={game.name} />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/80 px-0.5 py-0.5 text-center text-[9px] font-semibold leading-[1.15] text-white">
+        <span
+          className={cn(
+            "pointer-events-none absolute inset-x-0 bottom-0 bg-black/80 px-0.5 py-0.5 text-center text-[9px] font-semibold leading-[1.15] text-white",
+            // Viewing: the name appears on hover; arranging: always, to tell tiles apart
+            !arranging &&
+              "opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+          )}
+        >
           <span className="line-clamp-2">{game.name}</span>
         </span>
       </>
     );
     const className = cn(
-      "relative block w-12 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-[52px]",
+      "group relative block w-12 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-14",
       selectedId === game.id && "z-10 ring-2 ring-foreground",
       draggedId === game.id && "opacity-40",
     );
@@ -109,7 +116,10 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
         to="/games/$id"
         params={{ id: String(game.id) }}
         title={game.name}
-        className={cn(className, "hover:z-10 hover:ring-2 hover:ring-foreground")}
+        className={cn(
+          className,
+          "transition-transform duration-150 hover:z-10 hover:scale-110 hover:ring-2 hover:ring-foreground focus-visible:z-10 focus-visible:scale-110",
+        )}
       >
         {content}
       </Link>
