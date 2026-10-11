@@ -1,6 +1,7 @@
 import { PgBoss } from "pg-boss";
 
 import { ALL_QUEUES } from "@playdamnit/db/jobs";
+import { pool } from "@/db/postgres";
 import { createLogger } from "@/utils/enhancedLogger";
 
 const logger = createLogger("pg-boss");
@@ -8,7 +9,10 @@ const logger = createLogger("pg-boss");
 let bossPromise: Promise<PgBoss> | null = null;
 
 const startBoss = async (): Promise<PgBoss> => {
-  const boss = new PgBoss(process.env.POSTGRES_URL!);
+  // Reuse the app's pool instead of opening a second one
+  const boss = new PgBoss({
+    db: { executeSql: (text, values) => pool.query(text, values as unknown[]) },
+  });
 
   boss.on("error", (error) => {
     logger.exception(error, { context: "pg-boss", operation: "error-event" });

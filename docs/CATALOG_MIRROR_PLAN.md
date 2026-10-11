@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path. Phases 1 and 2 landed on 2026-10-11.
+the lazy path. Phases 1 to 3 landed on 2026-10-11.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -125,7 +125,7 @@ are kept only for games already in the catalog. It runs daily at 03:30 and once 
 (skipped when the last run is under 20 hours old). `fetchAllIGDB` in `utils/igdb/utils.ts` is the
 reusable pager the bulk sync will build on.
 
-### Phase 3. One Postgres driver
+### Phase 3. One Postgres driver — done
 
 The API builds its Drizzle client on `bun-sql`, the librarian on `node-postgres`, the API's LISTEN
 client is `node-postgres` and pg-boss brings its own pool. Before the bulk writer lands, everything

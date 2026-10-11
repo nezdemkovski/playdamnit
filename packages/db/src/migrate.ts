@@ -1,17 +1,18 @@
 import { fileURLToPath } from "node:url";
 
-import { drizzle } from "drizzle-orm/bun-sql";
-import { migrate } from "drizzle-orm/bun-sql/migrator";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 
 // Runtime migrator (drizzle-kit is a dev tool and not needed in images)
 export const migrationsFolder = fileURLToPath(new URL("../migrations", import.meta.url));
 
 export const runMigrations = async (url: string) => {
-  const db = drizzle(url);
+  const pool = new Pool({ connectionString: url });
   try {
-    await migrate(db, { migrationsFolder });
+    await migrate(drizzle({ client: pool }), { migrationsFolder });
   } finally {
-    await db.$client.close();
+    await pool.end();
   }
 };
 

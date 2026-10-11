@@ -60,9 +60,12 @@ const assertPlatformExists = async (platformId: number | null | undefined) => {
   }
 };
 
-const isUniqueViolation = (error: unknown) =>
-  (error as { code?: string })?.code === "23505" ||
-  (error as { errno?: string })?.errno === "23505";
+const isUniqueViolation = (error: unknown): boolean => {
+  const code = (error as { code?: unknown })?.code;
+  if (code === "23505") return true;
+  const cause = (error as { cause?: unknown })?.cause;
+  return cause !== undefined && cause !== error && isUniqueViolation(cause);
+};
 
 /**
  * UserGame service - handles all business logic for user game library operations

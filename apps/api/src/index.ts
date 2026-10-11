@@ -18,7 +18,7 @@ import { getBoss, stopBoss } from "@/utils/pgBoss";
 import { initNotifyListener, closeNotifyListener } from "@/utils/pgNotify";
 import { AppError, TooManyRequestsError } from "@/utils/errors";
 import { backfillMissingLibraryGames } from "@/utils/catalogRequests";
-import { db } from "@/db/postgres";
+import { db, closeDb } from "@/db/postgres";
 import { sql } from "drizzle-orm";
 
 const { postgresUrl, betterAuthSecret, resendApiKey, isDev } = getConfig();
@@ -182,9 +182,10 @@ const shutdown = async () => {
       await appInstance.stop();
     }
 
-    // Stop pg-boss and LISTEN client
+    // Stop pg-boss and LISTEN client, then release the shared pool
     await closeNotifyListener();
     await stopBoss();
+    await closeDb();
 
     // Flush Sentry events
     if (isSentryEnabled()) {

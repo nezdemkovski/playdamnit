@@ -52,7 +52,7 @@ The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. 
 
 ### Database (`packages/db`)
 
-- **Drizzle ORM 1.0 RC**. Tables: `src/schema.ts`; relations: `src/relations.ts` (`defineRelations`, RQB v2). Each app builds its own client (`apps/api/db/postgres/index.ts` with `bun-sql`, `apps/librarian/db/postgres/index.ts` with `node-postgres`) via `drizzle(url, { relations })`.
+- **Drizzle ORM 1.0 RC**. Tables: `src/schema.ts`; relations: `src/relations.ts` (`defineRelations`, RQB v2). Both apps use `node-postgres`: the API builds one `pg.Pool` in `apps/api/db/postgres/index.ts` (`drizzle({ client: pool, relations })`) shared with pg-boss, the librarian uses `drizzle(url, { relations })`. `numeric` columns come back as strings, Drizzle wraps driver errors in `DrizzleQueryError` with the `pg` error as `cause`.
 - RQB v2 syntax: `where: { id: 1 }`, `where: { platforms: { id } }`, `where: { RAW: (t) => sql\`...\` }`, `orderBy: { addedAt: "desc" }`or`orderBy: (t) => [...]`. Inside `RAW`/`orderBy` callbacks use the table passed in (RQB aliases it).
 - Many-to-many relations go `through` junction tables, so `with: { platforms: true }` returns platform rows.
 - Migrations: `migrations/<timestamp>_<name>/{migration.sql,snapshot.json}` (drizzle-kit v1, no journal). For renames `drizzle-kit generate` asks for `--hints`. CI runs `db:check`. The API Docker entrypoint applies migrations on start (`src/migrate.ts`).
@@ -75,7 +75,7 @@ The catalog is moving to a full IGDB mirror, see `docs/CATALOG_MIRROR_PLAN.md`. 
 
 - `src/lib/auth.ts`: email/password with verification, passkeys (`@better-auth/passkey`), API keys (`@better-auth/api-key`, keys owned by `referenceId`), admin, username.
 - The auth tables are passed to `drizzleAdapter(db, { schema })` explicitly — Drizzle v1 clients carry no schema.
-- The Better Auth CLI can't load the config (Node vs `bun-sql`): keep the auth tables in `packages/db/src/schema.ts` in sync by hand when upgrading.
+- The auth tables live in `packages/db/src/schema.ts`; after a Better Auth upgrade compare them with `bunx @better-auth/cli generate` output (the config loads under Node now that the driver is `node-postgres`).
 - Auth endpoints are served by the `/api/auth/*` route in `src/index.ts`; don't also `.mount()` the handler.
 
 ### Librarian (`apps/librarian`)
