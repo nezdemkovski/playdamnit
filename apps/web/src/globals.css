@@ -334,3 +334,32 @@
     opacity: 1;
   }
 }
+
+/* Media lightbox (yet-another-react-lightbox): the scoreboard's near-black, square, no glow */
+.media-lightbox {
+  --yarl__color_backdrop: #0f1012;
+  --yarl__color_button: rgb(241 241 240 / 0.75);
+  --yarl__color_button_active: #f1f1f0;
+  --yarl__color_button_disabled: rgb(241 241 240 / 0.25);
+  --yarl__button_filter: none;
+  --yarl__thumbnails_container_background_color: #0f1012;
+  --yarl__thumbnails_thumbnail_background: #17181b;
+  --yarl__thumbnails_thumbnail_border_color: rgb(241 241 240 / 0.14);
+  --yarl__thumbnails_thumbnail_active_border_color: #ff2b2b;
+  --yarl__slide_captions_container_background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.8),
+    transparent
+  );
+  --yarl__slide_title_color: #f1f1f0;
+  --yarl__slide_title_font_size: 14px;
+  --yarl__slide_title_font_weight: 700;
+  --yarl__counter_filter: none;
+  --yarl__counter_color: rgb(241 241 240 / 0.6);
+  font-family: var(--font-sans);
+}
+.media-lightbox .yarl__counter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}

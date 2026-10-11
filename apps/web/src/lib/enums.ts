@@ -207,3 +207,8 @@ export enum QueryKeySuffix {
 export enum DragDataType {
   Text = "text/plain",
 }
+
+/** Custom slide types of the media lightbox (images use the library's own "image") */
+export enum MediaSlideType {
+  Youtube = "youtube",
+}

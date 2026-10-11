@@ -32,13 +32,14 @@ import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MediaLightbox, type MediaSlide } from "@/components/media-lightbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
-import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
+import { IgdbSize, ImageLoading, MediaSlideType, PillSize } from "@/lib/enums";
 import { MEMBERS_VERDICT_MIN, gradeOf, gradeOfPercent } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
@@ -108,12 +109,46 @@ function GameDetail({ game }: { game: Game }) {
   const membersLead = !!membersGrade && community.ratingCount >= MEMBERS_VERDICT_MIN;
   const leadGrade = membersLead ? membersGrade : worldGrade;
   const [reviewSort, setReviewSort] = useState(GetApiGamesByIdReviewsSort.Latest);
+  // One gallery for everything visual: screenshots, then videos, then the covers
+  const [mediaIndex, setMediaIndex] = useState(-1);
+  const screenshots = game.screenshots ?? [];
+  const videos = game.videos ?? [];
+  const covers = [
+    ...(game.cover?.url ? [{ id: -1, url: game.cover.url, name: null as string | null }] : []),
+    ...(game.localizedCovers ?? []).filter((c) => c.url),
+  ];
+  const videoStart = screenshots.length;
+  const coverStart = videoStart + videos.length;
+  const slides: MediaSlide[] = [
+    ...screenshots.map((shot) => ({
+      src: igdbImage(shot.url, IgdbSize.P1080) ?? "",
+      thumbnail: igdbImage(shot.url, IgdbSize.ScreenshotMed) ?? undefined,
+    })),
+    ...videos.map((video) => ({
+      // No caption: the YouTube player shows the video's own title
+      type: MediaSlideType.Youtube as const,
+      videoId: video.videoId,
+    })),
+    ...covers.map((c) => ({
+      src: igdbImage(c.url, IgdbSize.P720) ?? "",
+      thumbnail: igdbImage(c.url, IgdbSize.CoverSmall) ?? undefined,
+      title: c.name ?? undefined,
+    })),
+  ];
   const reviews = useGetApiGamesByIdReviews(game.id, { sort: reviewSort, limit: 20 });
 
   return (
     <>
       <div className="relative -mx-4 overflow-hidden sm:-mx-6 sm:rounded-card">
         <div className="relative aspect-[16/7] min-h-64 w-full bg-muted">
+          {hero && (
+            <button
+              type="button"
+              onClick={() => setMediaIndex(0)}
+              aria-label={t("game.openScreenshots")}
+              className="absolute inset-0 cursor-zoom-in"
+            />
+          )}
           {hero && (
             <img
               src={hero}
@@ -129,12 +164,19 @@ function GameDetail({ game }: { game: Game }) {
           <div className="panel flex gap-4 bg-background/80 p-4 backdrop-blur-md sm:gap-5 sm:p-5">
             {/* The leading verdict sits on the cover like a sticker; hover for the count */}
             <div className="relative w-24 shrink-0 sm:w-32">
-              <GameCover
-                url={game.cover?.url}
-                name={game.name}
-                className="shadow-2xl"
-                loading={ImageLoading.Eager}
-              />
+              <button
+                type="button"
+                onClick={() => setMediaIndex(game.cover?.url ? coverStart : -1)}
+                aria-label={t("game.openCover")}
+                className="block w-full cursor-zoom-in"
+              >
+                <GameCover
+                  url={game.cover?.url}
+                  name={game.name}
+                  className="shadow-2xl"
+                  loading={ImageLoading.Eager}
+                />
+              </button>
               {leadGrade ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -361,21 +403,20 @@ function GameDetail({ game }: { game: Game }) {
           count={game.screenshots.length}
         >
           <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-            {game.screenshots.map((shot) => (
-              <a
+            {game.screenshots.map((shot, i) => (
+              <button
+                type="button"
                 key={shot.id}
-                href={igdbImage(shot.url, IgdbSize.P1080) ?? undefined}
-                target="_blank"
-                rel="noreferrer"
-                className="w-[85%] shrink-0 snap-start overflow-hidden rounded-lg bg-muted sm:w-[70%] md:w-[60%]"
+                onClick={() => setMediaIndex(i)}
+                className="group w-[85%] shrink-0 cursor-zoom-in snap-start overflow-hidden bg-muted sm:w-[70%] md:w-[60%]"
               >
                 <img
                   src={igdbImage(shot.url, IgdbSize.ScreenshotBig) ?? undefined}
                   alt=""
-                  className="aspect-video w-full object-cover"
+                  className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   loading="lazy"
                 />
-              </a>
+              </button>
             ))}
           </div>
         </Section>
@@ -384,13 +425,12 @@ function GameDetail({ game }: { game: Game }) {
       {game.videos && game.videos.length > 0 && (
         <Section title={t("game.sections.videos")} icon={PlayIcon} count={game.videos.length}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {game.videos.map((video) => (
-              <a
+            {game.videos.map((video, i) => (
+              <button
+                type="button"
                 key={video.id}
-                href={video.url}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative overflow-hidden rounded-lg bg-muted"
+                onClick={() => setMediaIndex(videoStart + i)}
+                className="group relative overflow-hidden bg-muted text-left"
                 title={video.name ?? undefined}
               >
                 <img
@@ -409,7 +449,7 @@ function GameDetail({ game }: { game: Game }) {
                     {video.name}
                   </span>
                 )}
-              </a>
+              </button>
             ))}
           </div>
         </Section>
@@ -497,13 +537,22 @@ function GameDetail({ game }: { game: Game }) {
           <GameRail>
             {game.localizedCovers.map((c) => (
               <div key={c.id}>
-                <GameCover url={c.url} name={c.name ?? game.name} />
+                <button
+                  type="button"
+                  onClick={() => setMediaIndex(coverStart + covers.findIndex((x) => x.id === c.id))}
+                  aria-label={c.name ?? game.name}
+                  className="block w-full cursor-zoom-in"
+                >
+                  <GameCover url={c.url} name={c.name ?? game.name} />
+                </button>
                 {c.name && <div className="mt-2 line-clamp-2 text-xs text-dimmed">{c.name}</div>}
               </div>
             ))}
           </GameRail>
         </Section>
       )}
+
+      <MediaLightbox slides={slides} index={mediaIndex} onClose={() => setMediaIndex(-1)} />
     </>
   );
 }

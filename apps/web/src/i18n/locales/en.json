@@ -301,7 +301,9 @@
     },
     "noReviewsEdit": "No reviews yet. Edit your entry to write one.",
     "noReviewsAdd": "No reviews yet. Add the game to your list and write the first.",
-    "goneFromCatalog": "Gone from the catalog"
+    "goneFromCatalog": "Gone from the catalog",
+    "openScreenshots": "Open screenshots",
+    "openCover": "Open the cover"
   },
   "histogram": {
     "games_one": "{{grade}} · {{count}} game",
@@ -692,5 +694,13 @@
         "sub": "Regret, filed. The hours stay gone."
       }
     }
+  },
+  "lightbox": {
+    "previous": "Previous",
+    "next": "Next",
+    "close": "Close",
+    "label": "Media viewer",
+    "gallery": "Screenshots and videos",
+    "position": "{index} of {total}"
   }
 }
