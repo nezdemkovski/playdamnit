@@ -4,6 +4,7 @@ import {
   timestamp,
   boolean,
   integer,
+  bigint,
   uuid,
   decimal,
   real,
@@ -333,7 +334,8 @@ export const game = pgTable(
     slug: text("slug").notNull().unique(),
     summary: text("summary"),
     storyline: text("storyline"),
-    firstReleaseDate: integer("first_release_date"),
+    // Unix seconds; bigint because IGDB has placeholder dates past 2038
+    firstReleaseDate: bigint("first_release_date", { mode: "number" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     totalRating: real("total_rating"),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

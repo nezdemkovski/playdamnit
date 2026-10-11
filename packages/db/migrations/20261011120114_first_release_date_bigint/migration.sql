@@ -1,0 +1,1 @@
+ALTER TABLE "game" ALTER COLUMN "first_release_date" SET DATA TYPE bigint USING "first_release_date"::bigint;
