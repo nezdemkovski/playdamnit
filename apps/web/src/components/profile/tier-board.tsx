@@ -118,7 +118,7 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
         title={game.name}
         className={cn(
           className,
-          "transition-transform duration-150 hover:z-10 hover:scale-110 hover:ring-2 hover:ring-foreground focus-visible:z-10 focus-visible:scale-110",
+          "origin-center transition-transform duration-150 hover:z-20 hover:scale-[2.5] hover:ring-1 hover:ring-foreground focus-visible:z-20 focus-visible:scale-[2.5]",
         )}
       >
         {content}
