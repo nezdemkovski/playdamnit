@@ -64,26 +64,28 @@ export function BadgeStrip({ badges }: { badges: Badge[] }) {
   const earned = badges.filter((b) => b.earned).length;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {badges.map((badge) => (
-        <Tooltip key={badge.id}>
-          <TooltipTrigger asChild>
-            <span
-              className={cn(
-                "flex size-8 items-center justify-center border",
-                badge.earned
-                  ? "border-warning/50 bg-warning/15 text-warning"
-                  : "border-border text-dimmed/40",
-              )}
-            >
-              <badge.icon className="size-4" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <span className="font-semibold">{badge.label}</span>
-            <span className="block text-dimmed">{badge.description}</span>
-          </TooltipContent>
-        </Tooltip>
-      ))}
+      {[...badges]
+        .sort((a, b) => Number(b.earned) - Number(a.earned))
+        .map((badge) => (
+          <Tooltip key={badge.id}>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center border",
+                  badge.earned
+                    ? "border-warning/50 bg-warning/15 text-warning"
+                    : "border-border text-dimmed/40",
+                )}
+              >
+                <badge.icon className="size-3.5" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span className="font-semibold">{badge.label}</span>
+              <span className="block text-dimmed">{badge.description}</span>
+            </TooltipContent>
+          </Tooltip>
+        ))}
       <span className="eyebrow ml-1">
         {earned} / {badges.length}
       </span>

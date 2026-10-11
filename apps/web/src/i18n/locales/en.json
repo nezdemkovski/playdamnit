@@ -545,7 +545,10 @@
       "count": "{{graded}} of {{total}} graded",
       "arrange": "Arrange",
       "done": "Done"
-    }
+    },
+    "hallOfFame": "Hall of fame",
+    "shelf": "On the shelf",
+    "since": "Since {{date}}"
   },
   "settings": {
     "title": "Settings",

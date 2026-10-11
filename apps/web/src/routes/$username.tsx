@@ -17,13 +17,15 @@ import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 import { BadgeStrip, computeBadges } from "@/components/profile/badges";
+import { HallOfFame } from "@/components/profile/hall-of-fame";
 import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { useLibrary } from "@/hooks/library";
-import { FriendsTab, ProfileTab } from "@/lib/enums";
+import { format } from "@/i18n/date";
+import { DateFormat, FriendsTab, ProfileTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username")({
   component: ProfileLayout,
@@ -93,80 +95,87 @@ function ProfileLayout() {
 
   return (
     <>
-      <header className="panel p-5 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <UserAvatar user={user} className="size-20 sm:size-24" textClassName="text-3xl" />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="truncate text-2xl font-bold">{user.name || user.username}</h1>
-              <span className="text-sm text-dimmed">@{user.username}</span>
-              {user.followsYou && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
-                  {t("profile.followsYou")}
-                </span>
-              )}
-              {!user.listPublic && (
-                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
-                  {t("profile.privateList")}
-                </span>
+      <header className="panel overflow-hidden">
+        <HallOfFame entries={library.data?.results ?? []} />
+        <div className="relative -mt-14 px-5 pb-5 sm:-mt-16 sm:px-6 sm:pb-6">
+          <div className="flex items-end justify-between gap-4">
+            <UserAvatar
+              user={user}
+              className="size-24 border-2 border-background bg-background sm:size-28"
+              textClassName="text-4xl"
+            />
+            <div className="flex shrink-0 gap-2">
+              {user.isOwn ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/$username/settings" params={{ username }}>
+                    <SettingsIcon /> {t("profile.editProfile")}
+                  </Link>
+                </Button>
+              ) : (
+                <FollowButton username={user.username} isFollowing={user.isFollowing} />
               )}
             </div>
-            {user.bio && <p className="mt-2 max-w-2xl text-sm text-white/80">{user.bio}</p>}
-            {user.links.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {user.links.map((link) => (
-                  <a
-                    key={link}
-                    href={link}
-                    target="_blank"
-                    rel="noreferrer nofollow"
-                    className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-dimmed hover:text-white"
-                  >
-                    <LinkIcon className="size-3" /> {new URL(link).hostname.replace(/^www\./, "")}
-                  </a>
-                ))}
-              </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="min-w-0 truncate text-3xl sm:text-4xl">{user.name || user.username}</h1>
+            <span className="num text-sm text-dimmed">@{user.username}</span>
+            {user.followsYou && (
+              <span className="eyebrow text-done">{t("profile.followsYou")}</span>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-              <Link
-                to="/$username/friends"
-                params={{ username }}
-                search={{ tab: FriendsTab.Followers }}
-                className="hover:underline"
-              >
-                <b>{user.counts.followers}</b>{" "}
-                <span className="text-dimmed">
-                  {t("profile.counts.followers", { count: user.counts.followers })}
-                </span>
-              </Link>
-              <Link
-                to="/$username/friends"
-                params={{ username }}
-                search={{ tab: FriendsTab.Following }}
-                className="hover:underline"
-              >
-                <b>{user.counts.following}</b>{" "}
-                <span className="text-dimmed">{t("profile.counts.following")}</span>
-              </Link>
-              {library.data && library.data.results.length > 0 && (
-                <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
-              )}
+            {!user.listPublic && <span className="eyebrow">{t("profile.privateList")}</span>}
+          </div>
+          <div className="eyebrow mt-1">
+            {t("profile.since", {
+              date: format(new Date(user.createdAt), DateFormat.MonthYearShort),
+            })}
+          </div>
+
+          {(user.bio || user.links.length > 0) && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {user.bio && <p className="max-w-2xl text-[15px] text-foreground/85">{user.bio}</p>}
+              {user.links.map((link) => (
+                <a
+                  key={link}
+                  href={link}
+                  target="_blank"
+                  rel="noreferrer nofollow"
+                  className="inline-flex items-center gap-1 text-sm text-dimmed hover:text-foreground"
+                >
+                  <LinkIcon className="size-3.5" /> {new URL(link).hostname.replace(/^www\./, "")}
+                </a>
+              ))}
             </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-4 text-sm">
+            <Link
+              to="/$username/friends"
+              params={{ username }}
+              search={{ tab: FriendsTab.Followers }}
+              className="hover:underline"
+            >
+              <b className="num">{user.counts.followers}</b>{" "}
+              <span className="text-dimmed">
+                {t("profile.counts.followers", { count: user.counts.followers })}
+              </span>
+            </Link>
+            <Link
+              to="/$username/friends"
+              params={{ username }}
+              search={{ tab: FriendsTab.Following }}
+              className="hover:underline"
+            >
+              <b className="num">{user.counts.following}</b>{" "}
+              <span className="text-dimmed">{t("profile.counts.following")}</span>
+            </Link>
+            {library.data && library.data.results.length > 0 && (
+              <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
+            )}
             {badges && (
-              <div className="mt-3">
+              <div className="sm:ml-auto">
                 <BadgeStrip badges={badges} />
               </div>
-            )}
-          </div>
-          <div className="flex shrink-0 gap-2">
-            {user.isOwn ? (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/$username/settings" params={{ username }}>
-                  <SettingsIcon /> {t("profile.editProfile")}
-                </Link>
-              </Button>
-            ) : (
-              <FollowButton username={user.username} isFollowing={user.isFollowing} />
             )}
           </div>
         </div>
