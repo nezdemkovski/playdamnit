@@ -6,26 +6,28 @@ import { gradeMeta } from "@/lib/grade";
 import { statusMeta, type LibraryStatus } from "@/lib/statuses";
 
 const SEAL_SIZE: Record<PillSize, string> = {
-  [PillSize.Sm]: "size-7",
-  [PillSize.Md]: "size-9",
+  [PillSize.Sm]: "size-8",
+  [PillSize.Md]: "size-10",
   [PillSize.Lg]: "size-14",
   [PillSize.Xl]: "size-24",
 };
 
-const LETTER_SIZE: Record<PillSize, number> = {
-  [PillSize.Sm]: 50,
-  [PillSize.Md]: 48,
-  [PillSize.Lg]: 46,
-  [PillSize.Xl]: 46,
-};
+// The letter, in viewBox units. Archivo Black's capitals are about 0.72em tall, so the
+// baseline sits that far below the centre: every letter's cap box is centred, whatever the
+// browser does with "central" baselines.
+const LETTER_SIZE = 46;
+const LETTER_BASELINE = 50 + (LETTER_SIZE * 0.72) / 2;
 
-/** Twelve soft lobes around a 100×100 box: the seal's outline */
+/**
+ * Twelve soft lobes around a 100×100 box: the seal's outline. Radius leaves room for the
+ * rims (up to 7 units outside the path) so nothing is drawn past the box and gets clipped.
+ */
 const SCALLOPS = (() => {
   const lobes = 12;
   const points: string[] = [];
   for (let i = 0; i < lobes * 8; i++) {
     const a = (Math.PI * 2 * i) / (lobes * 8);
-    const r = 43 + 4.5 * Math.cos(lobes * a);
+    const r = 38.5 + 4 * Math.cos(lobes * a);
     points.push(`${(50 + r * Math.cos(a)).toFixed(2)},${(50 + r * Math.sin(a)).toFixed(2)}`);
   }
   return points.join(" ");
@@ -63,7 +65,7 @@ export function GradeBadge({
       )}
       style={{ color: meta.fill }}
     >
-      <svg viewBox="0 0 100 100" className="block size-full overflow-visible" aria-hidden="true">
+      <svg viewBox="0 0 100 100" className="block size-full" aria-hidden="true">
         <g className={cn("origin-center", pressed && "seal-spin")}>
           {/* On art: a light rim outside the dark one, so the seal separates from any cover */}
           {onArt && (
@@ -86,10 +88,9 @@ export function GradeBadge({
         </g>
         <text
           x="50"
-          y="52"
+          y={LETTER_BASELINE}
           textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={LETTER_SIZE[size]}
+          fontSize={LETTER_SIZE}
           fill={meta.ink}
           className="font-display"
         >

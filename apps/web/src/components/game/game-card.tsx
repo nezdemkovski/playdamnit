@@ -55,7 +55,7 @@ export function GameRail({
   return (
     <div
       className={cn(
-        "no-scrollbar -mx-2 -mt-2 flex snap-x gap-3 overflow-x-auto px-2 pt-2 pb-1 [&>*]:w-28 [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-32 md:[&>*]:w-36",
+        "no-scrollbar -mx-3 -mt-3 flex snap-x gap-3 overflow-x-auto px-3 pt-3 pb-1 [&>*]:w-28 [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-32 md:[&>*]:w-36",
         className,
       )}
     >
