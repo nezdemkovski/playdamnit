@@ -118,7 +118,8 @@ export const fetchAllIGDB = async <T extends { id: number }>(
   onPage: (rows: T[]) => Promise<void>,
   opts: { where?: string; afterId?: number } = {},
 ): Promise<number> => {
-  let lastId = opts.afterId ?? 0;
+  // Some lookup tables start at id 0 (game_types: 0 = Main Game), so the walk starts below it
+  let lastId = opts.afterId ?? -1;
   let total = 0;
 
   for (;;) {

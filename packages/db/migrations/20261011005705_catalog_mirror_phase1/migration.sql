@@ -135,7 +135,7 @@ ALTER TABLE "game_to_theme" ADD CONSTRAINT "game_to_theme_theme_id_theme_id_fkey
 ALTER TABLE "video" ADD CONSTRAINT "video_game_id_game_id_fkey" FOREIGN KEY ("game_id") REFERENCES "game"("id") ON DELETE CASCADE;--> statement-breakpoint
 -- ─── Lookup tables move to IGDB ids ──────────────────────────────────────────
 -- Every catalog table mirrors IGDB, so platform/genre/game_mode/type/website_type ids become the
--- IGDB ids. The mapping is embedded (platforms from igdb.com, the rest from the IGDB enum tables,
+-- IGDB ids. The mapping is embedded (platforms from igdb.com, the rest from IGDB's lookup endpoints,
 -- 2026-10-11) so the migration needs no network. The librarian's sync-lookups job refreshes names
 -- afterwards. Only user_games.platform_id is user data: the migration refuses to run if a library
 -- references a platform that has no IGDB id. Everything else is derived and unmatched rows are
@@ -397,25 +397,38 @@ INSERT INTO igdb_lookup_map (entity, key, igdb_id) VALUES
 ('type','port',11),
 ('type','fork',12),
 ('type','pack',13),
+('type','pack / addon',13),
 ('type','update',14),
-('website_type','official',1),
-('website_type','wikia',2),
+('website_type','official website',1),
+('website_type','community wiki',2),
 ('website_type','wikipedia',3),
 ('website_type','facebook',4),
 ('website_type','twitter',5),
 ('website_type','twitch',6),
 ('website_type','instagram',8),
 ('website_type','youtube',9),
+('website_type','app store (iphone)',10),
+('website_type','app store (ipad)',11),
+('website_type','google play',12),
+('website_type','steam',13),
+('website_type','subreddit',14),
+('website_type','itch',15),
+('website_type','epic',16),
+('website_type','gog',17),
+('website_type','discord',18),
+('website_type','bluesky',19),
+('website_type','xbox',22),
+('website_type','playstation',23),
+('website_type','nintendo',24),
+('website_type','meta',25),
+('website_type','gamejolt',26),
+('website_type','official',1),
+('website_type','wikia',2),
 ('website_type','iphone',10),
 ('website_type','ipad',11),
 ('website_type','android',12),
-('website_type','steam',13),
 ('website_type','reddit',14),
-('website_type','itch',15),
-('website_type','epicgames',16),
-('website_type','gog',17),
-('website_type','discord',18),
-('website_type','bluesky',19);--> statement-breakpoint
+('website_type','epicgames',16);--> statement-breakpoint
 DO $$
 DECLARE missing text;
 BEGIN
