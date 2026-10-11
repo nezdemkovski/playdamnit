@@ -7,6 +7,7 @@ import { GameCard, GameRail } from "@/components/game/game-card";
 import { Badges, computeBadges } from "@/components/profile/badges";
 import { PrivateNotice } from "@/components/profile/private-notice";
 import { ProfileStats } from "@/components/profile/profile-stats";
+import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,7 +41,13 @@ function ProfileOverview() {
 
   return (
     <>
-      <ProfileStats entries={entries} />
+      <ProfileStats entries={entries} own={profile.data?.isOwn} />
+
+      {entries.length > 0 && (
+        <div className="mt-4">
+          <YearInEvenings entries={entries} />
+        </div>
+      )}
 
       <Section
         title="Badges"

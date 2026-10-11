@@ -4,66 +4,84 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Single dark theme (the design follows mygamelist.club): near-black surfaces, white primary
- * actions, dimmed grey secondary text and one neon colour per library status. The shadcn/ui
- * components read only the --* variables below; their files are left untouched.
+ * Single dark theme, the "scoreboard" look: cool near-black, 1px rules, zero radius, numbers in
+ * a monospace face, one red for guilt and one acid green for "finished". The shadcn/ui components
+ * read only the --* variables below; their files are left untouched.
  */
 :root {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Black", "Archivo Variable", Impact, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
-  --background: #1a1b1e;
-  --foreground: #ffffff;
-  --card: #202125;
-  --card-foreground: #ffffff;
-  --popover: #1b1d1f;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
+  --background: #0f1012;
+  --foreground: #f1f1f0;
+  --card: #17181b;
+  --card-foreground: #f1f1f0;
+  --popover: #131416;
+  --popover-foreground: #f1f1f0;
+  --primary: #f1f1f0;
   --primary-foreground: #000000;
-  --secondary: #2a2b30;
-  --secondary-foreground: #ffffff;
-  --muted: #26272b;
-  --muted-foreground: #a2a3a6;
-  --accent: #2e2f34;
-  --accent-foreground: #ffffff;
-  --destructive: #ff3975;
-  --destructive-foreground: #ffffff;
-  --border: rgb(255 255 255 / 0.08);
-  --input: rgb(255 255 255 / 0.12);
-  --ring: rgb(255 255 255 / 0.45);
-  --chart-1: #00f0ff;
-  --chart-2: #ff5bf8;
-  --chart-3: #4b93ff;
-  --chart-4: #fff600;
-  --chart-5: #ff794f;
-  --radius: 0.625rem;
-  --radius-card: 1.25rem;
-  --sidebar: #1a1b1e;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ffffff;
+  --secondary: #1e1f24;
+  --secondary-foreground: #f1f1f0;
+  --muted: #17181b;
+  --muted-foreground: #9a9aa1;
+  --accent: #1e1f24;
+  --accent-foreground: #f1f1f0;
+  --destructive: #ff2b2b;
+  --destructive-foreground: #000000;
+  --border: rgb(241 241 240 / 0.14);
+  --input: rgb(241 241 240 / 0.14);
+  --ring: #ff2b2b;
+  --chart-1: #ff2b2b;
+  --chart-2: #d7ff3b;
+  --chart-3: #ffb020;
+  --chart-4: #9a9aa1;
+  --chart-5: #f1f1f0;
+  --radius: 0px;
+  --radius-card: 0px;
+  --sidebar: #0f1012;
+  --sidebar-foreground: #f1f1f0;
+  --sidebar-primary: #ff2b2b;
   --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #2e2f34;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgb(255 255 255 / 0.08);
-  --sidebar-ring: rgb(255 255 255 / 0.45);
+  --sidebar-accent: #17181b;
+  --sidebar-accent-foreground: #f1f1f0;
+  --sidebar-border: rgb(241 241 240 / 0.14);
+  --sidebar-ring: #ff2b2b;
+
+  /* TanStack Charts tooltip, themed like a status chip */
+  --ts-chart-tooltip-background: #0f1012;
+  --ts-chart-tooltip-color: #f1f1f0;
+  --ts-chart-tooltip-border: 1px solid rgb(241 241 240 / 0.3);
+  --ts-chart-tooltip-border-radius: 0;
+  --ts-chart-tooltip-shadow: none;
+  --ts-chart-tooltip-padding: 6px 10px;
+  --ts-chart-tooltip-font: 700 11px "JetBrains Mono Variable", ui-monospace, monospace;
+
+  /* The two emotions */
+  --signal: #ff2b2b;
+  --done: #d7ff3b;
+  --warning: #ffb020;
+  --line-soft: rgb(241 241 240 / 0.06);
 
   /* Library statuses */
-  --status-finished: #00f0ff;
-  --status-playing: #ff5bf8;
-  --status-dropped: #ff794f;
+  --status-finished: #d7ff3b;
+  --status-playing: #f1f1f0;
+  --status-dropped: #ff2b2b;
   --status-online: #8ae0b4;
-  --status-on_hold: #fff600;
-  --status-want_to_play: #4b93ff;
-  --status-backlog: #d0b0ff;
+  --status-on_hold: #ffb020;
+  --status-want_to_play: #9a9aa1;
+  --status-backlog: #9a9aa1;
 
   /* Ratings */
-  --rating-high: #6beda3;
-  --rating-mid: #ffb224;
-  --rating-low: #ff794f;
-  --warning: #ffb224;
+  --rating-high: #d7ff3b;
+  --rating-mid: #ffb020;
+  --rating-low: #ff2b2b;
 }
 
 @theme inline {
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -96,14 +114,17 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-card: var(--radius-card);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-card: 0px;
 
   --color-dimmed: var(--muted-foreground);
+  --color-signal: var(--signal);
+  --color-done: var(--done);
   --color-warning: var(--warning);
+  --color-line-soft: var(--line-soft);
   --color-status-finished: var(--status-finished);
   --color-status-playing: var(--status-playing);
   --color-status-dropped: var(--status-dropped);
@@ -122,46 +143,126 @@
   }
   html {
     color-scheme: dark;
-    scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+    scrollbar-color: rgb(241 241 240 / 0.25) transparent;
   }
   body {
     @apply bg-background text-foreground antialiased;
   }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
 }
 
 @layer components {
-  /* Actions are pills, like the reference design; the shadcn button file stays as shipped */
+  /* Nothing on this site is round: the shadcn files stay as shipped, the shapes are overridden here */
+  .rounded-full,
+  [data-slot="avatar"],
+  [data-slot="avatar-image"],
+  [data-slot="avatar-fallback"] {
+    border-radius: 0 !important;
+  }
   [data-slot="button"] {
-    border-radius: 9999px;
-    font-weight: 600;
+    border-radius: 0;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
+  }
+  /* The red button is the "hot" action: solid red, black text, no translucency */
+  [data-slot="button"].bg-destructive {
+    color: #000;
   }
   [data-slot="badge"] {
-    border-radius: 9999px;
+    border-radius: 0;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
   [data-slot="input"],
   [data-slot="textarea"],
-  [data-slot="select-trigger"] {
-    background-color: rgb(255 255 255 / 0.04);
+  [data-slot="select-trigger"],
+  [data-slot="command-input"] {
+    background-color: var(--card);
+    border-radius: 0;
+  }
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="tooltip-content"] {
+    border-radius: 0;
+  }
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    border-color: var(--foreground);
+    box-shadow: 8px 8px 0 rgb(255 43 43 / 0.25);
+  }
+  [data-slot="tabs-list"],
+  [data-slot="tabs-trigger"],
+  [data-slot="switch"],
+  [data-slot="switch-thumb"],
+  [data-slot="slider-track"],
+  [data-slot="slider-range"],
+  [data-slot="slider-thumb"],
+  [data-slot="skeleton"] {
+    border-radius: 0 !important;
+  }
+  [data-slot="slider-thumb"] {
+    border: 0;
+    background: var(--foreground);
+  }
+  [data-slot="slider-range"] {
+    background: var(--done);
   }
 }
 
-@utility rounded-card {
-  border-radius: var(--radius-card);
+/* Numbers that line up and carry weight */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
 }
 
-/* A translucent panel on the page background: section cards, feed items, profile header */
+/* Small service label: mono, caps, tracked */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+@utility rounded-card {
+  border-radius: 0;
+}
+
+/* A ruled block on the page background: section cards, feed items, profile header */
 @utility panel {
-  background-color: rgb(255 255 255 / 0.03);
-  border: 1px solid rgb(255 255 255 / 0.05);
-  border-radius: var(--radius-card);
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0;
 }
 
 /* Poster-style game cover */
 @utility cover {
   aspect-ratio: 3 / 4;
-  border-radius: var(--radius);
+  border-radius: 0;
   overflow: hidden;
-  background-color: var(--muted);
+  background-color: var(--card);
 }
 
 @utility no-scrollbar {

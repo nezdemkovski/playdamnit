@@ -1,4 +1,6 @@
-import "@fontsource-variable/inter";
+import "@fontsource-variable/archivo";
+import "@fontsource/archivo-black";
+import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 
 import { configureApiClient } from "@playdamnit/api-client";
@@ -34,7 +36,7 @@ createRoot(document.getElementById("root")!).render(
       <TooltipProvider delayDuration={200}>
         <RouterProvider router={router} />
       </TooltipProvider>
-      <Toaster position="bottom-center" />
+      <Toaster position="bottom-center" theme="dark" />
     </QueryClientProvider>
   </StrictMode>,
 );

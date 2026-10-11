@@ -10,17 +10,15 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
-/** Titled block used across pages: icon, heading, optional count and a right-side action */
+/** Titled block used across pages: heading, optional count in mono and a right-side action */
 export function Section({ title, icon: Icon, count, action, className, children }: SectionProps) {
   return (
-    <section className={cn("mt-10", className)}>
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-xl font-bold">
-          {Icon && <Icon className="size-5 text-dimmed" />}
+    <section className={cn("mt-14", className)}>
+      <header className="mb-4 flex items-baseline justify-between gap-3 border-b border-border pb-3">
+        <h2 className="flex items-baseline gap-2.5 text-xl">
+          {Icon && <Icon className="size-4 self-center text-dimmed" />}
           {title}
-          {count !== undefined && count !== null && (
-            <span className="text-sm font-semibold text-dimmed">{count}</span>
-          )}
+          {count !== undefined && count !== null && <span className="eyebrow">{count}</span>}
         </h2>
         {action}
       </header>

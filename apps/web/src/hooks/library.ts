@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
+import { summarize, toastFor } from "@/lib/voice";
 import { useSession } from "./auth";
 
 const apiError = (error: unknown, fallback: string) =>
@@ -44,6 +45,9 @@ export const useLibraryMutations = () => {
   const queryClient = useQueryClient();
   const { user } = useSession();
   const username = user?.username ?? "";
+  const { entries } = useMyLibrary();
+  const voice = (kind: "add" | "update" | "remove", status?: string) =>
+    toastFor(kind, status, summarize(entries));
 
   const refresh = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
@@ -54,7 +58,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.data.gameId);
-        toast.success("Added to your list");
+        toast.success(voice("add", vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, "Could not add the game")),
     },
@@ -64,7 +68,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.id);
-        toast.success("Saved");
+        toast.success(voice("update", vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, "Could not save the changes")),
     },
@@ -74,7 +78,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.id);
-        toast.success("Removed from your list");
+        toast.success(voice("remove"));
       },
       onError: (error) => toast.error(apiError(error, "Could not remove the game")),
     },

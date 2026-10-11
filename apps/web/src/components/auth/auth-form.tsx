@@ -26,7 +26,7 @@ export function AuthForm() {
   return (
     <div className="panel w-full max-w-md p-6 sm:p-8">
       <div className="mb-6 flex items-center gap-3">
-        <img src="/logo.svg" alt="" className="h-10 w-auto rounded-md" />
+        <img src="/logo.svg" alt="" className="size-10" />
         <div>
           <h1 className="text-xl font-bold">PlayDamnIt</h1>
           <p className="text-sm text-dimmed">Your game list, ratings and reviews</p>

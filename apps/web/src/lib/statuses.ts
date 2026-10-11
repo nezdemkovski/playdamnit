@@ -20,6 +20,8 @@ export interface StatusMeta {
   text: string;
   bg: string;
   border: string;
+  /** The chip: finished and playing are filled, the rest are outlined in their colour */
+  chip: string;
   /** Finishing dates only make sense for these */
   ended: boolean;
 }
@@ -32,6 +34,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-finished",
     bg: "bg-status-finished",
     border: "border-status-finished",
+    chip: "bg-status-finished border-status-finished text-black",
     ended: true,
   },
   {
@@ -41,6 +44,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-playing",
     bg: "bg-status-playing",
     border: "border-status-playing",
+    chip: "bg-status-playing border-status-playing text-black",
     ended: false,
   },
   {
@@ -50,6 +54,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-dropped",
     bg: "bg-status-dropped",
     border: "border-status-dropped",
+    chip: "border-status-dropped text-status-dropped",
     ended: true,
   },
   {
@@ -59,6 +64,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-want_to_play",
     bg: "bg-status-want_to_play",
     border: "border-status-want_to_play",
+    chip: "border-border text-dimmed",
     ended: false,
   },
   {
@@ -68,6 +74,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-on_hold",
     bg: "bg-status-on_hold",
     border: "border-status-on_hold",
+    chip: "border-status-on_hold text-status-on_hold",
     ended: false,
   },
   {
@@ -77,6 +84,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-backlog",
     bg: "bg-status-backlog",
     border: "border-status-backlog",
+    chip: "border-border text-dimmed",
     ended: false,
   },
   {
@@ -86,6 +94,7 @@ export const STATUSES: StatusMeta[] = [
     text: "text-status-online",
     bg: "bg-status-online",
     border: "border-status-online",
+    chip: "border-status-online text-status-online",
     ended: false,
   },
 ];

@@ -229,7 +229,7 @@ function GameDetail({ game }: { game: Game }) {
         </div>
       )}
 
-      <CommunityStats community={community} className="mt-6 max-w-3xl" />
+      <CommunityStats community={community} mine={entry?.rating} className="mt-6 max-w-3xl" />
 
       <dl className="mt-8 grid gap-x-8 gap-y-2 md:grid-cols-2">
         {game.developers?.length ? (

@@ -21,19 +21,35 @@ import {
 } from "@/components/ui/select";
 import { GameCard } from "@/components/game/game-card";
 import { STATUSES, type LibraryStatus } from "@/lib/statuses";
+import { idleDays } from "@/lib/voice";
 import { LibraryRow } from "./library-row";
 
 const ALL_YEARS = "all";
 
-type Sort = "added" | "rating" | "name" | "release";
+type Sort = "shame" | "added" | "rating" | "name" | "release";
 const SORTS: { value: Sort; label: string }[] = [
+  { value: "shame", label: "Shame" },
   { value: "added", label: "Date added" },
   { value: "rating", label: "Rating" },
   { value: "name", label: "Name" },
   { value: "release", label: "Release year" },
 ];
 
+// Untouched backlog first, then stale "playing", finished games last
+const SHAME_RANK: Record<string, number> = {
+  backlog: 0,
+  want_to_play: 0,
+  on_hold: 1,
+  playing: 2,
+  online: 3,
+  dropped: 4,
+  finished: 5,
+};
+
 const compare: Record<Sort, (a: UserGameWithUserData, b: UserGameWithUserData) => number> = {
+  shame: (a, b) =>
+    SHAME_RANK[a.userGameData.status] - SHAME_RANK[b.userGameData.status] ||
+    idleDays(b) - idleDays(a),
   added: (a, b) => (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
   rating: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
   name: (a, b) => a.name.localeCompare(b.name),
@@ -49,7 +65,7 @@ interface LibraryListProps {
 export function LibraryList({ entries, editable }: LibraryListProps) {
   const [status, setStatus] = useState<LibraryStatus | "all">("all");
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<Sort>("added");
+  const [sort, setSort] = useState<Sort>("shame");
   const [view, setView] = useState<"list" | "grid">(() => {
     try {
       return localStorage.getItem("library-view") === "grid" ? "grid" : "list";
@@ -188,7 +204,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="border-t border-border">
           {visible.map((entry, i) => (
             <LibraryRow key={entry.id} rank={i + 1} entry={entry} editable={editable} />
           ))}

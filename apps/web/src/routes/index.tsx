@@ -24,6 +24,7 @@ import { ReviewCard } from "@/components/social/review-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { Verdict } from "@/components/home/verdict";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { relativeDate } from "@/lib/format";
@@ -36,7 +37,7 @@ const RAIL = 20;
 
 function Home() {
   const { user } = useSession();
-  const { byGameId, entries } = useMyLibrary();
+  const { byGameId, entries, isLoading: libraryLoading } = useMyLibrary();
   const popular = useGetApiGames({ sort: "popular", limit: RAIL });
   const recent = useGetApiGames({ sort: "recent", limit: RAIL });
   const now = Math.floor(Date.now() / 1000);
@@ -54,40 +55,35 @@ function Home() {
 
   return (
     <>
-      <section className="panel relative overflow-hidden p-6 sm:p-10">
-        <div className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-status-finished/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-10 size-72 rounded-full bg-status-playing/10 blur-3xl" />
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-          <img src="/logo.svg" alt="" className="h-20 w-auto shrink-0 rounded-xl sm:h-28" />
+      {user && user.username && !libraryLoading ? (
+        <Verdict username={user.username} entries={entries} />
+      ) : (
+        <section className="grid border-b border-border py-12 md:grid-cols-[1.3fr_1fr]">
           <div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-              {user ? `Welcome back, ${user.username ?? user.name}` : "Play, damn it."}
+            <div className="eyebrow">A game list with opinions</div>
+            <h1 className="mt-4 text-4xl leading-[.95] sm:text-5xl lg:text-6xl">
+              Your backlog has a mouth now.
             </h1>
-            <p className="mt-2 max-w-xl text-dimmed">
-              Track every game you play, rate it, write a few words and keep the backlog honest. The
-              whole IGDB catalog, no account needed to browse.
+            <p className="mt-5 max-w-[44ch] text-lg text-dimmed">
+              Track what you play, rate it, write a few honest words. Then get told the truth about
+              the games you "will definitely get to".
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {user ? (
-                <Button asChild size="lg">
-                  <Link to="/$username" params={{ username: user.username ?? "" }}>
-                    <LibraryIcon /> My list
-                  </Link>
-                </Button>
-              ) : (
-                <Button asChild size="lg">
-                  <Link to="/auth">Create your list</Link>
-                </Button>
-              )}
-              <Button asChild variant="outline" size="lg">
+            <div className="mt-7 flex flex-wrap gap-2">
+              <Button asChild variant="destructive">
+                <Link to="/auth">Start your list</Link>
+              </Button>
+              <Button asChild variant="outline">
                 <Link to="/search" search={{ q: "", page: 1, editions: false }}>
                   <Gamepad2Icon /> Browse games
                 </Link>
               </Button>
             </div>
           </div>
-        </div>
-      </section>
+          <div className="eyebrow mt-8 self-end md:mt-0 md:text-right">
+            Free · no ads · export anytime · the whole IGDB catalog
+          </div>
+        </section>
+      )}
 
       {playing.length > 0 && (
         <Section title="Now playing" icon={Gamepad2Icon} count={playing.length}>

@@ -32,9 +32,11 @@ type To =
 
 const itemClass = (active: boolean) =>
   cn(
-    "relative flex items-center gap-3 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+    "relative flex items-center gap-3 border-l-2 border-transparent outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
     "size-11 justify-center xl:h-11 xl:w-full xl:justify-start xl:px-4",
-    active ? "bg-white/10 text-white" : "text-dimmed hover:bg-white/5 hover:text-white",
+    active
+      ? "border-signal bg-gradient-to-r from-signal/15 to-transparent text-white"
+      : "text-dimmed hover:bg-white/5 hover:text-white",
   );
 
 function RailItem({
@@ -59,7 +61,7 @@ function RailItem({
       <Icon className="size-5 shrink-0" strokeWidth={2} />
       <span className="hidden text-sm font-semibold xl:inline">{label}</span>
       {badge ? (
-        <span className="absolute top-1.5 right-1.5 min-w-4 rounded-full bg-status-playing px-1 text-center text-[10px] font-bold leading-4 text-black xl:static xl:ml-auto">
+        <span className="num absolute top-1.5 right-1.5 min-w-4 bg-signal px-1 text-center text-[10px] font-extrabold leading-4 text-black xl:static xl:ml-auto">
           {badge > 99 ? "99+" : badge}
         </span>
       ) : null}
@@ -220,21 +222,21 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col items-center gap-2 border-r border-white/5 bg-sidebar px-3 py-5 md:flex xl:w-60 xl:items-stretch">
         <Link
           to="/"
-          className="mb-3 block self-center overflow-hidden rounded-lg xl:self-start"
+          className="mb-3 block self-center xl:self-start xl:px-1"
           aria-label="PlayDamnIt"
         >
-          <img src="/logo.svg" alt="" className="h-8 w-auto" />
+          <img src="/logo.svg" alt="" className="size-9" />
         </Link>
         {user && (
           <Link
             to="/$username"
             params={{ username }}
-            className="mb-1 flex items-center gap-3 self-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring xl:self-stretch xl:px-1"
+            className="mb-1 flex items-center gap-3 self-center outline-none focus-visible:ring-2 focus-visible:ring-ring xl:self-stretch xl:px-1"
           >
             <UserAvatar user={user} className="size-10" textClassName="text-lg" />
             <span className="hidden min-w-0 xl:block">
               <span className="block truncate text-sm font-bold">{user.name || username}</span>
-              <span className="block truncate text-xs text-dimmed">@{username}</span>
+              <span className="num block truncate text-[11px] text-dimmed">@{username}</span>
             </span>
           </Link>
         )}

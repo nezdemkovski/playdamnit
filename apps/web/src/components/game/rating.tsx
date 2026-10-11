@@ -14,12 +14,10 @@ export function RatingValue({
 }) {
   const text = formatRating(value);
   if (!text || value === null || value === undefined) return null;
-  return (
-    <span className={cn("font-bold tabular-nums", ratingColor(value), className)}>{text}</span>
-  );
+  return <span className={cn("num font-extrabold", ratingColor(value), className)}>{text}</span>;
 }
 
-/** Status pill: tinted background, dark text, status icon */
+/** Status chip: square, mono, filled for finished/playing, outlined in its colour otherwise */
 export function StatusPill({
   status,
   className,
@@ -30,18 +28,17 @@ export function StatusPill({
   size?: "sm" | "md";
 }) {
   const meta = statusMeta(status);
-  const Icon = meta.icon;
   return (
     <Badge
+      variant="outline"
       className={cn(
-        "gap-1 border-0 text-black",
-        meta.bg,
-        size === "md" ? "px-3 py-1 text-sm" : "px-2 py-0.5 text-xs",
+        "gap-1 bg-transparent",
+        meta.chip,
+        size === "md" ? "px-2.5 py-1 text-[11px]" : "px-2 py-0.5",
         className,
       )}
     >
       {meta.label}
-      <Icon className={size === "md" ? "size-3.5" : "size-3"} strokeWidth={2.5} />
     </Badge>
   );
 }

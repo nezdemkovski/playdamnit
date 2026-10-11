@@ -1,14 +1,15 @@
 import type { UserGameWithUserData } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
+import { cn } from "cn";
 import { useState } from "react";
 
 import { GameCover } from "@/components/game/game-cover";
 import { LogGameDialog } from "@/components/game/log-game-dialog";
 import { RatingValue, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
-import { usePlatformNames } from "@/hooks/platforms";
-import { gameTypeName, releaseYear, shortDate } from "@/lib/format";
+import { gameTypeName, releaseYear } from "@/lib/format";
+import { idleDays, idleLine } from "@/lib/voice";
 
 interface LibraryRowProps {
   rank: number;
@@ -16,71 +17,82 @@ interface LibraryRowProps {
   editable: boolean;
 }
 
-/** One list entry: rank, cover, title and metadata on the left, rating and status on the right */
+const IDLE_FULL = 180;
+
+/** One list entry: rank, cover, title and metadata, idle time with a bar, rating, status */
 export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
   const [open, setOpen] = useState(false);
   const data = entry.userGameData;
-  const platform = usePlatformNames().get(data.platformId ?? -1);
+  const status = data.status;
+  const idle = idleDays(entry);
+  const barWidth =
+    status === "finished"
+      ? 100
+      : status === "dropped"
+        ? 4
+        : Math.min(100, Math.round((idle / IDLE_FULL) * 100));
+  const barColor =
+    status === "finished"
+      ? "bg-done"
+      : status === "playing" || status === "on_hold"
+        ? "bg-warning"
+        : "bg-signal";
   const meta = [
+    entry.genres[0]?.name,
     releaseYear(entry.firstReleaseDate),
     gameTypeName(entry.gameType, entry.types[0]?.type),
   ]
     .filter(Boolean)
-    .join(" | ");
-  const date = shortDate(data.endedAt ?? data.addedAt);
+    .join(" · ");
 
   return (
-    <article className="panel relative flex gap-4 overflow-hidden p-3 transition-colors hover:bg-white/[0.05] sm:p-4">
-      {entry.cover?.url && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.08] blur-2xl"
-          style={{ backgroundImage: `url(${entry.cover.url})` }}
-        />
-      )}
-      <Link
-        to="/games/$id"
-        params={{ id: String(entry.id) }}
-        className="relative w-16 shrink-0 sm:w-20"
-      >
+    <article className="grid grid-cols-[28px_52px_1fr_auto] items-center gap-4 border-b border-border py-3 transition-colors last:border-b-0 hover:bg-card sm:grid-cols-[36px_56px_1fr_170px_72px_110px_32px]">
+      <span className="num text-sm font-extrabold text-dimmed">
+        {String(rank).padStart(2, "0")}
+      </span>
+      <Link to="/games/$id" params={{ id: String(entry.id) }}>
         <GameCover url={entry.cover?.url} name={entry.name} />
       </Link>
-      <div className="relative min-w-0 flex-1">
-        <div className="flex items-start gap-2">
-          <span className="mt-0.5 rounded bg-white/10 px-1.5 text-xs font-semibold tabular-nums">
-            {rank}
-          </span>
-          <Link
-            to="/games/$id"
-            params={{ id: String(entry.id) }}
-            className="line-clamp-2 font-bold leading-tight hover:underline"
-          >
-            {entry.name}
-          </Link>
-        </div>
-        <div className="mt-2 space-y-0.5 text-xs text-dimmed">
-          {entry.genres.length > 0 && (
-            <div className="truncate">{entry.genres.map((g) => g.name).join(", ")}</div>
-          )}
-          {meta && <div>{meta}</div>}
-          {date && <div className="pt-1">{date}</div>}
-        </div>
-        {data.review && <p className="mt-2 line-clamp-2 text-sm text-white/80">{data.review}</p>}
+      <div className="min-w-0">
+        <Link
+          to="/games/$id"
+          params={{ id: String(entry.id) }}
+          className="line-clamp-1 text-[15px] font-bold hover:underline"
+        >
+          {entry.name}
+        </Link>
+        <div className="mt-0.5 truncate text-xs text-dimmed">{meta}</div>
+        {data.review && <p className="mt-1 line-clamp-1 text-xs text-white/70">{data.review}</p>}
       </div>
-      <div className="relative flex shrink-0 flex-col items-end gap-1.5">
+      <div className="hidden sm:block">
+        <div className="h-1.5 bg-card">
+          <i className={cn("block h-full", barColor)} style={{ width: `${barWidth}%` }} />
+        </div>
+        <div className="num mt-1.5 text-[11px] text-dimmed">{idleLine(entry)}</div>
+      </div>
+      <div className="hidden text-right sm:block">
+        {data.rating ? (
+          <RatingValue value={data.rating} className="text-2xl" />
+        ) : (
+          <span className="eyebrow">unrated</span>
+        )}
+      </div>
+      <div className="flex items-center justify-end gap-2 sm:justify-start">
+        <RatingValue value={data.rating} className="text-lg sm:hidden" />
+        <StatusPill status={status} />
+      </div>
+      <div className="hidden sm:block">
         {editable && (
           <Button
             variant="ghost"
             size="icon-xs"
             onClick={() => setOpen(true)}
             aria-label="Edit entry"
-            className="-mt-1 -mr-1 text-dimmed"
+            className="text-dimmed"
           >
             <PencilIcon />
           </Button>
         )}
-        <RatingValue value={data.rating} className="text-2xl" />
-        <StatusPill status={data.status} />
       </div>
       {editable && <LogGameDialog game={entry} entry={data} open={open} onOpenChange={setOpen} />}
     </article>
