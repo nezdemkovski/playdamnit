@@ -2,7 +2,6 @@
 // LISTEN/NOTIFY channel. Imported by both services, so keep it dependency-free.
 
 export const QUEUES = {
-  SEARCH_IGDB: "search-igdb",
   FETCH_BY_IDS: "fetch-by-ids",
   REFRESH_STALE_GAMES: "refresh-stale-games",
   // Mirror IGDB's lookup endpoints (platforms, genres, companies, ...) into the catalog
@@ -16,12 +15,6 @@ export const QUEUES = {
 export const ALL_QUEUES = Object.values(QUEUES);
 
 export const NOTIFY_CHANNEL = "game_catalog_updated";
-
-export interface SearchIgdbJob {
-  query: string;
-  limit: number;
-  requestId: string;
-}
 
 export interface FetchByIdsJob {
   ids: number[];

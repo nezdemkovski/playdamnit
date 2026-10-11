@@ -7,15 +7,14 @@ import {
   QUEUES,
   type CatalogUpdatedPayload,
   type FetchByIdsJob,
-  type SearchIgdbJob,
 } from "@playdamnit/db/jobs";
-import { searchIGDB, fetchIGDBByIds } from "../utils/igdb/utils";
+import { fetchIGDBByIds } from "../utils/igdb/utils";
 import { writeGamesBatch } from "../catalog/writeGames";
 import { createLogger } from "../utils/enhancedLogger";
 
 const logger = createLogger("igdb-worker");
 
-// Workers poll for new jobs; a user may be waiting on these two queues
+// Workers poll for new jobs; a user (import, add by id) may be waiting on this queue
 const INTERACTIVE_POLLING = { pollingIntervalSeconds: 0.5 };
 
 export const sendNotify = async (requestId: string, ok: boolean): Promise<void> => {
@@ -41,25 +40,6 @@ const withNotify = async (requestId: string | undefined, run: () => Promise<void
   }
 };
 
-const handleSearch = async ([job]: Job<SearchIgdbJob>[]) => {
-  const { query, limit, requestId } = job.data;
-  logger.info(`Processing search-igdb job for query: "${query}"`);
-
-  await withNotify(requestId, async () => {
-    let results = await searchIGDB(query, true, limit);
-
-    if (results.length === 0) {
-      const cleanedQuery = query.replace(/[^\w\s]/gi, "").trim();
-      if (cleanedQuery && cleanedQuery !== query) {
-        results = await searchIGDB(cleanedQuery, true, limit);
-      }
-    }
-
-    await writeGamesBatch(results);
-    logger.info(`search-igdb done: ${results.length} games for "${query}"`);
-  });
-};
-
 const handleFetchByIds = async ([job]: Job<FetchByIdsJob>[]) => {
   const { ids, requestId } = job.data;
   logger.info(`Processing fetch-by-ids job for ${ids.length} IDs`);
@@ -72,6 +52,5 @@ const handleFetchByIds = async ([job]: Job<FetchByIdsJob>[]) => {
 };
 
 export const registerIgdbWorkers = async (boss: PgBoss): Promise<void> => {
-  await boss.work<SearchIgdbJob>(QUEUES.SEARCH_IGDB, INTERACTIVE_POLLING, handleSearch);
   await boss.work<FetchByIdsJob>(QUEUES.FETCH_BY_IDS, INTERACTIVE_POLLING, handleFetchByIds);
 };

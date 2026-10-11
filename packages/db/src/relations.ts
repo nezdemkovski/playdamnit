@@ -15,7 +15,6 @@ export const relations = defineRelations(
     userMetadata: schema.userMetadata,
     userGames: schema.userGames,
     userFollows: schema.userFollows,
-    igdbSearchLog: schema.igdbSearchLog,
     platform: schema.platform,
     genre: schema.genre,
     gameMode: schema.gameMode,
@@ -33,11 +32,9 @@ export const relations = defineRelations(
     externalGame: schema.externalGame,
     gameLocalization: schema.gameLocalization,
     gameTimeToBeat: schema.gameTimeToBeat,
-    gameToSimilarGame: schema.gameToSimilarGame,
     gameToPlatform: schema.gameToPlatform,
     gameToGenre: schema.gameToGenre,
     gameToGameMode: schema.gameToGameMode,
-    gameToType: schema.gameToType,
     gameToTheme: schema.gameToTheme,
     gameToCompany: schema.gameToCompany,
     gameToCollection: schema.gameToCollection,
@@ -68,15 +65,8 @@ export const relations = defineRelations(
         from: r.game.id.through(r.gameToGameMode.gameId),
         to: r.gameMode.id.through(r.gameToGameMode.gameModeId),
       }),
-      types: r.many.type({
-        from: r.game.id.through(r.gameToType.gameId),
-        to: r.type.id.through(r.gameToType.typeId),
-      }),
-      similarGames: r.many.game({
-        from: r.game.id.through(r.gameToSimilarGame.gameId),
-        to: r.game.id.through(r.gameToSimilarGame.similarGameId),
-        alias: "similar_games",
-      }),
+      // The game's single IGDB game type (column `game_type`), as a lookup row
+      gameTypeRef: r.one.type({ from: r.game.gameType, to: r.type.id }),
       themes: r.many.theme({
         from: r.game.id.through(r.gameToTheme.gameId),
         to: r.theme.id.through(r.gameToTheme.themeId),
@@ -85,8 +75,7 @@ export const relations = defineRelations(
         from: r.game.id.through(r.gameToCollection.gameId),
         to: r.collection.id.through(r.gameToCollection.collectionId),
       }),
-      // Junction rows, not companies: the roles (developer/publisher) live on the row.
-      // (`involvedCompanies` is still the legacy text column on game.)
+      // Junction rows, not companies: the roles (developer/publisher) live on the row
       companyRoles: r.many.gameToCompany({
         from: r.game.id,
         to: r.gameToCompany.gameId,

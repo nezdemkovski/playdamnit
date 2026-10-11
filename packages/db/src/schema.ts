@@ -253,12 +253,6 @@ export const userFollows = pgTable(
   ],
 );
 
-// Queries already searched in IGDB, so a miss in the local catalog doesn't hit IGDB on every request
-export const igdbSearchLog = pgTable("igdb_search_log", {
-  query: text("query").primaryKey(),
-  searchedAt: timestamp("searched_at").defaultNow().notNull(),
-});
-
 // ─── Game Catalog Tables ──────────────────────────────────────────────────────
 // Every catalog table is a mirror of IGDB: primary keys are IGDB ids, never generated locally.
 
@@ -360,14 +354,12 @@ export const game = pgTable(
     firstReleaseDate: integer("first_release_date"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     totalRating: real("total_rating"),
-    involvedCompanies: text("involved_companies"),
-    keywords: text("keywords"),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     isPopular: boolean("is_popular").notNull().default(false),
     totalRatingCount: integer("total_rating_count"),
     // IGDB date precision for first_release_date ("YYYYMMMMDD", "YYYYMMMM", "YYYY", ...)
     firstReleaseDatePrecision: text("first_release_date_precision"),
-    // IGDB game_type id (GameTypeEnum); single-valued, unlike the legacy game_to_type junction
+    // IGDB game_type id (GameTypeEnum), see the `type` table for names
     gameType: integer("game_type"),
     // DLC/expansions point at their parent; editions point at the game they are a version of
     parentGameId: integer("parent_game_id"),
@@ -455,24 +447,6 @@ export const website = pgTable(
   ],
 );
 
-export const gameToSimilarGame = pgTable(
-  "game_to_similar_game",
-  {
-    gameId: integer("game_id")
-      .notNull()
-      .references(() => game.id, { onDelete: "cascade" }),
-    similarGameId: integer("similar_game_id")
-      .notNull()
-      .references(() => game.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.gameId, table.similarGameId] }),
-    index("idx_g2sg_game_id").on(table.gameId),
-    index("idx_g2sg_similar_game_id").on(table.similarGameId),
-  ],
-);
-
 export const gameToPlatform = pgTable(
   "game_to_platform",
   {
@@ -521,23 +495,6 @@ export const gameToGameMode = pgTable(
     primaryKey({ columns: [table.gameId, table.gameModeId] }),
     index("idx_g2gm_game_id").on(table.gameId),
     index("idx_g2gm_game_mode_id").on(table.gameModeId),
-  ],
-);
-
-export const gameToType = pgTable(
-  "game_to_type",
-  {
-    gameId: integer("game_id")
-      .notNull()
-      .references(() => game.id, { onDelete: "cascade" }),
-    typeId: integer("type_id")
-      .notNull()
-      .references(() => type.id, { onDelete: "cascade" }),
-  },
-  (table) => [
-    primaryKey({ columns: [table.gameId, table.typeId] }),
-    index("idx_g2t_game_id").on(table.gameId),
-    index("idx_g2t_type_id").on(table.typeId),
   ],
 );
 

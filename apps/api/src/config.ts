@@ -10,9 +10,6 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 // Shared with the librarian, which registers the webhooks with IGDB
 const igdbWebhookSecret = process.env.IGDB_WEBHOOK_SECRET;
-// Ask the librarian to search IGDB when a first page is thin. Only until the catalog is a full
-// mirror; off by default.
-const searchIgdbFallback = process.env.SEARCH_IGDB_FALLBACK === "true";
 
 const config = {
   isDev,
@@ -23,7 +20,6 @@ const config = {
   resendApiKey,
   betterAuthSecret,
   igdbWebhookSecret,
-  searchIgdbFallback,
 };
 
 export const getConfig = () => {

@@ -16,7 +16,6 @@ import {
   gameToGenre,
   gameToPlatform,
   gameToTheme,
-  gameToType,
   genre,
   platform,
   screenshot,
@@ -188,17 +187,6 @@ export const writeGamesBatch = async (games: IGDBGameResponse[]): Promise<number
       gameToCompany,
       gameIds,
       derived.flatMap((d) => d.companyRoles as Row[]),
-    );
-    // Legacy single-type junction, still read by the API's `types` relation
-    await replaceJunction(
-      tx,
-      gameToType,
-      gameIds,
-      derived.flatMap((d) =>
-        d.game.gameType === null || d.game.gameType === undefined
-          ? []
-          : [{ gameId: d.game.id, typeId: d.game.gameType }],
-      ),
     );
   });
 

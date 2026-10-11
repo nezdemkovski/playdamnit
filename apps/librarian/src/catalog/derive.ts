@@ -131,9 +131,6 @@ export const deriveGame = (raw: IGDBGameResponse, now: Date): DerivedGame => {
       totalRating: raw.total_rating ?? null,
       totalRatingCount: raw.total_rating_count ?? null,
       isPopular: (raw.total_rating_count ?? 0) >= POPULAR_RATING_COUNT,
-      // Legacy text columns, still served by the API until the normalised tables replace them
-      involvedCompanies: companies.map((c) => c.name).join(", ") || null,
-      keywords: (raw.keywords ?? []).map((k) => k.name).join(", ") || null,
       gameType: raw.game_type?.id ?? null,
       parentGameId: raw.parent_game ?? null,
       versionParentId: raw.version_parent ?? null,

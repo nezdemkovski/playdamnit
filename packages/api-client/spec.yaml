@@ -202,12 +202,6 @@ components:
         totalRating:
           type: number
           nullable: true
-        involvedCompanies:
-          type: string
-          nullable: true
-        keywords:
-          type: string
-          nullable: true
         updatedAt:
           type: number
           nullable: true

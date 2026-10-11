@@ -1,4 +1,4 @@
-// Integration tests for the backend ⇄ librarian contract (pg-boss + LISTEN/NOTIFY),
+// Integration tests for search, the library and the backend ⇄ librarian contract (pg-boss + NOTIFY),
 // with an in-process fake librarian. Needs a disposable database:
 //   TEST_POSTGRES_URL=postgres://user:pass@localhost:5432/playdamnit_test bun test
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
@@ -57,22 +57,14 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
 
     pg = new Client(TEST_URL);
     await pg.connect();
-    await pg.query(`truncate "user", game, igdb_search_log cascade`);
+    await pg.query(`truncate "user", game cascade`);
 
     // Fake librarian: "IGDB" knows any id, and searches for "Zzyzx" find one game
     fakeLibrarian = new PgBoss(TEST_URL!);
     await fakeLibrarian.start();
-    for (const name of ["search-igdb", "fetch-by-ids"]) {
+    for (const name of ["fetch-by-ids"]) {
       await fakeLibrarian.createQueue(name);
     }
-    await fakeLibrarian.work<{ query: string; requestId: string }>(
-      "search-igdb",
-      { pollingIntervalSeconds: 0.5 },
-      async ([job]) => {
-        if (job.data.query.toLowerCase().includes("zzyzx")) await insertGame(900001, "Zzyzx Quest");
-        await notify(job.data.requestId, true);
-      },
-    );
     await fakeLibrarian.work<{ ids: number[]; requestId?: string }>(
       "fetch-by-ids",
       { pollingIntervalSeconds: 0.5 },
@@ -100,14 +92,12 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     await pg?.end();
   });
 
-  test("a catalog miss is filled through the librarian, then served locally", async () => {
-    const first = await mod.searchGames("Zzyzx");
-    expect(first.meta.source).toBe("igdb");
-    expect(first.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
-
-    const second = await mod.searchGames("Zzyzx");
-    expect(second.meta.source).toBe("database");
-    expect(second.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
+  test("search is served from the local catalog only", async () => {
+    expect((await mod.searchGames("Zzyzx")).results).toEqual([]);
+    await insertGame(900001, "Zzyzx Quest");
+    const found = await mod.searchGames("Zzyzx");
+    expect(found.meta.source).toBe("database");
+    expect(found.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
   }, 15_000);
 
   test("LIKE wildcards in the query are matched literally", async () => {
@@ -192,7 +182,6 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     await pg.query(
       `insert into type (id, type) values (1, 'DLC') on conflict (id) do update set type = excluded.type`,
     );
-    await pg.query(`insert into game_to_type (game_id, type_id) values (900002, 1)`);
 
     const usage = {
       inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },

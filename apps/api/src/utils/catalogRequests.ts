@@ -1,8 +1,8 @@
-import { inArray, sql } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, userGames } from "@playdamnit/db/schema";
-import { QUEUES, type FetchByIdsJob, type SearchIgdbJob } from "@playdamnit/db/jobs";
+import { game } from "@playdamnit/db/schema";
+import { QUEUES, type FetchByIdsJob } from "@playdamnit/db/jobs";
 import { getBoss } from "@/utils/pgBoss";
 import { waitForNotify, type NotifyResult } from "@/utils/pgNotify";
 
@@ -25,9 +25,6 @@ const enqueueAndWait = async <T extends object>(
 
   return notified;
 };
-
-export const requestIgdbSearch = (query: string, limit: number, timeoutMs?: number) =>
-  enqueueAndWait<Omit<SearchIgdbJob, "requestId">>(QUEUES.SEARCH_IGDB, { query, limit }, timeoutMs);
 
 /**
  * Make sure the given IGDB ids exist in the local catalog, fetching missing ones
@@ -62,22 +59,4 @@ export const ensureGamesInCatalog = async (
   for (const id of fetched) available.add(id);
 
   return { available, fetched };
-};
-
-/**
- * Library entries created before user_games.game_id had a foreign key may point at
- * games the catalog never fetched. Ask the librarian for them (fire and forget).
- */
-export const backfillMissingLibraryGames = async (): Promise<number> => {
-  const rows = await db
-    .selectDistinct({ gameId: userGames.gameId })
-    .from(userGames)
-    .where(sql`not exists (select 1 from ${game} where ${game.id} = ${userGames.gameId})`);
-
-  const ids = rows.map((row) => row.gameId);
-  if (ids.length === 0) return 0;
-
-  const boss = await getBoss();
-  await boss.send(QUEUES.FETCH_BY_IDS, { ids } satisfies FetchByIdsJob, JOB_OPTIONS);
-  return ids.length;
 };

@@ -12,7 +12,6 @@ const MAIN_GAME_TYPES = [0, 8, 9];
 // IGDB allows 4 requests/second and 8 open requests per client
 const MIN_REQUEST_INTERVAL_MS = 260;
 export const MAX_IDS_PER_REQUEST = 500;
-export const MAX_SEARCH_QUERY_LENGTH = 100;
 
 // The whole game document with every relation we store expanded one level (two for the
 // company and cover sub-objects). `*` covers the scalar fields and plain reference ids
@@ -95,7 +94,7 @@ export const igdbFetch = async (
       Authorization: await getIGDBToken(),
       ...(form && { "Content-Type": "application/x-www-form-urlencoded" }),
     },
-    body: form,
+    ...(form && { body: form }),
   });
 
   if (response.status === 401 && retryAuth) {
@@ -112,38 +111,6 @@ export const igdbFetch = async (
   }
 
   return response;
-};
-
-/**
- * Escape a user-supplied string for an Apicalypse string literal, so it can't
- * close the literal and inject clauses.
- */
-export const escapeApicalypseString = (value: string) =>
-  value
-    .slice(0, MAX_SEARCH_QUERY_LENGTH)
-    // oxlint-disable-next-line no-control-regex -- stripping control characters is the point
-    .replace(/[\u0000-\u001f]/g, " ")
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"');
-
-/**
- * Search IGDB. Throws on failure so pg-boss can retry the job.
- */
-export const searchIGDB = async (
-  query: string,
-  showOnlyGames: boolean = true,
-  limit: number = 50,
-): Promise<IGDBGameResponse[]> => {
-  logger.info("Searching IGDB for:", { query, showOnlyGames });
-
-  const safeLimit = Math.min(Math.max(1, Math.trunc(limit)), MAX_IDS_PER_REQUEST);
-  let body = `search "${escapeApicalypseString(query)}";${GAME_FIELDS}`;
-  if (showOnlyGames) {
-    body += ` where game_type = (${MAIN_GAME_TYPES.join(",")});`;
-  }
-  body += ` limit ${safeLimit};`;
-
-  return igdbQuery<IGDBGameResponse[]>("games", body);
 };
 
 /**

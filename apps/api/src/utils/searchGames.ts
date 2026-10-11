@@ -1,21 +1,11 @@
 import { and, desc, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, igdbSearchLog } from "@playdamnit/db/schema";
+import { game } from "@playdamnit/db/schema";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
-import { requestIgdbSearch } from "@/utils/catalogRequests";
-import { getConfig } from "@/config";
-import { createLogger } from "@/utils/enhancedLogger";
-
-const logger = createLogger("games-search");
 
 export const MAX_QUERY_LENGTH = 100;
 export const MAX_SEARCH_LIMIT = 50;
-
-// Fallback only (SEARCH_IGDB_FALLBACK=true, before the catalog is a full mirror): fewer substring
-// matches than this means the local catalog probably lacks the game
-const MIN_STRICT_MATCHES = 3;
-const IGDB_SEARCH_COOLDOWN = "7 days";
 
 export interface SearchOptions {
   limit?: number;
@@ -30,7 +20,7 @@ export interface SearchResult {
   results: ReturnType<typeof transformGameResponse>[];
   meta: {
     total: number;
-    source: "none" | "database" | "igdb";
+    source: "none" | "database";
     query_time_ms?: number;
   };
 }
@@ -75,31 +65,6 @@ const fetchGames = (
     with: GAME_CARD_WITH,
   });
 
-const countStrictMatches = async (queries: string[]) => {
-  const [row] = await db
-    .select({ value: sql<number>`count(*)::int` })
-    .from(game)
-    .where(or(...queries.map((q) => ilike(game.searchNames, `%${escapeLike(q)}%`))));
-  return row.value;
-};
-
-/**
- * Fallback mode only. Atomically claim the right to ask IGDB for this query; false when it was
- * asked recently (by this or another API instance).
- */
-const claimIgdbSearch = async (query: string) => {
-  const claimed = await db
-    .insert(igdbSearchLog)
-    .values({ query })
-    .onConflictDoUpdate({
-      target: igdbSearchLog.query,
-      set: { searchedAt: sql`now()` },
-      setWhere: sql`${igdbSearchLog.searchedAt} < now() - ${IGDB_SEARCH_COOLDOWN}::interval`,
-    })
-    .returning({ query: igdbSearchLog.query });
-  return claimed.length > 0;
-};
-
 export async function searchGames(
   searchQuery: string,
   opts: SearchOptions = {},
@@ -116,31 +81,10 @@ export async function searchGames(
   const cleanedQuery = query.replace(/[^\w\s]/gi, "").trim();
   const queries = cleanedQuery && cleanedQuery !== query ? [query, cleanedQuery] : [query];
 
-  // Until the catalog is a full mirror, a thin first page may still ask the librarian
-  let source: SearchResult["meta"]["source"] = "database";
-  if (
-    getConfig().searchIgdbFallback &&
-    offset === 0 &&
-    (await countStrictMatches(queries)) < MIN_STRICT_MATCHES &&
-    (await claimIgdbSearch(query.toLowerCase()))
-  ) {
-    source = "igdb";
-    logger.info(`Delegating IGDB search to librarian for "${query}"`);
-    try {
-      const outcome = await requestIgdbSearch(query, MAX_SEARCH_LIMIT);
-      if (outcome !== "notified") {
-        logger.warn(`IGDB search for "${query}" finished with: ${outcome}`);
-      }
-    } catch (error) {
-      // Serve whatever the local catalog has rather than failing the request
-      logger.exception(error, { operation: "requestIgdbSearch", query });
-    }
-  }
-
   const games = await fetchGames(query, buildWhere(queries, opts), limit, offset);
 
   return {
     results: games.map(transformGameResponse),
-    meta: { total: games.length, source, query_time_ms: Date.now() - startTime },
+    meta: { total: games.length, source: "database", query_time_ms: Date.now() - startTime },
   };
 }

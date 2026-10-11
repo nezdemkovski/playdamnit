@@ -6,7 +6,7 @@ export const GAME_CARD_WITH = {
   cover: true,
   platforms: true,
   genres: true,
-  types: true,
+  gameTypeRef: true,
 } as const;
 
 export const GAME_DETAIL_WITH = {
@@ -56,7 +56,7 @@ interface GameCard {
   cover?: Image | null;
   platforms?: unknown[];
   genres?: unknown[];
-  types?: unknown[];
+  gameTypeRef?: { id: number; type: string } | null;
   deletedAt?: Date | null;
   lastSyncedAt?: Date | null;
   igdbUpdatedAt?: Date | null;
@@ -125,7 +125,7 @@ export const transformGameResponse = <T extends GameCard>(game: T) => {
     cover,
     platforms,
     genres,
-    types,
+    gameTypeRef,
     screenshots,
     websites,
     similarGameIds,
@@ -142,7 +142,8 @@ export const transformGameResponse = <T extends GameCard>(game: T) => {
     deleted: !!deletedAt,
     platforms: platforms ?? [],
     genres: genres ?? [],
-    types: types ?? [],
+    // A game has one IGDB type; kept as a one-element array for the existing client shape
+    types: gameTypeRef ? [gameTypeRef] : [],
     cover: imageOut(cover, IgdbImageSize.COVER_BIG),
     ...(screenshots && {
       screenshots: screenshots.map((screenshot) =>

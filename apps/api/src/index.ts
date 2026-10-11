@@ -17,7 +17,6 @@ import { getConfig } from "@/config";
 import { getBoss, stopBoss } from "@/utils/pgBoss";
 import { initNotifyListener, closeNotifyListener } from "@/utils/pgNotify";
 import { AppError, TooManyRequestsError } from "@/utils/errors";
-import { backfillMissingLibraryGames } from "@/utils/catalogRequests";
 import { db, closeDb } from "@/db/postgres";
 import { sql } from "drizzle-orm";
 
@@ -76,13 +75,6 @@ const setupApp = async () => {
   logger.system("pg-boss started");
 
   await initNotifyListener();
-
-  backfillMissingLibraryGames()
-    .then(
-      (count) =>
-        count && logger.system(`Requested ${count} library games missing from the catalog`),
-    )
-    .catch((error) => logger.exception(error, { source: "backfill-library-games" }));
 
   const app = new Elysia({ name: "playdamnit-api" })
     .use(openapi())

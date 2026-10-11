@@ -82,7 +82,7 @@ Search and indexes live on columns only; `raw` is never indexed or filtered on.
 ## Phases
 
 Order matters: lookup ids first, one driver, then the full load, then webhooks, and only then remove
-the lazy path. Phases 1 to 6 landed on 2026-10-11.
+the lazy path. Phases 1 to 7 landed on 2026-10-11; the first full walk waits for the deployment.
 
 ### Phase 0. Preparation (parallel, non-blocking)
 
@@ -261,7 +261,7 @@ What landed (2026-10-11):
 - `spec.yaml` describes the new fields (`GameNamed`, `GameVideo`, `GameExternalGame`,
   `GameTimeToBeat`, `GameLocalizedCover`, `GameRelated`).
 
-### Phase 7. Cleanup
+### Phase 7. Cleanup — done
 
 - Migration drops `igdb_search_log`, `game_to_similar_game`, `game_to_type`, the
   `involved_companies`/`keywords` text columns, and runs `VALIDATE CONSTRAINT` on
@@ -274,14 +274,17 @@ What landed (2026-10-11):
 
 ## Rollout order
 
-1. Phases 1 + 2: one migration (the API applies it on start) and the librarian with
-   `sync-lookups`. Deploy the librarian right after; it refreshes lookup names within minutes.
-2. Phase 3 (driver swap) as its own deploy; no schema or behaviour change, easy to roll back.
-3. Librarian with the bulk sync, full load on production (at night: user imports share the IGDB
-   throttle for a few minutes). The lazy search keeps running meanwhile.
-4. API with the receiver + librarian with webhook registration. Check: `catalog_dirty` fills within
-   an hour on its own.
-5. Local-search flag on, code removal a day later, Phase 7.
+All code phases are in. What remains, in order:
+
+1. Helm charts and the homelab deployment (see below). The librarian comes up with
+   `WEBHOOK_BASE_URL` set, registers the webhooks, runs `sync-lookups`.
+2. Tune on the deployed stack (resources, CNPG parameters, probes) with the small catalog the
+   lazy `fetch-by-ids` path produces.
+3. **Only then** the first full walk: `bun run scripts/enqueue.ts sync-catalog full`, at night,
+   after dropping the two trigram indexes; recreate them and `VACUUM ANALYZE` when it is done.
+   The daily incremental sync takes over from there.
+4. Validate `user_games_game_id_game_id_fk` is already done by the Phase 7 migration (missing
+   games get stub rows that `refresh-stale-games` fills in).
 
 ## Risks
 

@@ -64,8 +64,6 @@ describe("deriveGame", () => {
       searchNames:
         "The Legend of Zelda: Breath of the Wild ゼルダの伝説 ブレス オブ ザ ワイルド BotW",
       similarGameIds: [1029, 119133],
-      involvedCompanies: "Nintendo, Nintendo, Monolith Soft",
-      keywords: "open world",
       igdbUpdatedAt: new Date(1_700_000_000 * 1000),
       lastSyncedAt: now,
       deletedAt: null,
@@ -126,7 +124,6 @@ describe("deriveGame", () => {
       alternativeNames: [],
       searchNames: "X",
       similarGameIds: [],
-      involvedCompanies: null,
     });
     expect(bare.cover).toBeNull();
     expect(bare.companyRoles).toEqual([]);
