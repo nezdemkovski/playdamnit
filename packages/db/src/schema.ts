@@ -207,6 +207,7 @@ export const userGames = pgTable(
     // Backloggd-style completion flag on top of the status (100%, platinum, ...)
     mastered: boolean("mastered").notNull().default(false),
     spoilers: boolean("spoilers").notNull().default(false),
+    allowReactions: boolean("allow_reactions").notNull().default(true),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -245,8 +246,12 @@ export const playthrough = pgTable(
   ],
 );
 
-export const reviewLike = pgTable(
-  "review_like",
+export const REACTION_EMOJIS = ["❤️", "🔥", "👏", "😂", "🤔", "😢", "💀", "👀"] as const;
+export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+
+// One emoji reaction per member per review; choosing another emoji replaces it
+export const reviewReaction = pgTable(
+  "review_reaction",
   {
     userId: text("user_id")
       .notNull()
@@ -254,11 +259,12 @@ export const reviewLike = pgTable(
     userGameId: uuid("user_game_id")
       .notNull()
       .references(() => userGames.id, { onDelete: "cascade" }),
+    emoji: text("emoji", { enum: REACTION_EMOJIS }).notNull().default("❤️"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.userGameId] }),
-    index("idx_review_like_user_game_id").on(table.userGameId),
+    index("idx_review_reaction_user_game_id").on(table.userGameId),
   ],
 );
 
@@ -318,7 +324,7 @@ export const gameListItem = pgTable(
   ],
 );
 
-export const NOTIFICATION_TYPES = ["follow", "review_like"] as const;
+export const NOTIFICATION_TYPES = ["follow", "review_reaction"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export const notification = pgTable(
@@ -335,6 +341,7 @@ export const notification = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     gameId: integer("game_id").references(() => game.id, { onDelete: "cascade" }),
+    emoji: text("emoji"),
     readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

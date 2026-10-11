@@ -18,7 +18,7 @@ import {
   useDeleteApiListsById,
   useDeleteApiListsByIdGamesByGameId,
   useDeleteApiMeAvatar,
-  useDeleteApiReviewsByIdLike,
+  useDeleteApiReviewsByIdReaction,
   useDeleteApiUserByUsernameFollow,
   useDeleteApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId,
   useGetApiMeNotifications,
@@ -29,7 +29,7 @@ import {
   usePostApiListsByIdGames,
   usePostApiMeAvatar,
   usePostApiMeNotificationsRead,
-  usePostApiReviewsByIdLike,
+  usePutApiReviewsByIdReaction,
   usePostApiUserByUsernameFollow,
   usePostApiUserByUsernameGamesByIdPlaythroughs,
   usePostApiUserByUsernameLists,
@@ -37,6 +37,7 @@ import {
   type GameListInput,
   type PlaythroughInput,
   type ProfileUpdateRequest,
+  type PutApiReviewsByIdReactionBodyEmoji,
 } from "@playdamnit/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -96,22 +97,30 @@ export const useGameLike = (gameId: number) => {
   };
 };
 
-/** Like / unlike a review; every list that may show it is refreshed */
-export const useReviewLike = () => {
+/** Set, change or clear the viewer's emoji on a review; every list that may show it is refreshed */
+export const useReviewReaction = () => {
   const queryClient = useQueryClient();
   const refresh = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdReviewsQueryKey(gameId) });
     queryClient.invalidateQueries({ queryKey: getGetApiReviewsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: ["/api/reviews"] });
     queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).endsWith("/reviews") });
   };
-  const like = usePostApiReviewsByIdLike({ mutation: { onError: onError("Could not like") } });
-  const unlike = useDeleteApiReviewsByIdLike({
-    mutation: { onError: onError("Could not unlike") },
+  const react = usePutApiReviewsByIdReaction({ mutation: { onError: onError("Could not react") } });
+  const clear = useDeleteApiReviewsByIdReaction({
+    mutation: { onError: onError("Could not remove the reaction") },
   });
   return {
-    toggle: (reviewId: string, gameId: number, liked: boolean) =>
-      (liked ? unlike : like).mutate({ id: reviewId }, { onSuccess: () => refresh(gameId) }),
+    isPending: react.isPending || clear.isPending,
+    /** Picking the emoji you already have removes it */
+    toggle: (
+      reviewId: string,
+      gameId: number,
+      emoji: PutApiReviewsByIdReactionBodyEmoji,
+      current: string | null,
+    ) =>
+      current === emoji
+        ? clear.mutate({ id: reviewId }, { onSuccess: () => refresh(gameId) })
+        : react.mutate({ id: reviewId, data: { emoji } }, { onSuccess: () => refresh(gameId) }),
   };
 };
 

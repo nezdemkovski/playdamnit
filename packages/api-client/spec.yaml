@@ -573,10 +573,28 @@ components:
           type: string
         updatedAt:
           type: string
+        allowReactions:
+          type: boolean
         likes:
           type: number
-        liked:
-          type: boolean
+          description: Total reactions
+        reactions:
+          type: array
+          description: Per-emoji counts, most used first
+          items:
+            type: object
+            properties:
+              emoji:
+                type: string
+              count:
+                type: number
+            required:
+              - emoji
+              - count
+        myReaction:
+          type: string
+          nullable: true
+          description: The viewer's own emoji on this review
         game:
           description: Present on feeds (not on a game's own reviews)
           allOf:
@@ -594,8 +612,10 @@ components:
         - endedAt
         - addedAt
         - updatedAt
+        - allowReactions
         - likes
-        - liked
+        - reactions
+        - myReaction
 
     ReviewListResponse:
       type: object
@@ -617,6 +637,15 @@ components:
           type: boolean
       required:
         - liked
+
+    ReactionResponse:
+      type: object
+      properties:
+        reaction:
+          type: string
+          nullable: true
+      required:
+        - reaction
 
     FollowResponse:
       type: object
@@ -703,7 +732,7 @@ components:
           type: string
         type:
           type: string
-          enum: [follow, review_like]
+          enum: [follow, review_reaction]
         actor:
           $ref: "#/components/schemas/PublicUser"
         game:
@@ -723,6 +752,9 @@ components:
             - name
             - slug
             - cover
+        emoji:
+          type: string
+          nullable: true
         readAt:
           type: string
           nullable: true
@@ -733,6 +765,7 @@ components:
         - type
         - actor
         - game
+        - emoji
         - readAt
         - createdAt
 
@@ -1142,6 +1175,8 @@ components:
           type: boolean
         spoilers:
           type: boolean
+        allowReactions:
+          type: boolean
         updatedAt:
           type: string
       required:
@@ -1152,6 +1187,7 @@ components:
         - addedAt
         - mastered
         - spoilers
+        - allowReactions
         - updatedAt
 
     UserGamePatchResponse:
@@ -1347,6 +1383,8 @@ components:
           type: boolean
         spoilers:
           type: boolean
+        allowReactions:
+          type: boolean
       required:
         - gameId
         - status
@@ -1375,6 +1413,8 @@ components:
         mastered:
           type: boolean
         spoilers:
+          type: boolean
+        allowReactions:
           type: boolean
       minProperties: 1
 
@@ -2995,12 +3035,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReviewListResponse"
 
-  /api/reviews/{id}/like:
-    post:
-      operationId: postApiReviewsByIdLike
+  /api/reviews/{id}/reaction:
+    put:
+      operationId: putApiReviewsByIdReaction
       tags:
         - Games
-      summary: Like a review
+      summary: React to a review with an emoji (replaces a previous reaction)
       security:
         - cookieAuth: []
       parameters:
@@ -3009,18 +3049,36 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emoji:
+                  type: string
+                  enum: ["❤️", "🔥", "👏", "😂", "🤔", "😢", "💀", "👀"]
+              required:
+                - emoji
       responses:
         "200":
-          description: Liked
+          description: Reacted
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LikeResponse"
+                $ref: "#/components/schemas/ReactionResponse"
+        "403":
+          description: The author turned reactions off
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
     delete:
-      operationId: deleteApiReviewsByIdLike
+      operationId: deleteApiReviewsByIdReaction
       tags:
         - Games
-      summary: Remove the like
+      summary: Remove the reaction
       security:
         - cookieAuth: []
       parameters:
@@ -3031,11 +3089,11 @@ paths:
             type: string
       responses:
         "200":
-          description: Not liked
+          description: Removed
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LikeResponse"
+                $ref: "#/components/schemas/ReactionResponse"
 
   /api/lists/{id}:
     get:

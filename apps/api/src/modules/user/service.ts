@@ -281,6 +281,7 @@ export abstract class UserService {
                 .cover,
             }
           : null,
+        emoji: row.emoji,
         readAt: row.readAt,
         createdAt: row.createdAt,
       })),

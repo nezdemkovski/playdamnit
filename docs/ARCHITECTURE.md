@@ -116,7 +116,7 @@ them with `deleted: true` and hides them from search and catalog lists.
 
 `user` (+ `bio`, `links`, `list_public`), `session`, `account`, `verification`, `passkey`,
 `apikey`, `user_games` (unique `(user_id, game_id)`, FK to `game` and `platform`; `mastered`,
-`spoilers`, `updated_at`), `playthrough` (replays with dates/hours, FK to the entry), `review_like`,
+`spoilers`, `allow_reactions`, `updated_at`), `playthrough` (replays with dates/hours, FK to the entry), `review_reaction` (one emoji per member per review),
 `game_like`, `game_list` + `game_list_item` (ordered custom lists), `user_follows`,
 `notification` (follow, review_like), `user_avatar` (uploaded picture as bytea, served at
 `GET /api/user/:username/avatar`). These are the only tables that need backups; the catalog is

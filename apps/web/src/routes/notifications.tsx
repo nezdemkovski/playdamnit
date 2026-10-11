@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { BellIcon, HeartIcon, UserPlusIcon } from "lucide-react";
+import { BellIcon, UserPlusIcon } from "lucide-react";
 import { cn } from "cn";
 import { useEffect } from "react";
 
@@ -63,7 +63,7 @@ function NotificationsPage() {
                   <span className="text-white/80">started following you</span>
                 ) : (
                   <span className="text-white/80">
-                    liked your review of{" "}
+                    reacted {n.emoji ?? "❤️"} to your review of{" "}
                     {n.game ? (
                       <Link
                         to="/games/$id"
@@ -91,7 +91,7 @@ function NotificationsPage() {
                   />
                 </Link>
               ) : (
-                <HeartIcon className="size-5 text-destructive" />
+                <span className="text-xl">{n.emoji ?? "❤️"}</span>
               )}
             </div>
           );

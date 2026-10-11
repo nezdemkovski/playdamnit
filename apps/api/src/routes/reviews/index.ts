@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
 import { REVIEW_SORTS, ReviewService } from "@/modules/review/service";
+import { REACTION_EMOJIS } from "@playdamnit/db/schema";
 
 const reviewParams = t.Object({ id: t.String({ format: "uuid" }) });
 
@@ -29,9 +30,15 @@ export const reviewRoutes = new Elysia()
         withGame: true,
       }),
   )
-  .post("/reviews/:id/like", { auth: true, params: reviewParams }, ({ params, user }) =>
-    ReviewService.like(user.id, params.id),
+  .put(
+    "/reviews/:id/reaction",
+    {
+      auth: true,
+      params: reviewParams,
+      body: t.Object({ emoji: t.Union(REACTION_EMOJIS.map((e) => t.Literal(e))) }),
+    },
+    ({ params, user, body }) => ReviewService.react(user.id, params.id, body.emoji),
   )
-  .delete("/reviews/:id/like", { auth: true, params: reviewParams }, ({ params, user }) =>
-    ReviewService.unlike(user.id, params.id),
+  .delete("/reviews/:id/reaction", { auth: true, params: reviewParams }, ({ params, user }) =>
+    ReviewService.unreact(user.id, params.id),
   );

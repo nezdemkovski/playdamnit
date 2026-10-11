@@ -1,9 +1,14 @@
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { reviewLike, userGames } from "@playdamnit/db/schema";
+import {
+  REACTION_EMOJIS,
+  reviewReaction,
+  userGames,
+  type ReactionEmoji,
+} from "@playdamnit/db/schema";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
-import { NotFoundError } from "@/utils/errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { notify, PUBLIC_USER_COLUMNS, visibleToViewer } from "@/utils/social";
 
 export const REVIEW_SORTS = ["latest", "top"] as const;
@@ -22,8 +27,14 @@ interface ListOptions {
   withGame?: boolean;
 }
 
-const likesCount = (userGameId: unknown) =>
-  sql<number>`(select count(*) from ${reviewLike} where ${reviewLike.userGameId} = ${userGameId})`;
+const reactionCount = (userGameId: unknown) =>
+  sql<number>`(select count(*) from ${reviewReaction} where ${reviewReaction.userGameId} = ${userGameId})`;
+
+// `[{ emoji, count }]` in palette order, as JSON built by Postgres
+const reactionSummary = (userGameId: unknown) =>
+  sql<
+    { emoji: string; count: number }[]
+  >`(select coalesce(json_agg(json_build_object('emoji', r.emoji, 'count', r.n) order by r.n desc, r.emoji), '[]'::json) from (select ${reviewReaction.emoji} as emoji, count(*)::int as n from ${reviewReaction} where ${reviewReaction.userGameId} = ${userGameId} group by ${reviewReaction.emoji}) r)`;
 
 /**
  * Reviews are library entries with text. They are public when the author's list is public,
@@ -49,17 +60,20 @@ export abstract class ReviewService {
       },
       orderBy: (t) =>
         sort === "top"
-          ? [sql`${likesCount(t.id)} desc`, sql`${t.updatedAt} desc`]
+          ? [sql`${reactionCount(t.id)} desc`, sql`${t.updatedAt} desc`]
           : [sql`${t.updatedAt} desc`],
       limit: opts.limit,
       offset: opts.offset,
       extras: {
-        likes: (t) => likesCount(t.id).as("likes"),
-        liked: (t) =>
+        likes: (t) => reactionCount(t.id).as("likes"),
+        reactions: (t) => reactionSummary(t.id).as("reactions"),
+        myReaction: (t) =>
           (viewerId
-            ? sql<boolean>`exists (select 1 from ${reviewLike} where ${reviewLike.userGameId} = ${t.id} and ${reviewLike.userId} = ${viewerId})`
-            : sql<boolean>`false`
-          ).as("liked"),
+            ? sql<
+                string | null
+              >`(select ${reviewReaction.emoji} from ${reviewReaction} where ${reviewReaction.userGameId} = ${t.id} and ${reviewReaction.userId} = ${viewerId})`
+            : sql<string | null>`null`
+          ).as("my_reaction"),
       },
       with: {
         user: { columns: PUBLIC_USER_COLUMNS },
@@ -91,39 +105,53 @@ export abstract class ReviewService {
         status: row.status,
         mastered: row.mastered,
         spoilers: row.spoilers,
+        allowReactions: row.allowReactions,
         review: row.review!,
         platformId: row.platformId,
         endedAt: row.endedAt,
         addedAt: row.addedAt,
         updatedAt: row.updatedAt,
         likes: Number(row.likes),
-        liked: !!row.liked,
+        reactions: (row.reactions ?? []).map((r) => ({ emoji: r.emoji, count: Number(r.count) })),
+        myReaction: row.myReaction ?? null,
         ...("game" in row && row.game ? { game: transformGameResponse(row.game) } : {}),
       })),
       meta: { total, limit: opts.limit, offset: opts.offset },
     };
   }
 
-  static async like(userId: string, userGameId: string) {
+  /** Set (or change) the viewer's reaction; the author is told about it */
+  static async react(userId: string, userGameId: string, emoji: string) {
+    if (!(REACTION_EMOJIS as readonly string[]).includes(emoji)) {
+      throw new BadRequestError("Unknown reaction");
+    }
     const entry = await db.query.userGames.findFirst({
       where: { id: userGameId, review: { isNotNull: true } },
-      columns: { userId: true, gameId: true },
+      columns: { userId: true, gameId: true, allowReactions: true },
     });
     if (!entry) throw new NotFoundError("Review not found");
-    await db.insert(reviewLike).values({ userId, userGameId }).onConflictDoNothing();
+    if (!entry.allowReactions) throw new ForbiddenError("The author turned reactions off");
+    await db
+      .insert(reviewReaction)
+      .values({ userId, userGameId, emoji: emoji as ReactionEmoji })
+      .onConflictDoUpdate({
+        target: [reviewReaction.userId, reviewReaction.userGameId],
+        set: { emoji: emoji as ReactionEmoji, createdAt: new Date() },
+      });
     await notify({
       userId: entry.userId,
       actorId: userId,
-      type: "review_like",
+      type: "review_reaction",
       gameId: entry.gameId,
+      emoji,
     });
-    return { liked: true };
+    return { reaction: emoji };
   }
 
-  static async unlike(userId: string, userGameId: string) {
+  static async unreact(userId: string, userGameId: string) {
     await db
-      .delete(reviewLike)
-      .where(and(eq(reviewLike.userId, userId), eq(reviewLike.userGameId, userGameId)));
-    return { liked: false };
+      .delete(reviewReaction)
+      .where(and(eq(reviewReaction.userId, userId), eq(reviewReaction.userGameId, userGameId)));
+    return { reaction: null };
   }
 }

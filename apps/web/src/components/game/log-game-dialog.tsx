@@ -72,6 +72,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const [review, setReview] = useState("");
   const [mastered, setMastered] = useState(false);
   const [spoilers, setSpoilers] = useState(false);
+  const [allowReactions, setAllowReactions] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Reset the form from the entry every time the dialog opens
@@ -84,6 +85,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     setReview(entry?.review ?? "");
     setMastered(entry?.mastered ?? false);
     setSpoilers(entry?.spoilers ?? false);
+    setAllowReactions(entry?.allowReactions ?? true);
     setDetailsOpen(!!entry?.endedAt || !!entry?.mastered);
   }, [open, entry, game.platforms]);
 
@@ -102,7 +104,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     if (!platform) return;
     const trimmed = review.trim();
     const ended = showEnded && endedAt ? endedAt : null;
-    const common = { status, rating, platformId: platform, mastered, spoilers };
+    const common = { status, rating, platformId: platform, mastered, spoilers, allowReactions };
     try {
       if (entry) {
         // null clears a previously set date
@@ -268,6 +270,14 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
             <div className="flex items-center gap-3">
               <Switch id="spoilers" checked={spoilers} onCheckedChange={setSpoilers} />
               <Label htmlFor="spoilers">Contains spoilers</Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch
+                id="allow-reactions"
+                checked={allowReactions}
+                onCheckedChange={setAllowReactions}
+              />
+              <Label htmlFor="allow-reactions">Allow reactions on this review</Label>
             </div>
           </div>
 

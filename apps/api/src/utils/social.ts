@@ -48,6 +48,7 @@ export const notify = async (input: {
   actorId: string;
   type: NotificationType;
   gameId?: number | null;
+  emoji?: string | null;
 }) => {
   if (input.userId === input.actorId) return;
   // Don't stack the same notification (a follow/unfollow/follow dance, repeated likes)
@@ -66,5 +67,6 @@ export const notify = async (input: {
     actorId: input.actorId,
     type: input.type,
     gameId: input.gameId ?? null,
+    emoji: input.emoji ?? null,
   });
 };

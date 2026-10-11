@@ -90,7 +90,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect((await GameService.findById(GAME, "alice")).viewer.liked).toBe(false);
   });
 
-  test("reviews list with likes, sort by top and notify the author", async () => {
+  test("reviews carry emoji reactions, sort by top and notify the author", async () => {
     const before = await ReviewService.list({
       gameId: GAME,
       viewerId: "bob",
@@ -103,11 +103,14 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(review.spoilers).toBe(true);
     expect(review.mastered).toBe(true);
     expect(review.likes).toBe(0);
-    expect(review.liked).toBe(false);
+    expect(review.reactions).toEqual([]);
+    expect(review.myReaction).toBeNull();
 
-    await ReviewService.like("bob", review.id);
-    await ReviewService.like("bob", review.id); // idempotent
-    await ReviewService.like("alice", review.id); // liking your own review makes no notification
+    await ReviewService.react("bob", review.id, "🔥");
+    await ReviewService.react("bob", review.id, "👏"); // a second emoji replaces the first
+    await ReviewService.react("alice", review.id, "👏"); // reacting to yourself makes no notification
+    await ReviewService.react("carol", review.id, "❤️");
+    await expect(ReviewService.react("carol", review.id, "🦄")).rejects.toThrow(/Unknown reaction/);
     const after = await ReviewService.list({
       gameId: GAME,
       viewerId: "bob",
@@ -115,22 +118,34 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       limit: 10,
       offset: 0,
     });
-    expect(after.results[0].likes).toBe(2);
-    expect(after.results[0].liked).toBe(true);
+    expect(after.results[0].likes).toBe(3);
+    expect(after.results[0].reactions).toEqual([
+      { emoji: "👏", count: 2 },
+      { emoji: "❤️", count: 1 },
+    ]);
+    expect(after.results[0].myReaction).toBe("👏");
 
     const notifications = await UserService.notifications("alice", { limit: 10 });
-    expect(notifications.unread).toBe(1);
-    expect(notifications.results[0]).toMatchObject({
-      type: "review_like",
-      actor: { username: "bob" },
-    });
+    expect(notifications.unread).toBe(2);
+    expect(notifications.results.map((n) => [n.type, n.actor.username, n.emoji]).sort()).toEqual([
+      ["review_reaction", "bob", "👏"],
+      ["review_reaction", "carol", "❤️"],
+    ]);
     expect(notifications.results[0].game?.id).toBe(GAME);
 
-    await ReviewService.unlike("bob", review.id);
+    await ReviewService.unreact("bob", review.id);
+    await ReviewService.unreact("carol", review.id);
     expect(
       (await ReviewService.list({ gameId: GAME, viewerId: null, limit: 10, offset: 0 })).results[0]
         .likes,
     ).toBe(1);
+
+    // The author can turn reactions off
+    await UserGameService.updateUserGame("alice", GAME, { allowReactions: false });
+    await expect(ReviewService.react("bob", review.id, "🔥")).rejects.toThrow(
+      /turned reactions off/,
+    );
+    await UserGameService.updateUserGame("alice", GAME, { allowReactions: true });
   });
 
   test("follow, connections, community search, feed and the follow notification", async () => {

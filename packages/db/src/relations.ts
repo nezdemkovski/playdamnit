@@ -15,7 +15,7 @@ export const relations = defineRelations(
     userGames: schema.userGames,
     userFollows: schema.userFollows,
     playthrough: schema.playthrough,
-    reviewLike: schema.reviewLike,
+    reviewReaction: schema.reviewReaction,
     gameLike: schema.gameLike,
     gameList: schema.gameList,
     gameListItem: schema.gameListItem,
@@ -59,7 +59,7 @@ export const relations = defineRelations(
         from: [r.userGames.userId, r.userGames.gameId],
         to: [r.playthrough.userId, r.playthrough.gameId],
       }),
-      likes: r.many.reviewLike({ from: r.userGames.id, to: r.reviewLike.userGameId }),
+      reactions: r.many.reviewReaction({ from: r.userGames.id, to: r.reviewReaction.userGameId }),
     },
     playthrough: {
       game: r.one.game({ from: r.playthrough.gameId, to: r.game.id, optional: false }),

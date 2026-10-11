@@ -26,6 +26,7 @@ interface UserGameInput {
   endedAt?: string | null;
   mastered?: boolean;
   spoilers?: boolean;
+  allowReactions?: boolean;
 }
 
 export interface PlaythroughInput {
@@ -143,6 +144,7 @@ export abstract class UserGameService {
             source: entry.source,
             mastered: entry.mastered,
             spoilers: entry.spoilers,
+            allowReactions: entry.allowReactions,
             updatedAt: entry.updatedAt,
           },
         })),
@@ -172,6 +174,7 @@ export abstract class UserGameService {
           review: input.review ?? null,
           mastered: input.mastered ?? false,
           spoilers: input.spoilers ?? false,
+          allowReactions: input.allowReactions ?? true,
           endedAt: parseEndedAt(input.endedAt) ?? null,
           platformId: input.platformId ?? null,
           source: "manual",
@@ -215,6 +218,7 @@ export abstract class UserGameService {
         ...(input.review !== undefined && { review: input.review }),
         ...(input.mastered !== undefined && { mastered: input.mastered }),
         ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
+        ...(input.allowReactions !== undefined && { allowReactions: input.allowReactions }),
         ...(input.platformId !== undefined && { platformId: input.platformId }),
         ...(endedAt !== undefined && { endedAt }),
       })

@@ -1,6 +1,6 @@
-import type { Review } from "@playdamnit/api-client";
+import { PutApiReviewsByIdReactionBodyEmoji, type Review } from "@playdamnit/api-client";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { EyeOffIcon, HeartIcon, TrophyIcon } from "lucide-react";
+import { EyeOffIcon, SmilePlusIcon, TrophyIcon } from "lucide-react";
 import { cn } from "cn";
 import { useState } from "react";
 
@@ -8,9 +8,13 @@ import { GameCover } from "@/components/game/game-cover";
 import { RatingValue, StatusPill } from "@/components/game/rating";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
-import { useReviewLike } from "@/hooks/social";
+import { useReviewReaction } from "@/hooks/social";
+
+const EMOJIS = Object.values(PutApiReviewsByIdReactionBodyEmoji);
+type Emoji = (typeof EMOJIS)[number];
 import { relativeDate, releaseYear, shortDate } from "@/lib/format";
 
 interface ReviewCardProps {
@@ -23,14 +27,16 @@ interface ReviewCardProps {
 export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
   const { user } = useSession();
   const navigate = useNavigate();
-  const { toggle } = useReviewLike();
+  const { toggle, isPending } = useReviewReaction();
   const [revealed, setRevealed] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const hidden = review.spoilers && !revealed;
   const username = review.user.username ?? "";
 
-  const onLike = () => {
+  const react = (emoji: Emoji) => {
+    setPickerOpen(false);
     if (!user) return navigate({ to: "/auth" });
-    toggle(review.id, review.gameId, review.liked);
+    toggle(review.id, review.gameId, emoji, review.myReaction);
   };
 
   return (
@@ -108,20 +114,65 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
             )}
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={onLike}
-              aria-pressed={review.liked}
-              className={cn(
-                "gap-1 text-dimmed",
-                review.liked && "text-destructive hover:text-destructive",
-              )}
-            >
-              <HeartIcon className={cn("size-3.5", review.liked && "fill-current")} />
-              {review.likes} {review.likes === 1 ? "like" : "likes"}
-            </Button>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {review.reactions.map((r) => (
+              <button
+                key={r.emoji}
+                type="button"
+                disabled={isPending || !review.allowReactions}
+                onClick={() => react(r.emoji as Emoji)}
+                aria-pressed={review.myReaction === r.emoji}
+                className={cn(
+                  "flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition-colors",
+                  review.myReaction === r.emoji
+                    ? "border-status-want_to_play/60 bg-status-want_to_play/15"
+                    : "border-white/10 bg-white/[0.03] hover:bg-white/10",
+                )}
+              >
+                <span>{r.emoji}</span>
+                <span className="text-xs font-semibold tabular-nums text-dimmed">{r.count}</span>
+              </button>
+            ))}
+            {review.allowReactions ? (
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label="Add a reaction"
+                    className="rounded-full text-dimmed"
+                  >
+                    <SmilePlusIcon />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="start"
+                  className="w-auto rounded-full border-white/10 bg-popover p-1.5"
+                >
+                  <div className="flex gap-0.5">
+                    {EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => react(emoji)}
+                        aria-label={emoji}
+                        className={cn(
+                          "size-8 rounded-full text-lg leading-none transition-transform hover:scale-125 hover:bg-white/10",
+                          review.myReaction === emoji && "bg-white/15",
+                        )}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              review.reactions.length === 0 && (
+                <span className="text-xs text-dimmed">Reactions are off</span>
+              )
+            )}
           </div>
         </div>
       </div>

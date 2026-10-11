@@ -24,6 +24,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
       endedAt: t.Optional(t.Nullable(endedAtSchema)),
       mastered: t.Optional(t.Boolean()),
       spoilers: t.Optional(t.Boolean()),
+      allowReactions: t.Optional(t.Boolean()),
     }),
   },
   ({ params, user, body }) => {
