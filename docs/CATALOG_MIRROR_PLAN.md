@@ -199,9 +199,10 @@ What landed (2026-10-11):
   (`games` → `id`; `covers`, `screenshots`, `videos`, `external_games`, `involved_companies`,
   `game_localizations` → `game`) and does one `insert into catalog_dirty … on conflict do nothing`,
   then returns 200. `games`/`delete` writes reason `deleted`. It never touches catalog tables.
-- Registration in the librarian on startup: `GET /v4/webhooks`, create the missing ones for `games`
-  and `covers` × `create|update|delete` (other entities are optional and can be added later),
-  re-create any with `active: false` (IGDB deactivates webhooks whose URL stopped answering).
+- Registration in the librarian on startup: `GET /v4/webhooks`, create the missing ones for
+  `games`, `covers`, `screenshots`, `videos`, `websites`, `external_games`, `game_localizations`
+  and `involved_companies` × `create|update|delete` (24 hooks since 0.1.2), re-create any with
+  `active: false` (IGDB deactivates webhooks whose URL stopped answering).
 - Drain: cron queue `drain-dirty`, every minute. Claims up to 500 ids with
   `delete … returning` + `for update skip locked`, does one `fetch-by-ids`, upserts through
   `writeGamesBatch`. Ids IGDB did not return get `deleted_at`. A thousand events become two IGDB

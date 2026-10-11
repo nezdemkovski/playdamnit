@@ -3,10 +3,19 @@ import { createLogger } from "../enhancedLogger";
 
 const logger = createLogger("igdb-webhooks");
 
-// Entities whose changes should re-fetch a game. Covers are separate because a new cover
-// doesn't bump the game's updated_at. Other child entities can be added without code changes
-// on the API side (its receiver accepts them already).
-const WEBHOOK_ENTITIES = ["games", "covers"] as const;
+// Entities whose changes re-fetch a game: the game itself and every child row we store, since
+// a new cover, screenshot or store link doesn't bump the game's updated_at. The API receiver
+// resolves each of them to a game id (see apps/api/src/modules/webhook/service.ts).
+const WEBHOOK_ENTITIES = [
+  "games",
+  "covers",
+  "screenshots",
+  "videos",
+  "websites",
+  "external_games",
+  "game_localizations",
+  "involved_companies",
+] as const;
 const WEBHOOK_METHODS = ["create", "update", "delete"] as const;
 
 interface IGDBWebhook {
