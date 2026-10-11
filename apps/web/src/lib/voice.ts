@@ -1,7 +1,6 @@
 import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
 
 import { t } from "@/i18n";
-import { Grade, PlayerTitle } from "@/lib/enums";
 import { LibraryAction } from "@/lib/enums";
 
 /**
@@ -85,31 +84,6 @@ export const verdictLine = (s: LibrarySummary): string => {
   if (s.completion >= 50) return t("voice.verdict.halfDone");
   if (s.finished === 0) return t("voice.verdict.none");
   return t("voice.verdict.default");
-};
-
-/** What kind of player the library says this is, for the chip next to the name */
-export const playerTitle = (
-  s: LibrarySummary,
-  typical: Grade | null,
-  reviews: number,
-): { title: string; why: string } | null => {
-  if (s.total < 3) return null;
-  const pick = (key: PlayerTitle) => ({
-    title: t(`voice.title.${key}.title`),
-    why: t(`voice.title.${key}.why`, {
-      total: s.total,
-      finished: s.finished,
-      completion: Math.round(s.completion),
-      reviews,
-    }),
-  });
-  if (s.finished === 0 && s.total >= 5) return pick(PlayerTitle.WindowShopper);
-  if (s.total >= 50 && s.completion < 20) return pick(PlayerTitle.Hoarder);
-  if (s.finished >= 5 && s.completion >= 60) return pick(PlayerTitle.Closer);
-  if (typical === Grade.D || typical === Grade.F) return pick(PlayerTitle.HardToPlease);
-  if (typical === Grade.S) return pick(PlayerTitle.EasyGrader);
-  if (reviews >= 10) return pick(PlayerTitle.Critic);
-  return pick(PlayerTitle.WorkInProgress);
 };
 
 /** The owner's line under the profile's finished bar: when they last finished anything */

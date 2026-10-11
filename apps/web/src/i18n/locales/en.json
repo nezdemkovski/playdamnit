@@ -102,36 +102,6 @@
       "recent_other": "Last finish {{count}} days ago. Acceptable.",
       "old_one": "Last finish {{count}} day ago. We remember.",
       "old_other": "Last finish {{count}} days ago. We remember."
-    },
-    "title": {
-      "windowShopper": {
-        "title": "Window shopper",
-        "why": "{{total}} games added, none finished."
-      },
-      "hoarder": {
-        "title": "Hoarder",
-        "why": "{{total}} games, {{completion}}% finished. The shelf is the hobby."
-      },
-      "closer": {
-        "title": "Closer",
-        "why": "{{completion}}% of what they start, they finish. Rare."
-      },
-      "hardToPlease": {
-        "title": "Hard to please",
-        "why": "A typical grade of D or worse. Don't take it personally."
-      },
-      "easyGrader": {
-        "title": "Easy grader",
-        "why": "Hands out S like it's free. Because it is."
-      },
-      "critic": {
-        "title": "Critic",
-        "why": "{{reviews}} reviews written. Has opinions, shares them."
-      },
-      "workInProgress": {
-        "title": "Work in progress",
-        "why": "{{finished}} of {{total}} finished. The verdict is still out."
-      }
     }
   },
   "layout": {

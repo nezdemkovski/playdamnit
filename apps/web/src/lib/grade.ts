@@ -129,12 +129,3 @@ export const gradeCounts = (ratings: (number | null | undefined)[]): number[] =>
   }
   return counts;
 };
-
-/**
- * The typical grade of a set of ratings: the median, not the mean. It is always a grade the
- * person actually gave, and a mix of S and F does not average out to a C nobody got.
- */
-export const typicalGrade = (ratings: (number | null | undefined)[]): Grade | null => {
-  const graded = ratings.filter((r): r is number => !!r).sort((a, b) => b - a);
-  return graded.length ? gradeOf(graded[Math.floor((graded.length - 1) / 2)]) : null;
-};
