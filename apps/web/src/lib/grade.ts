@@ -103,6 +103,10 @@ export const gradeOf = (rating: number | null | undefined): Grade | null => {
   return (GRADES.find((g) => rating >= g.min) ?? GRADES[GRADES.length - 1]).value;
 };
 
+/** The grade of a 0–100 score (everyone else's, from the catalog) */
+export const gradeOfPercent = (score: number | null | undefined): Grade | null =>
+  gradeOf(score ? score / 10 : null);
+
 /** The rating the API stores for a grade (0 clears it) */
 export const ratingOf = (grade: Grade | null): number => (grade ? gradeMeta(grade).rating : 0);
 

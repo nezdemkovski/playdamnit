@@ -38,7 +38,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
-import { MEMBERS_VERDICT_MIN, gradeOf } from "@/lib/grade";
+import { MEMBERS_VERDICT_MIN, gradeOf, gradeOfPercent } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -98,7 +98,7 @@ function GameDetail({ game }: { game: Game }) {
   const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
   const date = releaseDate(game.firstReleaseDate, game.firstReleaseDatePrecision);
-  const worldScore = game.totalRating ? Math.round(game.totalRating) : null;
+  const worldGrade = gradeOfPercent(game.totalRating);
   const stores = (game.externalGames ?? []).filter((e) => e.url);
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
@@ -139,16 +139,17 @@ function GameDetail({ game }: { game: Game }) {
                   <span className="text-xs text-dimmed">
                     {t("game.stats.grades", { count: community.ratingCount })}
                   </span>
-                  {worldScore ? (
-                    <span className="num mt-1 text-xs text-dimmed">
-                      {t("game.stats.alsoEveryoneElse", { score: worldScore })}
+                  {worldGrade ? (
+                    <span className="mt-1 flex items-center gap-1 text-xs text-dimmed">
+                      <GradeBadge grade={worldGrade} className="size-5" />
+                      {t("game.stats.alsoEveryoneElse")}
                     </span>
                   ) : null}
                 </Stat>
               ) : (
                 <Stat label={t("game.stats.everyoneElse")}>
-                  {worldScore ? (
-                    <span className="num text-2xl font-extrabold">{worldScore}</span>
+                  {worldGrade ? (
+                    <GradeBadge grade={worldGrade} size={PillSize.Lg} />
                   ) : (
                     <span className="text-2xl font-bold text-dimmed">–</span>
                   )}

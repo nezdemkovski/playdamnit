@@ -271,7 +271,7 @@
       "ratings": "{{ratings}} ratings",
       "grades_one": "{{count}} grade from members",
       "grades_other": "{{count}} grades from members",
-      "alsoEveryoneElse": "Everyone else says {{score}}",
+      "alsoEveryoneElse": "everyone else",
       "alsoMembers_one": "{{count}} member here",
       "alsoMembers_other": "{{count}} members here",
       "noMembersYet": "No grades here yet. Be first.",
