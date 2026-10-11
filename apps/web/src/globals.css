@@ -327,5 +327,10 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .seal-in,
-  .seal-spin,
-  
+  .seal-spin {
+    animation: none;
+  }
+  .seal-in {
+    opacity: 1;
+  }
+}
