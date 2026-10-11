@@ -74,14 +74,14 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
         <GameCover url={game.cover?.url} name={game.name} />
         <span
           className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 bg-black/80 px-0.5 py-0.5 text-center text-[9px] font-semibold leading-[1.15] text-white",
-            // Viewing: the name appears on hover; arranging: always, to tell tiles apart
-            // Smaller type here: the whole tile scales 2.5× on hover
-            !arranging &&
-              "text-[7px] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+            "pointer-events-none absolute inset-x-0 bottom-0 text-center leading-tight text-white",
+            arranging
+              ? "bg-black/80 px-0.5 py-0.5 text-[9px] font-semibold"
+              : // Viewing: the name fades in on hover; the tile scales 1.8×, so 5px reads as 9px
+                "bg-gradient-to-t from-black/90 to-transparent px-1 pt-2 pb-0.5 text-[5px] font-medium opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
           )}
         >
-          <span className="line-clamp-2">{game.name}</span>
+          <span className={arranging ? "line-clamp-2" : "block truncate"}>{game.name}</span>
         </span>
       </>
     );
