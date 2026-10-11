@@ -7,19 +7,21 @@ import {
   LibraryIcon,
   LinkIcon,
   MessageSquareTextIcon,
-  Rows3Icon,
   SettingsIcon,
   UserIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
+import { BadgeStrip, computeBadges } from "@/components/profile/badges";
 import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { useLibrary } from "@/hooks/library";
 import { FriendsTab, ProfileTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username")({
@@ -41,7 +43,6 @@ const TABS: {
     icon: MessageSquareTextIcon,
     count: ProfileTab.Reviews,
   },
-  { to: "/tiers", label: ProfileTab.Tiers, icon: Rows3Icon },
   { to: "/lists", label: ProfileTab.Lists, icon: LayersIcon, count: ProfileTab.Lists },
   { to: "/friends", label: ProfileTab.Friends, icon: UsersIcon },
   { to: "/likes", label: ProfileTab.Likes, icon: HeartIcon },
@@ -52,6 +53,13 @@ function ProfileLayout() {
   const { t } = useTranslation();
   const { username } = Route.useParams();
   const profile = useGetApiUserByUsername(username);
+  // Badges come from the library; a private one simply shows none
+  const library = useLibrary(username);
+  const badges = useMemo(
+    () =>
+      library.data ? computeBadges(library.data.results, profile.data?.counts.reviews ?? 0) : null,
+    [library.data, profile.data?.counts.reviews],
+  );
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const base = `/${username}`;
 
@@ -146,6 +154,11 @@ function ProfileLayout() {
                 <span className="text-dimmed">{t("profile.counts.following")}</span>
               </Link>
             </div>
+            {badges && (
+              <div className="mt-3">
+                <BadgeStrip badges={badges} />
+              </div>
+            )}
           </div>
           <div className="flex shrink-0 gap-2">
             {user.isOwn ? (

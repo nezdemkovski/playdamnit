@@ -460,7 +460,6 @@
       "games": "Games",
       "journal": "Journal",
       "reviews": "Reviews",
-      "tiers": "Tiers",
       "lists": "Lists",
       "friends": "Friends",
       "likes": "Likes"
@@ -477,7 +476,7 @@
     "editProfile": "Edit profile",
     "private": "This member keeps their list private.",
     "overview": {
-      "badges": "Badges",
+      "tiers": "Tiers",
       "nowPlaying": "Now playing",
       "recentlyPlayed": "Recently played",
       "journal": "Journal",
@@ -559,11 +558,6 @@
       "finished": "Finished"
     },
     "tiers": {
-      "summary": "{{graded}} graded · {{ungraded}} still without a verdict",
-      "emptyRow": "Nobody here.",
-      "ungraded": "Ungraded",
-      "ungradedHintOwn": "Open a game, pick a letter, it lands in a row.",
-      "ungradedHint": "No verdict yet.",
       "saving": "Saving…",
       "noMatches": "No matching games.",
       "pool": "Pool",
@@ -575,7 +569,9 @@
       "selectGame": "Select {{name}}",
       "returnToPool": "Return to pool",
       "emptyPool": "All games have a grade.",
-      "loadError": "Could not load this library. Please try again."
+      "count": "{{graded}} of {{total}} graded",
+      "arrange": "Arrange",
+      "done": "Done"
     }
   },
   "settings": {

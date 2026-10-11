@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { t } from "@/i18n";
 import { BadgeId } from "@/lib/enums";
 
@@ -58,24 +59,34 @@ export const computeBadges = (entries: UserGameWithUserData[], reviews: number):
   ];
 };
 
-export function Badges({ badges }: { badges: Badge[] }) {
+/** Badges as a row of small tiles for the profile header: earned ones lit, the rest dim */
+export function BadgeStrip({ badges }: { badges: Badge[] }) {
+  const earned = badges.filter((b) => b.earned).length;
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {badges.map((badge) => (
-        <div
-          key={badge.id}
-          title={badge.description}
-          className={cn(
-            "flex flex-col items-center gap-1 rounded-xl border p-3 text-center",
-            badge.earned
-              ? "border-warning/40 bg-warning/10 text-warning"
-              : "border-white/5 text-dimmed/50",
-          )}
-        >
-          <badge.icon className="size-5" />
-          <span className="text-xs font-semibold">{badge.label}</span>
-        </div>
+        <Tooltip key={badge.id}>
+          <TooltipTrigger asChild>
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center border",
+                badge.earned
+                  ? "border-warning/50 bg-warning/15 text-warning"
+                  : "border-border text-dimmed/40",
+              )}
+            >
+              <badge.icon className="size-4" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <span className="font-semibold">{badge.label}</span>
+            <span className="block text-dimmed">{badge.description}</span>
+          </TooltipContent>
+        </Tooltip>
       ))}
+      <span className="eyebrow ml-1">
+        {earned} / {badges.length}
+      </span>
     </div>
   );
 }

@@ -38,7 +38,6 @@ export enum ProfileTab {
   Games = "games",
   Journal = "journal",
   Reviews = "reviews",
-  Tiers = "tiers",
   Lists = "lists",
   Friends = "friends",
   Likes = "likes",

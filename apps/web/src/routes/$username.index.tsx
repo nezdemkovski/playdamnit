@@ -1,16 +1,17 @@
 import { StatusEnum, useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AwardIcon, Gamepad2Icon, MessageSquareTextIcon } from "lucide-react";
-import { useMemo } from "react";
+import { Gamepad2Icon, MessageSquareTextIcon, Rows3Icon } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { GameCard, GameRail } from "@/components/game/game-card";
-import { Badges, computeBadges } from "@/components/profile/badges";
 import { PrivateNotice } from "@/components/profile/private-notice";
 import { ProfileStats } from "@/components/profile/profile-stats";
+import { TierBoard } from "@/components/profile/tier-board";
 import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
 import { gradeOf } from "@/lib/grade";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/$username/")({
   component: ProfileOverview,
 });
 
-/** Overview tab: stats, badges, what's being played, latest reviews */
+/** Overview tab: stats, the tier board, the year's activity, what's being played, latest reviews */
 function ProfileOverview() {
   const { t } = useTranslation();
   const { username, entries, library, isPrivate, profile } = useProfileContext();
@@ -28,10 +29,8 @@ function ProfileOverview() {
     { limit: 3 },
     { query: { enabled: !isPrivate } },
   );
-  const badges = useMemo(
-    () => computeBadges(entries, profile.data?.counts.reviews ?? 0),
-    [entries, profile.data],
-  );
+  const isOwn = !!profile.data?.isOwn;
+  const [arranging, setArranging] = useState(false);
 
   if (isPrivate) return <PrivateNotice />;
   if (library.isPending) return <Skeleton className="h-40 rounded-card" />;
@@ -44,22 +43,38 @@ function ProfileOverview() {
 
   return (
     <>
-      <ProfileStats entries={entries} own={profile.data?.isOwn} />
+      <ProfileStats entries={entries} own={isOwn} />
 
       {entries.length > 0 && (
-        <div className="mt-4">
+        <Section
+          title={t("profile.overview.tiers")}
+          icon={Rows3Icon}
+          count={t("profile.tiers.count", {
+            graded: entries.filter((e) => gradeOf(e.userGameData.rating)).length,
+            total: entries.length,
+          })}
+          action={
+            isOwn ? (
+              <Button
+                variant={arranging ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setArranging((v) => !v)}
+              >
+                {arranging ? t("profile.tiers.done") : t("profile.tiers.arrange")}
+              </Button>
+            ) : undefined
+          }
+          className="mt-8"
+        >
+          <TierBoard entries={entries} arranging={isOwn && arranging} />
+        </Section>
+      )}
+
+      {entries.length > 0 && (
+        <div className="mt-8">
           <YearInEvenings entries={entries} />
         </div>
       )}
-
-      <Section
-        title={t("profile.overview.badges")}
-        icon={AwardIcon}
-        count={`${badges.filter((b) => b.earned).length} / ${badges.length}`}
-        className="mt-8"
-      >
-        <Badges badges={badges} />
-      </Section>
 
       {playing.length > 0 && (
         <Section
