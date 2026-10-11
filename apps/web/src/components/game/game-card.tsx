@@ -39,11 +39,7 @@ export function GameCard({ game, grade, tag, className }: GameCardProps) {
           {tag}
         </div>
       ) : null}
-      {grade ? (
-        <div className="absolute top-0 right-0 bg-background p-1">
-          <GradeBadge grade={grade} className="block" />
-        </div>
-      ) : null}
+      {grade ? <GradeBadge grade={grade} className="absolute -top-2 -right-2 block" /> : null}
     </Link>
   );
 }
@@ -59,7 +55,7 @@ export function GameRail({
   return (
     <div
       className={cn(
-        "no-scrollbar -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1 [&>*]:w-28 [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-32 md:[&>*]:w-36",
+        "no-scrollbar -mx-2 -mt-2 flex snap-x gap-3 overflow-x-auto px-2 pt-2 pb-1 [&>*]:w-28 [&>*]:shrink-0 [&>*]:snap-start sm:[&>*]:w-32 md:[&>*]:w-36",
         className,
       )}
     >

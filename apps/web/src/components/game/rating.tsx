@@ -65,7 +65,7 @@ export function GradeBadge({
           points={SCALLOPS}
           fill="currentColor"
           stroke="var(--background)"
-          strokeWidth="5"
+          strokeWidth="7"
           strokeLinejoin="round"
           className={cn("origin-center", pressed && "seal-spin")}
         />
