@@ -269,14 +269,14 @@
       "members": "Members",
       "everyoneElse": "Overall",
       "ratings": "{{ratings}} ratings",
-      "grades_one": "{{count}} grade from members",
-      "grades_other": "{{count}} grades from members",
-      "alsoEveryoneElse": "overall",
       "alsoMembers_one": "{{count}} member here",
       "alsoMembers_other": "{{count}} members here",
       "noMembersYet": "No grades here yet. Be first.",
       "inListsLabel": "In lists here",
-      "statusLine": "{{finished}} finished · {{playing}} playing"
+      "statusLine": "{{finished}} finished · {{playing}} playing",
+      "overallTip": "Overall · {{ratings}} ratings",
+      "membersTip_one": "Members · {{count}} grade",
+      "membersTip_other": "Members · {{count}} grades"
     },
     "yourList": "In your list",
     "yourRating": "Your grade",

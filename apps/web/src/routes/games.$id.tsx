@@ -32,6 +32,7 @@ import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
@@ -105,6 +106,7 @@ function GameDetail({ game }: { game: Game }) {
   const community = game.community!;
   const membersGrade = gradeOf(community.ratingAverage);
   const membersLead = !!membersGrade && community.ratingCount >= MEMBERS_VERDICT_MIN;
+  const leadGrade = membersLead ? membersGrade : worldGrade;
   const [reviewSort, setReviewSort] = useState(GetApiGamesByIdReviewsSort.Latest);
   const reviews = useGetApiGamesByIdReviews(game.id, { sort: reviewSort, limit: 20 });
 
@@ -125,47 +127,62 @@ function GameDetail({ game }: { game: Game }) {
 
         <div className="relative z-10 -mt-20 grid gap-4 px-4 sm:-mt-24 sm:px-6 md:grid-cols-[1fr_minmax(0,320px)]">
           <div className="panel flex gap-4 bg-background/80 p-4 backdrop-blur-md sm:gap-5 sm:p-5">
-            <GameCover
-              url={game.cover?.url}
-              name={game.name}
-              className="w-24 shrink-0 shadow-2xl sm:w-32"
-              loading={ImageLoading.Eager}
-            />
-            <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
-              {/* One verdict up front: the members' once enough of them have graded, else everyone else's */}
-              {membersLead ? (
-                <Stat label={t("game.stats.members")}>
-                  <GradeBadge grade={membersGrade} size={PillSize.Lg} />
-                  <span className="text-xs text-dimmed">
-                    {t("game.stats.grades", { count: community.ratingCount })}
-                  </span>
-                  {worldGrade ? (
-                    <span className="mt-1 flex items-center gap-1 text-xs text-dimmed">
-                      <GradeBadge grade={worldGrade} className="size-5" />
-                      {t("game.stats.alsoEveryoneElse")}
+            {/* The leading verdict sits on the cover like a sticker; hover for the count */}
+            <div className="relative w-24 shrink-0 sm:w-32">
+              <GameCover
+                url={game.cover?.url}
+                name={game.name}
+                className="shadow-2xl"
+                loading={ImageLoading.Eager}
+              />
+              {leadGrade ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="absolute -top-3 -right-3 block">
+                      <GradeBadge grade={leadGrade} size={PillSize.Lg} onArt className="block" />
                     </span>
-                  ) : null}
-                </Stat>
-              ) : (
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {membersLead
+                      ? t("game.stats.membersTip", { count: community.ratingCount })
+                      : t("game.stats.overallTip", {
+                          ratings: compactNumber(game.totalRatingCount ?? 0),
+                        })}
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
+            </div>
+            <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
+              {/* The other verdict, small: members until ten of them have graded, then overall */}
+              {membersLead ? (
                 <Stat label={t("game.stats.everyoneElse")}>
-                  {worldGrade ? (
-                    <GradeBadge grade={worldGrade} size={PillSize.Lg} />
-                  ) : (
-                    <span className="text-2xl font-bold text-dimmed">–</span>
-                  )}
-                  <span className="text-xs text-dimmed">
-                    {t("game.stats.ratings", {
-                      ratings: compactNumber(game.totalRatingCount ?? 0),
-                    })}
-                  </span>
-                  <span className="mt-1 flex items-center gap-1 text-xs text-dimmed">
-                    {membersGrade ? (
+                  <span className="flex items-center gap-1.5 text-sm">
+                    {worldGrade ? (
                       <>
-                        <GradeBadge grade={membersGrade} className="size-5" />
-                        {t("game.stats.alsoMembers", { count: community.ratingCount })}
+                        <GradeBadge grade={worldGrade} className="size-6" />
+                        <span className="text-xs text-dimmed">
+                          {t("game.stats.ratings", {
+                            ratings: compactNumber(game.totalRatingCount ?? 0),
+                          })}
+                        </span>
                       </>
                     ) : (
-                      t("game.stats.noMembersYet")
+                      <span className="text-dimmed">–</span>
+                    )}
+                  </span>
+                </Stat>
+              ) : (
+                <Stat label={t("game.stats.members")}>
+                  <span className="flex items-center gap-1.5 text-sm">
+                    {membersGrade ? (
+                      <>
+                        <GradeBadge grade={membersGrade} className="size-6" />
+                        <span className="text-xs text-dimmed">
+                          {t("game.stats.alsoMembers", { count: community.ratingCount })}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-dimmed">{t("game.stats.noMembersYet")}</span>
                     )}
                   </span>
                 </Stat>
