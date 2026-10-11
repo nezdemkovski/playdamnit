@@ -691,7 +691,7 @@
       "D": "Meh",
       "F": "Regret"
     },
-    "ring": "{{name}} · {{grade}} rank · {{name}} · {{grade}} rank · ",
+    "ring": "{{name}} · ",
     "lines": {
       "S": {
         "main": "S. You don't hand those out. Right?",

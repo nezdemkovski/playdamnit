@@ -8,10 +8,19 @@ import { gradeMeta } from "@/lib/grade";
 import { statusMeta, type LibraryStatus } from "@/lib/statuses";
 
 const SEAL_SIZE: Record<PillSize, string> = {
-  [PillSize.Sm]: "size-6",
+  [PillSize.Sm]: "size-7",
   [PillSize.Md]: "size-9",
   [PillSize.Lg]: "size-14",
   [PillSize.Xl]: "size-24",
+};
+
+/** The ring text: the verdict repeated around the letter until the circle is full */
+const RING_CHARS = 29;
+const ringText = (name: string) => {
+  const unit = t("grade.ring", { name });
+  let text = unit;
+  while (text.length + unit.length <= RING_CHARS) text += unit;
+  return text;
 };
 
 /**
@@ -34,13 +43,14 @@ export function GradeBadge({
   if (!grade) return null;
   const meta = gradeMeta(grade);
   const withText = size === PillSize.Lg || size === PillSize.Xl;
+  // Small seals drop the fine notches and the inner hairline: they turn to mush under 40px
+  const small = !withText;
   const inner = meta.filled
     ? "currentColor"
     : grade === Grade.F
       ? `url(#${id}h)`
       : "var(--background)";
   const ink = meta.filled ? "#000" : "currentColor";
-  const ring = t("grade.ring", { name: meta.name, grade });
   return (
     <span
       title={meta.name}
@@ -65,17 +75,25 @@ export function GradeBadge({
             <rect width="2" height="6" fill="currentColor" opacity="0.3" />
           </pattern>
         )}
+        {small && <circle cx="50" cy="50" r="50" fill="var(--background)" />}
         <g className={cn("origin-center", pressed && "seal-spin")}>
           <circle
             cx="50"
             cy="50"
-            r="45"
+            r={small ? 43 : 45}
             fill="none"
             stroke="currentColor"
-            strokeWidth={withText ? 8.5 : 9.5}
-            strokeDasharray="1.6 1.9"
+            strokeWidth={small ? 11 : 8.5}
+            strokeDasharray={small ? "3.4 2.6" : "1.6 1.9"}
           />
-          <circle cx="50" cy="50" r="37" fill={inner} stroke="currentColor" strokeWidth="1.2" />
+          <circle
+            cx="50"
+            cy="50"
+            r={small ? 34 : 37}
+            fill={inner}
+            stroke="currentColor"
+            strokeWidth={small ? 3 : 1.2}
+          />
           {withText && (
             <>
               <path
@@ -89,7 +107,7 @@ export function GradeBadge({
                 letterSpacing="0.22em"
                 fill={ink}
               >
-                <textPath href={`#${id}p`}>{ring}</textPath>
+                <textPath href={`#${id}p`}>{ringText(meta.name)}</textPath>
               </text>
             </>
           )}
@@ -99,7 +117,7 @@ export function GradeBadge({
           y="50"
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={withText ? 36 : 46}
+          fontSize={withText ? 36 : 48}
           fill={ink}
           className="font-display"
         >
@@ -107,7 +125,10 @@ export function GradeBadge({
         </text>
       </svg>
       {pressed && (
-        <i className="seal-pulse pointer-events-none absolute -inset-1.5 rounded-full border-2 border-current" />
+        <i
+          className="seal-pulse pointer-events-none absolute -inset-1.5 border-2 border-current"
+          style={{ borderRadius: "50%" }}
+        />
       )}
     </span>
   );

@@ -149,18 +149,15 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-card border-white/5 bg-popover p-6 sm:max-w-xl">
         <DialogHeader className="flex-row items-center gap-5 text-left">
-          <div className={cn("relative w-20 shrink-0", moment > 0 && "seal-shake")} key={moment}>
+          <div className="relative mr-3 w-20 shrink-0" key={moment}>
             <GameCover url={game.cover?.url} name={game.name} />
             {grade && (
               <GradeBadge
                 grade={grade}
-                size={PillSize.Xl}
+                size={PillSize.Lg}
                 pressed={moment > 0}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                className="absolute -right-4 -bottom-3"
               />
-            )}
-            {moment > 0 && (
-              <i className="seal-flash pointer-events-none absolute inset-0 bg-white mix-blend-overlay" />
             )}
           </div>
           <div className="min-w-0">
