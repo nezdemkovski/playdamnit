@@ -272,9 +272,9 @@
       "grades_one": "{{count}} grade from members",
       "grades_other": "{{count}} grades from members",
       "alsoEveryoneElse": "Everyone else says {{score}}",
-      "alsoMembers_one": "{{count}} member here says so",
-      "alsoMembers_other": "{{count}} members here say so",
-      "noMembersYet": "Nobody here has graded it. Be first.",
+      "alsoMembers_one": "{{count}} member here",
+      "alsoMembers_other": "{{count}} members here",
+      "noMembersYet": "No grades here yet. Be first.",
       "inListsLabel": "In lists here",
       "statusLine": "{{finished}} finished · {{playing}} playing"
     },
