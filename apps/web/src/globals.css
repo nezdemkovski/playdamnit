@@ -169,9 +169,8 @@
   [data-slot="button"] {
     border-radius: 0;
     font-weight: 700;
-    font-size: 12.5px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 13.5px;
+    letter-spacing: 0;
     transition:
       background-color 0.15s,
       border-color 0.15s,
@@ -182,7 +181,7 @@
     font-family: var(--font-mono);
     font-weight: 800;
     font-size: 10.5px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
   [data-slot="input"],
@@ -242,7 +241,7 @@
   font-size: 10.5px;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }

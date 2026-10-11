@@ -272,7 +272,7 @@ function GameDetail({ game }: { game: Game }) {
 
       {(links.length > 0 || stores.length > 0) && (
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold tracking-wider text-dimmed uppercase">Links</span>
+          <span className="eyebrow">Links</span>
           {links.map((w) => (
             <LinkChip key={`w${w.id}`} href={w.url} label={w.type ?? "Website"} />
           ))}
