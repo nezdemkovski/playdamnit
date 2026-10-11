@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia";
 import { GameService, MAX_GAMES_PAGE_SIZE } from "@/modules/game/service";
-import { GameSort } from "@/utils/enums";
+import { GameSort, isFlagSet } from "@/utils/enums";
 
-const idList = (value: string | undefined) =>
+export const idList = (value: string | undefined) =>
   value
     ? value
         .split(",")
@@ -23,6 +23,7 @@ export const getGames = new Elysia().get(
       releasedTo: t.Optional(t.Numeric({ minimum: 0 })),
       types: t.Optional(t.String({ maxLength: 100 })),
       ids: t.Optional(t.String({ maxLength: 1000 })),
+      popular: t.Optional(t.String({ maxLength: 5 })),
       sort: t.Optional(t.Enum(GameSort)),
     }),
   },
@@ -31,5 +32,6 @@ export const getGames = new Elysia().get(
       ...query,
       types: idList(query.types),
       ids: idList(query.ids)?.slice(0, MAX_GAMES_PAGE_SIZE),
+      popular: isFlagSet(query.popular),
     }),
 );

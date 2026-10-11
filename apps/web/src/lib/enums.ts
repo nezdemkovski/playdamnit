@@ -212,3 +212,8 @@ export enum DragDataType {
 export enum MediaSlideType {
   Youtube = "youtube",
 }
+
+/** The value the API reads as "yes" in a query flag (e.g. popular=1) */
+export enum FlagValue {
+  One = "1",
+}

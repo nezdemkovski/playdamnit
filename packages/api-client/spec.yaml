@@ -951,6 +951,25 @@ components:
         - results
         - private
 
+    ReleaseDaysResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                description: UTC day, YYYY-MM-DD
+              count:
+                type: number
+            required:
+              - date
+              - count
+      required:
+        - days
+
     GameListSummary:
       type: object
       properties:
@@ -1735,6 +1754,12 @@ paths:
           description: Comma-separated game ids; results come back in catalog order
           schema:
             type: string
+        - name: popular
+          in: query
+          required: false
+          description: '"1" or "true" keeps only the games IGDB flags as popular'
+          schema:
+            type: string
         - name: sort
           in: query
           required: false
@@ -1767,6 +1792,46 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/release-days:
+    get:
+      parameters:
+        - name: releasedFrom
+          in: query
+          required: true
+          description: Unix seconds, inclusive
+          schema:
+            type: number
+        - name: releasedTo
+          in: query
+          required: true
+          description: Unix seconds, inclusive
+          schema:
+            type: number
+        - name: types
+          in: query
+          required: false
+          description: Comma-separated IGDB game_type ids to keep
+          schema:
+            type: string
+        - name: popular
+          in: query
+          required: false
+          description: '"1" or "true" counts only the games IGDB flags as popular'
+          schema:
+            type: string
+      operationId: getApiGamesReleaseDays
+      tags:
+        - Games
+      summary: Releases per day
+      description: How many games release on each UTC day of the range. Days without releases are left out.
+      responses:
+        "200":
+          description: Counts per day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReleaseDaysResponse"
 
   /api/games/{id}:
     get:

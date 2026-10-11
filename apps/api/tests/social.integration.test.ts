@@ -327,4 +327,21 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ).toEqual([GAME, OTHER_GAME]);
     expect((await GameService.findGames({ platformId: 6 })).meta.total).toBe(0);
   });
+
+  test("the release calendar counts per UTC day and can keep only popular games", async () => {
+    // Both seeded games release at 1600000000 = 2020-09-13 12:26:40 UTC
+    const range = { releasedFrom: 1598918400, releasedTo: 1601510399 }; // September 2020
+    expect((await GameService.releaseDays(range)).days).toEqual([{ date: "2020-09-13", count: 2 }]);
+    await pg.query(`update game set is_popular = true where id = $1`, [GAME]);
+    expect((await GameService.releaseDays({ ...range, popular: true })).days).toEqual([
+      { date: "2020-09-13", count: 1 },
+    ]);
+    const popular = await GameService.findGames({
+      ...range,
+      popular: true,
+      sort: GameSort.Popular,
+    });
+    expect(popular.results.map((g) => g.id)).toEqual([GAME]);
+    await pg.query(`update game set is_popular = false where id = $1`, [GAME]);
+  });
 });

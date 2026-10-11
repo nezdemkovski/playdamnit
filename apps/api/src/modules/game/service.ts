@@ -42,6 +42,8 @@ export interface GameFilters {
   /** IGDB game_type ids */
   types?: number[];
   ids?: number[];
+  /** Only games IGDB flags as popular */
+  popular?: boolean;
   sort?: GameSort;
 }
 
@@ -88,6 +90,7 @@ const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
   if (to !== undefined) filters.push(sql`${t.firstReleaseDate} <= ${to}`);
   if (opts.types?.length) filters.push(sql`${t.gameType} in ${opts.types}`);
   if (opts.ids?.length) filters.push(sql`${t.id} in ${opts.ids}`);
+  if (opts.popular) filters.push(sql`${t.isPopular} = true`);
   if (sort === GameSort.Recent) {
     filters.push(sql`${t.firstReleaseDate} <= extract(epoch from now())::bigint`, hasCover(t));
   }
@@ -287,6 +290,27 @@ export abstract class GameService {
       results: games.map(transformGameResponse),
       meta: { total, limit, offset },
     };
+  }
+
+  /**
+   * How many games release on each UTC day of a range (the release calendar's counts), with
+   * the same filters as the list. Days without releases are left out.
+   */
+  static async releaseDays(opts: GameFilters) {
+    const day = sql<string>`to_char(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC', 'YYYY-MM-DD')`;
+    const rows = await db
+      .select({ date: day, count: count() })
+      .from(game)
+      .where(
+        and(
+          isNull(game.deletedAt),
+          sql`${game.firstReleaseDate} is not null`,
+          ...buildFilters(opts, game),
+        ),
+      )
+      .groupBy(sql`1`)
+      .orderBy(sql`1`);
+    return { days: rows.map((r) => ({ date: r.date, count: Number(r.count) })) };
   }
 
   /** Cards for a set of ids, in the order given (library imports, lists, similar games) */
