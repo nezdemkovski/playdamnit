@@ -305,7 +305,7 @@ All code phases are in. What remains, in order:
   "through these terms or otherwise"; IGDB's own FAQ explicitly prefers local storage. The current
   lazy catalog already stores data indefinitely, so the mirror changes scale, not legal status.
 
-## Deployment: homelab Kubernetes — manifests ready, not yet applied
+## Deployment: homelab Kubernetes — deployed 2026-10-11
 
 Target: the Flux-managed homelab cluster (`~/Sites/homelab-gitops`, see its `AGENTS.md`), one
 hostname `games.nezdemkovski.cloud` with `/api/*` routed to the API and everything else to the
@@ -334,22 +334,24 @@ What exists (2026-10-11):
   clusterwide lists (API server egress, tunnel ingress, CNPG backup egress and operator ingress).
   `charts/cloudflared/values.yaml` routes `games.nezdemkovski.cloud` (`^/api/.*` → API, rest → web).
 
-Before the first reconcile:
+State after the first reconcile (2026-10-11): CNPG cluster healthy, web live at
+https://games.nezdemkovski.cloud, librarian running (IGDB webhooks registered and already
+delivering, `sync-lookups` done in 94 s). The API pod crash-loops until `RESEND_API_KEY` is filled
+in the `playdamnit` 1Password item (production refuses to start without email); after filling it
+in, force the ExternalSecret to refresh and restart the deployment:
 
-1. 1Password vault `Homelab`, one item `playdamnit`: `username`/`password` are the Postgres
-   owner, plus `BETTER_AUTH_SECRET`, `IGDB_WEBHOOK_SECRET`, `TWITCH_CLIENT_ID`,
-   `TWITCH_CLIENT_SECRET`, `RESEND_API_KEY`, `OPENAI_API_KEY`, `SENTRY_DSN`. The pull secret reuses
-   `haymaker-ghcr` (same GitHub user). Created 2026-10-11; `RESEND_API_KEY` is still empty and the
-   API refuses to start in production without it.
-2. Cloudflare DNS: `games.nezdemkovski.cloud` CNAME to the tunnel (`<tunnel id>.cfargotunnel.com`).
-3. Merge this repo to `master` so CI publishes `0.1.0` images and charts; then pin the image tags
-   in the HelmReleases as `0.1.0@sha256:…` (Renovate keeps them pinned afterwards).
-4. Push the `playdamnit` branch of `homelab-gitops` and merge; `flux reconcile kustomization
-   playdamnit --with-source`; check the librarian log for "IGDB webhooks ensured" and
-   `sync-lookups done`.
-5. Uptime Kuma check on `https://games.nezdemkovski.cloud/api/health`? No: `/health` is served
-   at the API root, which the tunnel does not route. Point the check at
-   `https://games.nezdemkovski.cloud/api/games?limit=1` instead, or add `/api/health` later.
+```bash
+kubectl -n playdamnit annotate externalsecret playdamnit-api-env force-sync=$(date +%s) --overwrite
+kubectl -n playdamnit rollout restart deployment/playdamnit-api
+```
+
+Gotchas met on the way: the tunnel's egress NetworkPolicy (`homelab-cloudflared-egress` in
+`workload-baseline.yaml`) lists the namespaces it may reach and needs every new app added; the
+API client npm publish fails with a 404 because the `NPM_TOKEN` repository secret (2025-05) is no
+longer accepted by npm.
+
+Still to do: Uptime Kuma check (`/api/games?limit=1`), resource tuning on the live cluster, then
+the first full catalog walk.
 
 ## References
 
