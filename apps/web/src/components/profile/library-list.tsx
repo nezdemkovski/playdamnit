@@ -132,8 +132,8 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1 basis-full sm:basis-auto">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-dimmed" />
           <Input
             value={query}
@@ -195,7 +195,9 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
 
       {visible.length === 0 ? (
         <div className="panel p-10 text-center text-sm text-dimmed">
-          {entries.length === 0 ? "Nothing in the list yet." : "No games match."}
+          {entries.length === 0
+            ? "Nothing in the list yet. Nothing to feel guilty about either."
+            : "No games match. Not even the ones you forgot about."}
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

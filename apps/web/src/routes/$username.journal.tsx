@@ -73,7 +73,9 @@ function ProfileJournal() {
 
       {journal.isPending && <Skeleton className="mt-4 h-40 rounded-card" />}
       {journal.data && months.length === 0 && (
-        <div className="panel mt-4 p-12 text-center text-dimmed">Nothing logged yet.</div>
+        <div className="panel mt-4 p-12 text-center text-dimmed">
+          Nothing logged yet. Finish something and it shows up here.
+        </div>
       )}
 
       {months.map(([month, items]) => (

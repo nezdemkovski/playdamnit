@@ -53,7 +53,9 @@ function ProfileFriends() {
       <div className="mt-4 space-y-2">
         {query.isPending && <Skeleton className="h-16 rounded-card" />}
         {query.data?.results.length === 0 && (
-          <div className="panel p-12 text-center text-dimmed">Nobody here yet.</div>
+          <div className="panel p-12 text-center text-dimmed">
+            Nobody here yet. Follow someone and it stops being awkward.
+          </div>
         )}
         {query.data?.results.map((member) => (
           <div key={member.id} className="panel flex items-center gap-3 p-3">

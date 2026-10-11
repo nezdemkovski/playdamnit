@@ -386,7 +386,7 @@ function GameDetail({ game }: { game: Game }) {
                   reviewSort === sort ? "bg-white/10 text-white" : "text-dimmed hover:text-white",
                 )}
               >
-                {sort === "top" ? "Top liked" : "Latest"}
+                {sort === "top" ? "Most reacted" : "Latest"}
               </button>
             ))}
           </div>

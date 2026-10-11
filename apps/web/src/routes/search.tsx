@@ -66,7 +66,7 @@ function SearchPage() {
 
       <div className="mt-4 flex items-center justify-between gap-4 text-sm text-dimmed">
         <div>
-          {enabled && data ? `${total} results for “${q}”` : "Type at least two characters"}
+          {enabled && data ? `${total} results for “${q}”` : "Two characters. We know you can."}
         </div>
         <div className="flex items-center gap-2">
           <Switch

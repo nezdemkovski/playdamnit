@@ -39,7 +39,7 @@ function NotificationsPage() {
           Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-16 rounded-card" />)}
         {notifications.data?.results.length === 0 && (
           <div className="panel p-12 text-center text-dimmed">
-            Nothing yet. Follows and likes on your reviews show up here.
+            Nothing yet. Follow someone, write something, get reacted to.
           </div>
         )}
         {notifications.data?.results.map((n) => {

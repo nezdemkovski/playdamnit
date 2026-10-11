@@ -29,7 +29,7 @@ export function AuthForm() {
         <img src="/logo.svg" alt="" className="size-10" />
         <div>
           <h1 className="text-xl font-bold">PlayDamnIt</h1>
-          <p className="text-sm text-dimmed">Your game list, ratings and reviews</p>
+          <p className="text-sm text-dimmed">Log it. Rate it. Get judged.</p>
         </div>
       </div>
 

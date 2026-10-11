@@ -61,7 +61,7 @@ export function CommunityStats({
           </span>
         )}
         {community.total === 0 && (
-          <span className="text-dimmed">Nobody has logged this game yet.</span>
+          <span className="text-dimmed">Nobody's logged this yet. First one sets the tone.</span>
         )}
       </div>
     </div>

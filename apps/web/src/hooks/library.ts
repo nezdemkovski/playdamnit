@@ -91,7 +91,7 @@ export const useLibraryMutations = () => {
           queryKey: getGetApiUserByUsernameGamesQueryKey(username),
         });
         toast.success(
-          `Imported ${result.imported}, skipped ${result.skipped}, errors ${result.errors}`,
+          `Imported ${result.imported}, skipped ${result.skipped}, failed ${result.errors}. The backlog just grew.`,
         );
       },
       onError: (error) => toast.error(apiError(error, "Import failed")),

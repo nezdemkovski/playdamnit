@@ -50,7 +50,7 @@ export function PasswordForm({ user }: { user: SessionUser }) {
           />
           <p className="text-xs text-dimmed">
             {user.emailVerified
-              ? "Verified. A change is confirmed from your current inbox first."
+              ? "Verified. A new address gets a confirmation link before it takes over."
               : "Not verified."}
           </p>
         </div>

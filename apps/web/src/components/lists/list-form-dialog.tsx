@@ -52,7 +52,7 @@ export function ListFormDialog({ open, onOpenChange, list, onSubmit }: ListFormD
       <DialogContent className="rounded-card border-white/5 bg-popover">
         <DialogHeader>
           <DialogTitle>{list ? "Edit list" : "New list"}</DialogTitle>
-          <DialogDescription>A named, ordered set of games.</DialogDescription>
+          <DialogDescription>Games in the order you say.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">

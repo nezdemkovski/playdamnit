@@ -119,7 +119,7 @@ export const useChangeEmail = () => {
     },
     onSuccess: (applied) => {
       queryClient.invalidateQueries({ queryKey: SESSION_KEY });
-      toast.success(applied ? "Email updated" : "Check your current inbox to confirm the change.");
+      toast.success(applied ? "Email updated" : "Check the new address for a confirmation link.");
     },
     onError: (error) => toast.error(errorMessage(error, "Could not change the email")),
   });

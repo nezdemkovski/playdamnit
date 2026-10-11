@@ -129,9 +129,9 @@ export const toastFor = (
   status: string | undefined,
   s: LibrarySummary,
 ): string => {
-  if (kind === "remove") return "Removed. The backlog breathes a little easier.";
+  if (kind === "remove") return "Removed. One less thing to feel bad about.";
   if (status === "finished") return `Finished. ${s.backlog} to go. We noticed.`;
   if (status === "dropped") return "Dropped. Bold. Honest. We respect it.";
   if (kind === "add") return `Added. That's ${s.total + 1} now. Just saying.`;
-  return "Saved. The numbers have been updated accordingly.";
+  return "Saved. Recounted.";
 };

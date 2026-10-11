@@ -37,7 +37,9 @@ function SettingsPage() {
   return (
     <>
       <h1 className="text-2xl font-bold">Settings</h1>
-      <p className="mt-1 text-sm text-dimmed">Manage your profile and account</p>
+      <p className="mt-1 text-sm text-dimmed">
+        Who you are, how you sign in, what you take with you.
+      </p>
 
       <Tabs defaultValue="profile" className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto">

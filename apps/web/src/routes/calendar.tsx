@@ -136,7 +136,9 @@ function CalendarPage() {
           </div>
         </div>
       ) : days.length === 0 ? (
-        <div className="panel mt-6 p-12 text-center text-dimmed">No releases match this month.</div>
+        <div className="panel mt-6 p-12 text-center text-dimmed">
+          Nothing releases this month. Finish something instead.
+        </div>
       ) : (
         days.map(([day, list]) => {
           const date = parse(day, "yyyy-MM-dd", new Date());

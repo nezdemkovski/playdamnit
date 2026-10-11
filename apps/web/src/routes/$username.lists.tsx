@@ -31,7 +31,9 @@ function ProfileLists() {
       )}
       {lists.isPending && <Skeleton className="h-40 rounded-card" />}
       {lists.data?.length === 0 && (
-        <div className="panel p-12 text-center text-dimmed">No lists yet.</div>
+        <div className="panel p-12 text-center text-dimmed">
+          No lists yet. "Top 10 of all time" is right there.
+        </div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         {lists.data?.map((list) => (
