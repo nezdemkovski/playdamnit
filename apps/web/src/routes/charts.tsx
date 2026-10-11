@@ -237,6 +237,7 @@ function ChartRow({
   tab: ChartTab;
   grade?: Grade | null;
 }) {
+  const { t } = useTranslation();
   const igdb = game.totalRating ? Math.round(game.totalRating) : null;
   return (
     <li className="panel flex items-center gap-3 p-2 pr-4 transition-colors hover:bg-white/[0.05]">
@@ -257,28 +258,30 @@ function ChartRow({
         >
           {game.name}
         </Link>
-        <div className="truncate text-xs text-dimmed">
-          {[
-            releaseYear(game.firstReleaseDate),
-            gameTypeName(game.gameType, game.types[0]?.type),
-            game.genres
-              .slice(0, 3)
-              .map((g) => g.name)
-              .join(", "),
-          ]
-            .filter(Boolean)
-            .join(" · ")}
+        <div className="flex items-center gap-1 truncate text-xs text-dimmed">
+          {tab !== ChartTab.Upcoming && igdb ? (
+            <span className="num flex shrink-0 items-center gap-1" title={t("charts.igdbScore")}>
+              <StarIcon className="size-3" />
+              {igdb} · {compactNumber(game.totalRatingCount ?? 0)}
+            </span>
+          ) : null}
+          <span className="truncate">
+            {[
+              releaseYear(game.firstReleaseDate),
+              gameTypeName(game.gameType, game.types[0]?.type),
+              game.genres
+                .slice(0, 3)
+                .map((g) => g.name)
+                .join(", "),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-3 text-sm">
-        <GradeBadge grade={grade} />
-        {tab !== ChartTab.Upcoming && igdb ? (
-          <span className="flex items-center gap-1 text-dimmed">
-            <StarIcon className="size-3.5" />
-            <span className="num font-extrabold text-foreground">{igdb}</span>
-            <span className="text-xs">({compactNumber(game.totalRatingCount ?? 0)})</span>
-          </span>
-        ) : null}
+      {/* Your verdict, and nothing else on the right: a seal or an empty slot the same width */}
+      <div className="flex w-9 shrink-0 items-center justify-center">
+        <GradeBadge grade={grade} className="block" />
       </div>
     </li>
   );

@@ -258,7 +258,8 @@
       "popular": "By IGDB rating count",
       "upcoming": "Soonest first",
       "members": "By members of this site"
-    }
+    },
+    "igdbScore": "IGDB score · votes"
   },
   "game": {
     "notInCatalog": "This game isn't in the catalog.",
