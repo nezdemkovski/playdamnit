@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Children, isValidElement, useCallback, useEffect, useRef, useState } from "react";
+import { Children, isValidElement, useCallback, useEffect, useRef } from "react";
 
 interface RailProps {
   children: React.ReactNode;
@@ -12,14 +12,22 @@ interface RailProps {
 
 /** A pointer that moved further than this is a drag, and the click at its end is swallowed */
 const DRAG_SLOP = 5;
-/** Width of the fade on an edge that has more content behind it */
-const FADE = "48px";
+/** Width of the fade on an edge with more content behind it */
+const FADE = 72;
+/** Scroll distance over which a fade grows from nothing to full, so it eases in */
+const RAMP = 120;
 
-/** A mask that fades out the edges with more content behind them */
-const edgeMask = (left: boolean, right: boolean) =>
-  left || right
-    ? `linear-gradient(to right, ${left ? "transparent" : "#000"} 0, #000 ${left ? FADE : "0px"}, #000 calc(100% - ${right ? FADE : "0px"}), ${right ? "transparent" : "#000"} 100%)`
-    : undefined;
+/**
+ * A mask fading out the edges with more content behind them. Each side's strength follows
+ * how much is hidden there (0 at the very edge, 1 once RAMP pixels are hidden), so the fade
+ * eases in and out with the scroll instead of switching on.
+ */
+const edgeMask = (left: number, right: number) => {
+  if (!left && !right) return "";
+  const l = `rgba(0,0,0,${(1 - left).toFixed(3)})`;
+  const r = `rgba(0,0,0,${(1 - right).toFixed(3)})`;
+  return `linear-gradient(to right, ${l} 0, #000 ${FADE}px, #000 calc(100% - ${FADE}px), ${r} 100%)`;
+};
 
 /**
  * A horizontal row of cards or media on the browser's own scrolling: touch swipe and trackpad
@@ -31,14 +39,18 @@ export function Rail({ children, itemClassName, overhang = false, className }: R
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const swallowClick = useRef(false);
-  const [edges, setEdges] = useState({ left: false, right: false });
-
+  // Written straight to the element on every scroll frame, no re-render
   const update = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    const left = el.scrollLeft > 2;
-    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
-    setEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+    const hiddenLeft = el.scrollLeft;
+    const hiddenRight = el.scrollWidth - el.clientWidth - el.scrollLeft;
+    const mask = edgeMask(
+      Math.min(1, Math.max(0, hiddenLeft / RAMP)),
+      Math.min(1, Math.max(0, hiddenRight / RAMP)),
+    );
+    el.style.maskImage = mask;
+    el.style.webkitMaskImage = mask;
   }, []);
 
   useEffect(() => {
@@ -50,13 +62,11 @@ export function Rail({ children, itemClassName, overhang = false, className }: R
     return () => observer.disconnect();
   }, [update, items.length]);
 
-  const mask = edgeMask(edges.left, edges.right);
   return (
     <div className={cn("relative", className)}>
       <div
         ref={ref}
         onScroll={update}
-        style={{ maskImage: mask, WebkitMaskImage: mask }}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || event.button !== 0 || !ref.current) return;
           drag.current = { x: event.clientX, left: ref.current.scrollLeft, moved: false };
