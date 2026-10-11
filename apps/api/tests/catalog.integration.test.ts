@@ -30,11 +30,12 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
       versionParentId?: number;
       parentGameId?: number;
       deletedAt?: string;
+      totalRatingCount?: number;
     } = {},
   ) =>
     pg.query(
-      `insert into game (id, name, slug, game_type, alternative_names, search_names, version_parent_id, parent_game_id, deleted_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9) on conflict do nothing`,
+      `insert into game (id, name, slug, game_type, alternative_names, search_names, version_parent_id, parent_game_id, deleted_at, total_rating_count)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict do nothing`,
       [
         id,
         name,
@@ -45,6 +46,7 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
         extra.versionParentId ?? null,
         extra.parentGameId ?? null,
         extra.deletedAt ?? null,
+        extra.totalRatingCount ?? null,
       ],
     );
 
@@ -122,6 +124,37 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
       "Nightwalk: Shadows",
     ]);
     expect(await names("Nightwalk", { gameTypes: [1] })).toEqual(["Nightwalk: Shadows"]);
+  }, 15_000);
+
+  test("search ranks exact names, numbered sequels and popularity sensibly", async () => {
+    await insertGame(900300, "Quarkfall", { totalRatingCount: 800 });
+    await insertGame(900301, "Quarkfall 3: Ember Tide", {
+      alternativeNames: ["QF3", "Кваркфолл 3"],
+      totalRatingCount: 5000,
+    });
+    await insertGame(900302, "Quarkfall Arena", { totalRatingCount: 20 });
+
+    const first = async (q: string) => (await mod.searchGames(q)).results[0]?.name;
+
+    // Word similarity beats the shorter name for a numbered sequel
+    expect(await first("quarkfall 3")).toBe("Quarkfall 3: Ember Tide");
+    // An exact alternative name wins outright, in any case and any script
+    expect(await first("qf3")).toBe("Quarkfall 3: Ember Tide");
+    expect(await first("КВАРКФОЛЛ 3")).toBe("Quarkfall 3: Ember Tide");
+    // The exact main name wins over a more popular partial match
+    expect(await first("Quarkfall")).toBe("Quarkfall");
+  }, 15_000);
+
+  test("Cyrillic queries are case-insensitive and keep their letters", async () => {
+    await insertGame(900400, "Duskmere", { alternativeNames: ["Сумрачный Предел"] });
+    await insertGame(900401, "Duskmere 3", { versionParentId: 900400 });
+    const names = async (q: string) => (await mod.searchGames(q)).results.map((g) => g.name);
+
+    expect(await names("сумрачный")).toEqual(["Duskmere"]);
+    expect(await names("СУМРАЧНЫЙ ПРЕДЕЛ")).toEqual(["Duskmere"]);
+    // Stripping punctuation used to drop every non-ASCII letter, so this also searched for "3"
+    // and matched "Quarkfall 3"; now only the fuzzy match on the Cyrillic word remains
+    expect(await names("сумрачный 3")).toEqual(["Duskmere"]);
   }, 15_000);
 
   test("the detail view adds companies, relatives and the deleted flag", async () => {
