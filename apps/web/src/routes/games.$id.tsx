@@ -425,7 +425,7 @@ function GameDetail({ game }: { game: Game }) {
 
       {game.videos && game.videos.length > 0 && (
         <Section title={t("game.sections.videos")} icon={PlayIcon} count={game.videos.length}>
-          <Rail itemClassName="basis-[70%] sm:basis-1/2 md:basis-1/3">
+          <Rail itemClassName="basis-[70%] sm:basis-[calc((100%-0.75rem)/2)] md:basis-[calc((100%-1.5rem)/3)]">
             {game.videos.map((video, i) => (
               <button
                 type="button"
