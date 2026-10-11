@@ -3,6 +3,7 @@ import {
   useGetApiCatalog,
   useGetApiGames,
   type Game,
+  type UserGameData,
 } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -17,7 +18,7 @@ import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
 import { GameCover } from "@/components/game/game-cover";
-import { GradeBadge } from "@/components/game/rating";
+import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,8 +30,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
-import { Grade, IgdbSize } from "@/lib/enums";
-import { ChartTab } from "@/lib/enums";
+import { ChartTab, IgdbSize } from "@/lib/enums";
 import { gradeOf } from "@/lib/grade";
 
 const TABS = [
@@ -195,8 +195,7 @@ function ChartsPage() {
                 key={game.id}
                 rank={(search.page - 1) * PAGE + i + 1}
                 game={game}
-                tab={tab.value}
-                grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
+                entry={byGameId.get(game.id)?.userGameData ?? null}
               />
             ))}
       </ol>
@@ -229,16 +228,14 @@ function ChartsPage() {
 function ChartRow({
   rank,
   game,
-  tab,
-  grade,
+  entry,
 }: {
   rank: number;
   game: Game;
-  tab: ChartTab;
-  grade?: Grade | null;
+  /** The viewer's library entry for this game, if any */
+  entry: UserGameData | null;
 }) {
-  const { t } = useTranslation();
-  const igdb = game.totalRating ? Math.round(game.totalRating) : null;
+  const grade = gradeOf(entry?.rating);
   return (
     <li className="panel flex items-center gap-3 p-2 pr-4 transition-colors hover:bg-white/[0.05]">
       <span className="w-8 text-center text-sm font-bold tabular-nums text-dimmed">{rank}</span>
@@ -258,30 +255,26 @@ function ChartRow({
         >
           {game.name}
         </Link>
-        <div className="flex items-center gap-1 truncate text-xs text-dimmed">
-          {tab !== ChartTab.Upcoming && igdb ? (
-            <span className="num shrink-0">
-              {t("charts.igdb", { score: igdb, votes: compactNumber(game.totalRatingCount ?? 0) })}
-            </span>
-          ) : null}
-          {tab !== ChartTab.Upcoming && igdb ? <span className="shrink-0">·</span> : null}
-          <span className="truncate">
-            {[
-              releaseYear(game.firstReleaseDate),
-              gameTypeName(game.gameType, game.types[0]?.type),
-              game.genres
-                .slice(0, 3)
-                .map((g) => g.name)
-                .join(", "),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
+        <div className="truncate text-xs text-dimmed">
+          {[
+            releaseYear(game.firstReleaseDate),
+            gameTypeName(game.gameType, game.types[0]?.type),
+            game.genres
+              .slice(0, 3)
+              .map((g) => g.name)
+              .join(", "),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
       </div>
-      {/* Your verdict, and nothing else on the right: a seal or an empty slot the same width */}
-      <div className="flex w-9 shrink-0 items-center justify-center">
-        <GradeBadge grade={grade} className="block" />
+      {/* The right edge is you: your seal, else your status, else nothing */}
+      <div className="flex shrink-0 items-center justify-end">
+        {grade ? (
+          <GradeBadge grade={grade} className="block" />
+        ) : entry ? (
+          <StatusPill status={entry.status} />
+        ) : null}
       </div>
     </li>
   );

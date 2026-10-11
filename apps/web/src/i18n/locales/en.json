@@ -157,7 +157,7 @@
       "text": "Track what you play, rate it, write a few honest words. Then get told the truth about the games you \"will definitely get to\".",
       "start": "Start your list",
       "browse": "Browse games",
-      "fine": "Free · no ads · export anytime · the whole IGDB catalog"
+      "fine": "Free · no ads · export anytime · every game ever released"
     },
     "sections": {
       "nowPlaying": "Now playing",
@@ -254,29 +254,27 @@
     "games_one": "{{formatted}} game",
     "games_other": "{{formatted}} games",
     "blurb": {
-      "best": "By IGDB rating, 50+ votes",
-      "popular": "By IGDB rating count",
+      "best": "Top rated by everyone else, 50+ ratings",
+      "popular": "Most rated by everyone else",
       "upcoming": "Soonest first",
       "members": "By members of this site"
-    },
-    "igdb": "IGDB {{score}} · {{votes}} votes"
+    }
   },
   "game": {
     "notInCatalog": "This game isn't in the catalog.",
     "stats": {
-      "igdb": "IGDB",
       "toFinish": "To finish",
       "reports_one": "{{count}} report",
       "reports_other": "{{count}} reports",
       "members": "Members",
       "inLists": "{{count}} in lists",
-      "votes": "{{votes}} votes on IGDB"
+      "everyoneElse": "Everyone else",
+      "ratings": "{{ratings}} ratings"
     },
     "yourList": "In your list",
     "yourRating": "Your grade",
     "publicLists_one": "in {{count}} public list",
     "publicLists_other": "in {{count}} public lists",
-    "removedFromIgdb": "Removed from IGDB",
     "story": "Story",
     "yourReview": "Your review",
     "markedSpoilers": "marked as spoilers",
@@ -310,7 +308,8 @@
       "top": "Most reacted"
     },
     "noReviewsEdit": "No reviews yet. Edit your entry to write one.",
-    "noReviewsAdd": "No reviews yet. Add the game to your list and write the first."
+    "noReviewsAdd": "No reviews yet. Add the game to your list and write the first.",
+    "goneFromCatalog": "Gone from the catalog"
   },
   "histogram": {
     "games_one": "{{grade}} · {{count}} game",

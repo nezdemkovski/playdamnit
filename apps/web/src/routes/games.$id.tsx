@@ -98,7 +98,7 @@ function GameDetail({ game }: { game: Game }) {
   const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
   const date = releaseDate(game.firstReleaseDate, game.firstReleaseDatePrecision);
-  const igdbScore = game.totalRating ? Math.round(game.totalRating) : null;
+  const worldScore = game.totalRating ? Math.round(game.totalRating) : null;
   const stores = (game.externalGames ?? []).filter((e) => e.url);
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
@@ -130,14 +130,14 @@ function GameDetail({ game }: { game: Game }) {
               loading={ImageLoading.Eager}
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
-              <Stat label={t("game.stats.igdb")}>
-                {igdbScore ? (
-                  <span className="num text-2xl font-extrabold">{igdbScore}</span>
+              <Stat label={t("game.stats.everyoneElse")}>
+                {worldScore ? (
+                  <span className="num text-2xl font-extrabold">{worldScore}</span>
                 ) : (
                   <span className="text-2xl font-bold text-dimmed">–</span>
                 )}
                 <span className="text-xs text-dimmed">
-                  {t("game.stats.votes", { votes: compactNumber(game.totalRatingCount ?? 0) })}
+                  {t("game.stats.ratings", { ratings: compactNumber(game.totalRatingCount ?? 0) })}
                 </span>
               </Stat>
               {game.timeToBeat?.normally ? (
@@ -199,7 +199,7 @@ function GameDetail({ game }: { game: Game }) {
       <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-3xl font-bold tracking-tight">{game.name}</h1>
         {typeName && <Badge variant="secondary">{typeName}</Badge>}
-        {game.deleted && <Badge variant="destructive">{t("game.removedFromIgdb")}</Badge>}
+        {game.deleted && <Badge variant="destructive">{t("game.goneFromCatalog")}</Badge>}
       </div>
       {date && <div className="mt-1 text-dimmed">{date}</div>}
       {entry && (
