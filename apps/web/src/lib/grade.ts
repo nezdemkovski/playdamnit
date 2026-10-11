@@ -15,7 +15,7 @@ export interface GradeMeta {
   rating: number;
   /** The picker button when this grade is pressed */
   chip: string;
-  /** The seal's metal: platinum, gold, silver, bronze, iron, red */
+  /** The seal's metal, tuned in OKLCH so the ink reads at APCA Lc 60+ and WCAG 7+ on each */
   fill: string;
   /** The letter on it: one ink for every metal, the same near-black as the rim */
   ink: string;
@@ -62,8 +62,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 6,
     rating: 6.5,
-    chip: "border-[#d9975f] bg-[#d9975f] text-black",
-    fill: "#d9975f",
+    chip: "border-[#e4a169] bg-[#e4a169] text-black",
+    fill: "#e4a169",
     ink: "var(--background)",
   },
   {
@@ -73,8 +73,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 4,
     rating: 5,
-    chip: "border-[#8a8f97] bg-[#8a8f97] text-black",
-    fill: "#8a8f97",
+    chip: "border-[#abb0b8] bg-[#abb0b8] text-black",
+    fill: "#abb0b8",
     ink: "var(--background)",
   },
   {
@@ -84,8 +84,8 @@ export const GRADES: GradeMeta[] = [
     },
     min: 0,
     rating: 2.5,
-    chip: "border-signal bg-signal text-black",
-    fill: "#ff2b2b",
+    chip: "border-[#ff9083] bg-[#ff9083] text-black",
+    fill: "#ff9083",
     ink: "var(--background)",
   },
 ];
