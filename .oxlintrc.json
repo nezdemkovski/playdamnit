@@ -19,7 +19,8 @@
     "packages/api-client/*.d.ts",
     "apps/api/.claude/**",
     "apps/api/.cursor/**",
-    "apps/api/scripts/load-testing/**"
+    "apps/api/scripts/load-testing/**",
+    "apps/web/src/components/ui/**"
   ],
   "overrides": [
     {

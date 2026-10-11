@@ -1,0 +1,158 @@
+import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { ArrowDownUpIcon, SearchIcon } from "lucide-react";
+import { cn } from "cn";
+import { useMemo, useState } from "react";
+
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { STATUSES, type LibraryStatus } from "@/lib/statuses";
+import { LibraryRow } from "./library-row";
+
+type Sort = "added" | "rating" | "name" | "release";
+const SORTS: { value: Sort; label: string }[] = [
+  { value: "added", label: "Date added" },
+  { value: "rating", label: "Rating" },
+  { value: "name", label: "Name" },
+  { value: "release", label: "Release year" },
+];
+
+const compare: Record<Sort, (a: UserGameWithUserData, b: UserGameWithUserData) => number> = {
+  added: (a, b) => (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
+  rating: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
+  name: (a, b) => a.name.localeCompare(b.name),
+  release: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
+};
+
+interface LibraryListProps {
+  entries: UserGameWithUserData[];
+  editable: boolean;
+}
+
+/** Status tabs with counts, search-in-list, sort and the ranked rows */
+export function LibraryList({ entries, editable }: LibraryListProps) {
+  const [status, setStatus] = useState<LibraryStatus | "all">("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>("added");
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const entry of entries)
+      map.set(entry.userGameData.status, (map.get(entry.userGameData.status) ?? 0) + 1);
+    return map;
+  }, [entries]);
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return entries
+      .filter((e) => status === "all" || e.userGameData.status === status)
+      .filter(
+        (e) =>
+          !q ||
+          e.name.toLowerCase().includes(q) ||
+          e.alternativeNames.some((n) => n.toLowerCase().includes(q)),
+      )
+      .sort(compare[sort]);
+  }, [entries, status, query, sort]);
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="no-scrollbar flex gap-1 overflow-x-auto px-1">
+        <StatusTab
+          label="All"
+          count={entries.length}
+          active={status === "all"}
+          onClick={() => setStatus("all")}
+        />
+        {STATUSES.map((s) => (
+          <StatusTab
+            key={s.value}
+            label={s.label}
+            icon={<s.icon className="size-3" />}
+            count={counts.get(s.value) ?? 0}
+            active={status === s.value}
+            onClick={() => setStatus(s.value)}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-dimmed" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search in list"
+            className="rounded-full pl-9"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="sm">
+              {SORTS.find((s) => s.value === sort)?.label} <ArrowDownUpIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as Sort)}>
+              {SORTS.map((s) => (
+                <DropdownMenuRadioItem key={s.value} value={s.value}>
+                  {s.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="panel p-10 text-center text-sm text-dimmed">
+          {entries.length === 0 ? "Nothing in the list yet." : "No games match."}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {visible.map((entry, i) => (
+            <LibraryRow key={entry.id} rank={i + 1} entry={entry} editable={editable} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatusTab({
+  label,
+  icon,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex shrink-0 flex-col items-center rounded-lg px-3 py-1.5 text-xs transition-colors",
+        active ? "bg-white/10 text-white" : "text-dimmed hover:text-white",
+      )}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        {icon}
+      </span>
+      <span className="text-base font-bold tabular-nums text-white">{count}</span>
+    </button>
+  );
+}

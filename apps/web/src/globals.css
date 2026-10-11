@@ -3,93 +3,67 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Single dark theme (the design follows mygamelist.club): near-black surfaces, white primary
+ * actions, dimmed grey secondary text and one neon colour per library status. The shadcn/ui
+ * components read only the --* variables below; their files are left untouched.
+ */
 :root {
-  /* Self-hosted fonts from @fontsource-variable (previously next/font) */
-  --font-geist-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-geist-mono: "Geist Mono Variable", ui-monospace, monospace;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --background: #1a1b1e;
+  --foreground: #ffffff;
+  --card: #202125;
+  --card-foreground: #ffffff;
+  --popover: #1b1d1f;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #2a2b30;
+  --secondary-foreground: #ffffff;
+  --muted: #26272b;
+  --muted-foreground: #a2a3a6;
+  --accent: #2e2f34;
+  --accent-foreground: #ffffff;
+  --destructive: #ff3975;
+  --destructive-foreground: #ffffff;
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: rgb(255 255 255 / 0.45);
+  --chart-1: #00f0ff;
+  --chart-2: #ff5bf8;
+  --chart-3: #4b93ff;
+  --chart-4: #fff600;
+  --chart-5: #ff794f;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius-card: 1.25rem;
+  --sidebar: #1a1b1e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #2e2f34;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: rgb(255 255 255 / 0.45);
 
-  --playdamnit-purple: #7a5fff;
-  --playdamnit-dark: #252735;
-  --playdamnit-darker: #030712;
-  --playdamnit-light: #f6f8fd;
-  --playdamnit-cyan: #67fff2;
-}
+  /* Library statuses */
+  --status-finished: #00f0ff;
+  --status-playing: #ff5bf8;
+  --status-dropped: #ff794f;
+  --status-online: #8ae0b4;
+  --status-on_hold: #fff600;
+  --status-want_to_play: #4b93ff;
+  --status-backlog: #d0b0ff;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-
-  --playdamnit-purple: #7a5fff;
-  --playdamnit-dark: #252735;
-  --playdamnit-darker: #030712;
-  --playdamnit-light: #f6f8fd;
-  --playdamnit-cyan: #67fff2;
+  /* Ratings */
+  --rating-high: #6beda3;
+  --rating-mid: #ffb224;
+  --rating-low: #ff794f;
+  --warning: #ffb224;
 }
 
 @theme inline {
+  --font-sans: var(--font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -114,10 +88,6 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -126,19 +96,77 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-card: var(--radius-card);
 
-  --color-playdamnit-purple: var(--playdamnit-purple);
-  --color-playdamnit-dark: var(--playdamnit-dark);
-  --color-playdamnit-darker: var(--playdamnit-darker);
-  --color-playdamnit-light: var(--playdamnit-light);
-  --color-playdamnit-cyan: var(--playdamnit-cyan);
+  --color-dimmed: var(--muted-foreground);
+  --color-warning: var(--warning);
+  --color-status-finished: var(--status-finished);
+  --color-status-playing: var(--status-playing);
+  --color-status-dropped: var(--status-dropped);
+  --color-status-online: var(--status-online);
+  --color-status-on_hold: var(--status-on_hold);
+  --color-status-want_to_play: var(--status-want_to_play);
+  --color-status-backlog: var(--status-backlog);
+  --color-rating-high: var(--rating-high);
+  --color-rating-mid: var(--rating-mid);
+  --color-rating-low: var(--rating-low);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    color-scheme: dark;
+    scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  /* Actions are pills, like the reference design; the shadcn button file stays as shipped */
+  [data-slot="button"] {
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+  [data-slot="badge"] {
+    border-radius: 9999px;
+  }
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="select-trigger"] {
+    background-color: rgb(255 255 255 / 0.04);
+  }
+}
+
+@utility rounded-card {
+  border-radius: var(--radius-card);
+}
+
+/* A translucent panel on the page background: section cards, feed items, profile header */
+@utility panel {
+  background-color: rgb(255 255 255 / 0.03);
+  border: 1px solid rgb(255 255 255 / 0.05);
+  border-radius: var(--radius-card);
+}
+
+/* Poster-style game cover */
+@utility cover {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-color: var(--muted);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

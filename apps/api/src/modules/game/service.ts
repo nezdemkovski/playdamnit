@@ -1,7 +1,7 @@
-import { and, count, eq, exists, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, exists, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { game, gameToPlatform } from "@playdamnit/db/schema";
+import { cover, game, gameToPlatform } from "@playdamnit/db/schema";
 import {
   GAME_CARD_COLUMNS,
   GAME_CARD_WITH,
@@ -14,6 +14,9 @@ import {
 import { NotFoundError } from "@/utils/errors";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
+
+export const GAME_SORTS = ["id", "popular", "recent"] as const;
+export type GameSort = (typeof GAME_SORTS)[number];
 
 // Live games that point at `id` through the given parent column (DLC → parent_game,
 // editions → version_parent)
@@ -54,10 +57,23 @@ export abstract class GameService {
 
   /**
    * Find games with pagination and optional platform filter. Deleted games are excluded.
+   * `popular` orders by IGDB rating count, `recent` lists released games newest first
+   * (unreleased and undated games are left out), `id` is the catalog order.
    */
-  static async findGames(opts: { limit?: number; offset?: number; platformId?: number }) {
+  static async findGames(opts: {
+    limit?: number;
+    offset?: number;
+    platformId?: number;
+    sort?: GameSort;
+  }) {
     const limit = Math.min(opts.limit ?? MAX_GAMES_PAGE_SIZE, MAX_GAMES_PAGE_SIZE);
     const offset = opts.offset ?? 0;
+    const sort = opts.sort ?? "id";
+    // Released games with a cover: new releases without artwork are noise on a front page.
+    // RQB aliases the table inside `where`, so the filter is built from the table it passes.
+    const released = (t: { id: unknown; firstReleaseDate: unknown }) =>
+      sql`${t.firstReleaseDate} <= extract(epoch from now())::bigint and exists (select 1 from ${cover} where ${cover.gameId} = ${t.id})`;
+    const releasedFilter = sort === "recent" ? released(game) : undefined;
 
     const platformFilter = opts.platformId
       ? exists(
@@ -80,15 +96,21 @@ export abstract class GameService {
         where: {
           deletedAt: { isNull: true },
           ...(opts.platformId && { platforms: { id: opts.platformId } }),
+          ...(sort === "recent" && { RAW: released }),
         },
-        orderBy: { id: "asc" },
+        orderBy:
+          sort === "popular"
+            ? (t) => [desc(t.isPopular), sql`${t.totalRatingCount} desc nulls last`, t.id]
+            : sort === "recent"
+              ? (t) => [desc(t.firstReleaseDate), sql`${t.totalRatingCount} desc nulls last`]
+              : { id: "asc" },
         columns: GAME_CARD_COLUMNS,
         with: GAME_CARD_WITH,
       }),
       db
         .select({ total: count() })
         .from(game)
-        .where(and(isNull(game.deletedAt), platformFilter)),
+        .where(and(isNull(game.deletedAt), platformFilter, releasedFilter)),
     ]);
 
     return {

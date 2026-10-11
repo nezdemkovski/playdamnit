@@ -982,6 +982,15 @@ paths:
           schema:
             type: number
             default: 0
+        - name: sort
+          in: query
+          required: false
+          description: >-
+            id (catalog order, default), popular (IGDB rating count) or recent (released games,
+            newest first; unreleased and undated games are left out)
+          schema:
+            type: string
+            enum: [id, popular, recent]
       operationId: getApiGames
       tags:
         - Games

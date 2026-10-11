@@ -8,6 +8,7 @@
     "apps/api/.claude/**",
     "apps/api/.cursor/**",
     "bun.lock",
-    "charts/**/templates/**"
+    "charts/**/templates/**",
+    "apps/web/src/components/ui/**"
   ]
 }
