@@ -203,3 +203,8 @@ export enum Char {
 export enum QueryKeySuffix {
   Reviews = "/reviews",
 }
+
+/** Browser drag-and-drop payload format. */
+export enum DragDataType {
+  Text = "text/plain",
+}

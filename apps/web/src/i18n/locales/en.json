@@ -555,7 +555,19 @@
       "emptyRow": "Nobody here.",
       "ungraded": "Ungraded",
       "ungradedHintOwn": "Open a game, pick a letter, it lands in a row.",
-      "ungradedHint": "No verdict yet."
+      "ungradedHint": "No verdict yet.",
+      "saving": "Saving…",
+      "noMatches": "No matching games.",
+      "pool": "Pool",
+      "filterPool": "Filter pool…",
+      "boardHint": "Drag a game into a tier, or select a game and tap a tier label.",
+      "moveHint": "Move {{name}} to a tier",
+      "moveTo": "Move selected game to {{grade}} tier",
+      "rowLabel": "{{grade}} tier",
+      "selectGame": "Select {{name}}",
+      "returnToPool": "Return to pool",
+      "emptyPool": "All games have a grade.",
+      "loadError": "Could not load this library. Please try again."
     }
   },
   "settings": {
