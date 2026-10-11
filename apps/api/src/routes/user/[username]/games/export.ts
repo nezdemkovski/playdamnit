@@ -4,6 +4,14 @@ import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
 import { libraryParams } from "@/modules/userGame/model";
 import { toCSV } from "@/modules/userGame/csv";
+import {
+  ContentDisposition,
+  ExportFormat,
+  FlagValue,
+  HttpHeader,
+  isFlagSet,
+  MimeType,
+} from "@/utils/enums";
 
 const CSV_HEADERS = [
   "gameId",
@@ -23,13 +31,14 @@ export const exportUserGames = new Elysia().use(betterAuth).get(
     auth: true,
     params: libraryParams,
     query: t.Object({
-      format: t.Optional(t.Union([t.Literal("json"), t.Literal("csv")])),
+      format: t.Optional(t.Enum(ExportFormat)),
       download: t.Optional(t.String()),
     }),
   },
   async ({ params, user, query, set }) => {
     const { username } = params;
-    const { format = "json", download = "true" } = query;
+    const format: ExportFormat = query.format ?? ExportFormat.Json;
+    const download = query.download ?? FlagValue.True;
 
     UserGameService.assertOwnLibrary(username, user);
 
@@ -37,12 +46,13 @@ export const exportUserGames = new Elysia().use(betterAuth).get(
     const date = new Date().toISOString().split("T")[0];
     const filename = `games-export-${username}-${date}.${format}`;
 
-    if (download === "true") {
-      set.headers["content-disposition"] = `attachment; filename="${filename}"`;
+    if (isFlagSet(download)) {
+      set.headers[HttpHeader.ContentDisposition] =
+        `${ContentDisposition.Attachment}; filename="${filename}"`;
     }
 
-    if (format === "csv") {
-      set.headers["content-type"] = "text/csv; charset=utf-8";
+    if (format === ExportFormat.Csv) {
+      set.headers[HttpHeader.ContentType] = `${MimeType.Csv}; charset=utf-8`;
       return toCSV(CSV_HEADERS, games);
     }
 

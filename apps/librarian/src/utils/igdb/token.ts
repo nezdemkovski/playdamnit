@@ -1,6 +1,7 @@
 import { createLogger } from "../enhancedLogger";
+import { HttpMethod, OAuthGrantType, LogNamespace } from "../enums";
 
-const logger = createLogger("igdb-token");
+const logger = createLogger(LogNamespace.IgdbToken);
 
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
@@ -43,10 +44,10 @@ const requestNewToken = async (): Promise<{ token: string; expiresAt: number }> 
     const params = new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
-      grant_type: "client_credentials",
+      grant_type: OAuthGrantType.ClientCredentials,
     });
 
-    const response = await fetch(tokenUrl, { method: "POST", body: params });
+    const response = await fetch(tokenUrl, { method: HttpMethod.Post, body: params });
 
     if (!response.ok) {
       throw new Error(`Twitch token request failed with ${response.status}`);

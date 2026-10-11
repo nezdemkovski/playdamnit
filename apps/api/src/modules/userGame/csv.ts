@@ -1,3 +1,5 @@
+import { CsvChar } from "@/utils/enums";
+
 // Minimal RFC 4180 CSV support for library import/export: quoted fields may
 // contain commas, escaped quotes and newlines.
 
@@ -13,21 +15,21 @@ export const parseCSV = (content: string): Record<string, string>[] => {
     const char = text[i];
 
     if (inQuotes) {
-      if (char === '"' && text[i + 1] === '"') {
-        field += '"';
+      if (char === CsvChar.Quote && text[i + 1] === CsvChar.Quote) {
+        field += CsvChar.Quote;
         i++;
-      } else if (char === '"') {
+      } else if (char === CsvChar.Quote) {
         inQuotes = false;
       } else {
         field += char;
       }
-    } else if (char === '"') {
+    } else if (char === CsvChar.Quote) {
       inQuotes = true;
-    } else if (char === ",") {
+    } else if (char === CsvChar.Comma) {
       row.push(field);
       field = "";
-    } else if (char === "\n" || char === "\r") {
-      if (char === "\r" && text[i + 1] === "\n") i++;
+    } else if (char === CsvChar.Newline || char === CsvChar.CarriageReturn) {
+      if (char === CsvChar.CarriageReturn && text[i + 1] === CsvChar.Newline) i++;
       row.push(field);
       rows.push(row);
       row = [];

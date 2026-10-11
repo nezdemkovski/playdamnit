@@ -19,6 +19,7 @@ import { FollowButton } from "@/components/social/follow-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { FriendsTab, ProfileTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username")({
   component: ProfileLayout,
@@ -26,17 +27,22 @@ export const Route = createFileRoute("/$username")({
 
 const TABS: {
   to: string;
-  label: "profile" | "games" | "journal" | "reviews" | "lists" | "friends" | "likes";
+  label: ProfileTab;
   icon: LucideIcon;
-  count?: "games" | "reviews" | "lists";
+  count?: ProfileTab.Games | ProfileTab.Reviews | ProfileTab.Lists;
 }[] = [
-  { to: "", label: "profile", icon: UserIcon },
-  { to: "/games", label: "games", icon: LibraryIcon, count: "games" },
-  { to: "/journal", label: "journal", icon: BookOpenIcon },
-  { to: "/reviews", label: "reviews", icon: MessageSquareTextIcon, count: "reviews" },
-  { to: "/lists", label: "lists", icon: LayersIcon, count: "lists" },
-  { to: "/friends", label: "friends", icon: UsersIcon },
-  { to: "/likes", label: "likes", icon: HeartIcon },
+  { to: "", label: ProfileTab.Profile, icon: UserIcon },
+  { to: "/games", label: ProfileTab.Games, icon: LibraryIcon, count: ProfileTab.Games },
+  { to: "/journal", label: ProfileTab.Journal, icon: BookOpenIcon },
+  {
+    to: "/reviews",
+    label: ProfileTab.Reviews,
+    icon: MessageSquareTextIcon,
+    count: ProfileTab.Reviews,
+  },
+  { to: "/lists", label: ProfileTab.Lists, icon: LayersIcon, count: ProfileTab.Lists },
+  { to: "/friends", label: ProfileTab.Friends, icon: UsersIcon },
+  { to: "/likes", label: ProfileTab.Likes, icon: HeartIcon },
 ];
 
 /** Profile header (avatar, bio, links, follow) and the tab bar; tabs render in the outlet */
@@ -120,7 +126,7 @@ function ProfileLayout() {
               <Link
                 to="/$username/friends"
                 params={{ username }}
-                search={{ tab: "followers" }}
+                search={{ tab: FriendsTab.Followers }}
                 className="hover:underline"
               >
                 <b>{user.counts.followers}</b>{" "}
@@ -131,7 +137,7 @@ function ProfileLayout() {
               <Link
                 to="/$username/friends"
                 params={{ username }}
-                search={{ tab: "following" }}
+                search={{ tab: FriendsTab.Following }}
                 className="hover:underline"
               >
                 <b>{user.counts.following}</b>{" "}

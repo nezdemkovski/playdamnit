@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { deriveGame } from "@/catalog/derive";
 import type { IGDBGameResponse } from "@/utils/igdb/types";
+import { ImageSource } from "@playdamnit/db/enums";
 
 const now = new Date("2026-10-11T00:00:00Z");
 
@@ -96,7 +97,7 @@ describe("deriveGame", () => {
   test("keys media and links by IGDB id", () => {
     expect(derived.cover).toMatchObject({ id: 100, gameId: 7346, hash: "co3p2d" });
     expect(derived.screenshots).toEqual([
-      { id: 200, gameId: 7346, hash: "sc1", source: "igdb", width: null, height: null },
+      { id: 200, gameId: 7346, hash: "sc1", source: ImageSource.Igdb, width: null, height: null },
     ]);
     expect(derived.videos).toEqual([{ id: 300, gameId: 7346, name: "Trailer", videoId: "abc" }]);
     expect(derived.websites[0]).toMatchObject({ id: 400, typeId: 1, trusted: true });

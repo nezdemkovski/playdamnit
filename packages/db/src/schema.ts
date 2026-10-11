@@ -19,10 +19,15 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-export enum ImageSourceEnum {
-  IGDB = "igdb",
-  LOCAL = "local",
-}
+import {
+  enumValues,
+  ImageSource,
+  NotificationType,
+  ReactionEmoji,
+  ReleaseDatePrecision,
+  UserGameSource,
+  UserGameStatus,
+} from "./enums";
 
 // ─── Better Auth Tables ───────────────────────────────────────────────────────
 // Mirrors the schema Better Auth 1.7 (+ username, admin, passkey, api-key plugins) expects.
@@ -169,20 +174,6 @@ export const apikey = pgTable(
   ],
 );
 
-export const USER_GAME_STATUSES = [
-  "finished",
-  "playing",
-  "dropped",
-  "online",
-  "on_hold",
-  "want_to_play",
-  "backlog",
-] as const;
-
-export type UserGameStatus = (typeof USER_GAME_STATUSES)[number];
-
-export const USER_GAME_SOURCES = ["steam", "gog", "manual"] as const;
-
 export const userGames = pgTable(
   "user_games",
   {
@@ -195,8 +186,10 @@ export const userGames = pgTable(
     gameId: integer("game_id")
       .notNull()
       .references(() => game.id, { onDelete: "restrict" }),
-    status: text("status", { enum: USER_GAME_STATUSES }).notNull(),
-    source: text("source", { enum: USER_GAME_SOURCES }).notNull().default("manual"),
+    status: text("status", { enum: enumValues(UserGameStatus) }).notNull(),
+    source: text("source", { enum: enumValues(UserGameSource) })
+      .notNull()
+      .default(UserGameSource.Manual),
     endedAt: timestamp("ended_at"),
     addedAt: timestamp("added_at").defaultNow().notNull(),
     rating: decimal("rating", { precision: 3, scale: 1 }),
@@ -246,9 +239,6 @@ export const playthrough = pgTable(
   ],
 );
 
-export const REACTION_EMOJIS = ["❤️", "🔥", "👏", "😂", "🤔", "😢", "💀", "👀"] as const;
-export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
-
 // One emoji reaction per member per review; choosing another emoji replaces it
 export const reviewReaction = pgTable(
   "review_reaction",
@@ -259,7 +249,9 @@ export const reviewReaction = pgTable(
     userGameId: uuid("user_game_id")
       .notNull()
       .references(() => userGames.id, { onDelete: "cascade" }),
-    emoji: text("emoji", { enum: REACTION_EMOJIS }).notNull().default("❤️"),
+    emoji: text("emoji", { enum: enumValues(ReactionEmoji) })
+      .notNull()
+      .default(ReactionEmoji.Heart),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -324,9 +316,6 @@ export const gameListItem = pgTable(
   ],
 );
 
-export const NOTIFICATION_TYPES = ["follow", "review_reaction"] as const;
-export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
-
 export const notification = pgTable(
   "notification",
   {
@@ -336,7 +325,7 @@ export const notification = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type", { enum: NOTIFICATION_TYPES }).notNull(),
+    type: text("type", { enum: enumValues(NotificationType) }).notNull(),
     actorId: text("actor_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -492,7 +481,9 @@ export const game = pgTable(
     isPopular: boolean("is_popular").notNull().default(false),
     totalRatingCount: integer("total_rating_count"),
     // IGDB date precision for first_release_date ("YYYYMMMMDD", "YYYYMMMM", "YYYY", ...)
-    firstReleaseDatePrecision: text("first_release_date_precision"),
+    firstReleaseDatePrecision: text("first_release_date_precision", {
+      enum: enumValues(ReleaseDatePrecision),
+    }),
     // IGDB game_type id, see the `type` table for names
     gameType: integer("game_type"),
     // DLC/expansions point at their parent; editions point at the game they are a version of
@@ -538,9 +529,9 @@ export const cover = pgTable(
       .unique()
       .references(() => game.id, { onDelete: "cascade" }),
     hash: text("hash").notNull(),
-    source: text("source", { enum: ["igdb", "local"] })
+    source: text("source", { enum: enumValues(ImageSource) })
       .notNull()
-      .default(ImageSourceEnum.IGDB),
+      .default(ImageSource.Igdb),
     width: integer("width"),
     height: integer("height"),
   },
@@ -555,9 +546,9 @@ export const screenshot = pgTable(
       .notNull()
       .references(() => game.id, { onDelete: "cascade" }),
     hash: text("hash").notNull(),
-    source: text("source", { enum: ["igdb", "local"] })
+    source: text("source", { enum: enumValues(ImageSource) })
       .notNull()
-      .default(ImageSourceEnum.IGDB),
+      .default(ImageSource.Igdb),
     width: integer("width"),
     height: integer("height"),
   },

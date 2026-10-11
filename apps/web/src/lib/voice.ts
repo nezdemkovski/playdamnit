@@ -1,6 +1,7 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
 
 import { t } from "@/i18n";
+import { LibraryAction } from "@/lib/enums";
 
 /**
  * The site's voice: one-liners that only make sense next to the user's real numbers. Sarcasm
@@ -42,23 +43,27 @@ export const summarize = (entries: UserGameWithUserData[]): LibrarySummary => {
   let stalePlaying: UserGameWithUserData | null = null;
   for (const e of entries) {
     const d = e.userGameData;
-    if (d.status === "finished") finished++;
-    if (d.status === "playing") playing++;
-    if (d.status === "dropped") dropped++;
-    if (d.status === "backlog" || d.status === "want_to_play") backlog++;
+    if (d.status === StatusEnum.Finished) finished++;
+    if (d.status === StatusEnum.Playing) playing++;
+    if (d.status === StatusEnum.Dropped) dropped++;
+    if (d.status === StatusEnum.Backlog || d.status === StatusEnum.WantToPlay) backlog++;
     if (d.addedAt && now - new Date(d.addedAt).getTime() < 7 * DAY) addedThisWeek++;
-    if (d.status === "finished" && d.endedAt && now - new Date(d.endedAt).getTime() < 30 * DAY)
+    if (
+      d.status === StatusEnum.Finished &&
+      d.endedAt &&
+      now - new Date(d.endedAt).getTime() < 30 * DAY
+    )
       finishedThisMonth++;
     if (
-      (d.status === "backlog" || d.status === "want_to_play") &&
+      (d.status === StatusEnum.Backlog || d.status === StatusEnum.WantToPlay) &&
       (!longestIdle || idleDays(e) > idleDays(longestIdle))
     )
       longestIdle = e;
-    if (d.status === "playing" && (!stalePlaying || idleDays(e) > idleDays(stalePlaying)))
+    if (d.status === StatusEnum.Playing && (!stalePlaying || idleDays(e) > idleDays(stalePlaying)))
       stalePlaying = e;
   }
   const settled =
-    entries.length - entries.filter((e) => e.userGameData.status === "want_to_play").length;
+    entries.length - entries.filter((e) => e.userGameData.status === StatusEnum.WantToPlay).length;
   return {
     total: entries.length,
     finished,
@@ -86,7 +91,7 @@ export const addedLine = (s: LibrarySummary): string =>
 
 export const finishedLine = (entries: UserGameWithUserData[]): string => {
   const last = entries
-    .filter((e) => e.userGameData.status === "finished" && e.userGameData.endedAt)
+    .filter((e) => e.userGameData.status === StatusEnum.Finished && e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))[0];
   if (!last) return t("voice.finished.never");
   const d = daysSince(last.userGameData.endedAt);
@@ -111,24 +116,24 @@ export const backlogLine = (s: LibrarySummary): string => {
 export const idleLine = (entry: UserGameWithUserData): string => {
   const d = idleDays(entry);
   const status = entry.userGameData.status;
-  if (status === "finished") return t("voice.idle.finished");
-  if (status === "dropped") return t("voice.idle.dropped");
-  if (status === "playing")
+  if (status === StatusEnum.Finished) return t("voice.idle.finished");
+  if (status === StatusEnum.Dropped) return t("voice.idle.dropped");
+  if (status === StatusEnum.Playing)
     return d > 30 ? t("voice.idle.playingStale", { count: d }) : t("voice.idle.playingFine");
-  if (status === "on_hold") return t("voice.idle.onHold", { count: d });
-  if (status === "online") return t("voice.idle.online");
+  if (status === StatusEnum.OnHold) return t("voice.idle.onHold", { count: d });
+  if (status === StatusEnum.Online) return t("voice.idle.online");
   return d === 0 ? t("voice.idle.today") : t("voice.idle.never", { count: d });
 };
 
 /** Toasts after a library write */
 export const toastFor = (
-  kind: "add" | "update" | "remove",
+  kind: LibraryAction,
   status: string | undefined,
   s: LibrarySummary,
 ): string => {
-  if (kind === "remove") return t("voice.toast.removed");
-  if (status === "finished") return t("voice.toast.finished", { count: s.backlog });
-  if (status === "dropped") return t("voice.toast.dropped");
-  if (kind === "add") return t("voice.toast.added", { count: s.total + 1 });
+  if (kind === LibraryAction.Remove) return t("voice.toast.removed");
+  if (status === StatusEnum.Finished) return t("voice.toast.finished", { count: s.backlog });
+  if (status === StatusEnum.Dropped) return t("voice.toast.dropped");
+  if (kind === LibraryAction.Add) return t("voice.toast.added", { count: s.total + 1 });
   return t("voice.toast.saved");
 };

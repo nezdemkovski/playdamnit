@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getConfig } from "@/config";
 import { useLibraryMutations } from "@/hooks/library";
+import { GetApiUserByUsernameGamesExportFormat } from "@playdamnit/api-client";
 
 /** Export the list as JSON or CSV, import a file exported here (or a hand-made one) */
 export function DataSettings({ username }: { username: string }) {
@@ -15,7 +16,7 @@ export function DataSettings({ username }: { username: string }) {
   const [overwrite, setOverwrite] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const exportUrl = (format: "json" | "csv") =>
+  const exportUrl = (format: GetApiUserByUsernameGamesExportFormat) =>
     `${getConfig().apiUrl}/api/user/${encodeURIComponent(username)}/games/export?format=${format}&download=true`;
 
   const upload = async (file: File | undefined) => {
@@ -36,10 +37,10 @@ export function DataSettings({ username }: { username: string }) {
         <p className="text-sm text-dimmed">{t("settings.data.exportText")}</p>
         <div className="flex gap-2">
           <Button asChild variant="secondary">
-            <a href={exportUrl("json")}>JSON</a>
+            <a href={exportUrl(GetApiUserByUsernameGamesExportFormat.Json)}>JSON</a>
           </Button>
           <Button asChild variant="secondary">
-            <a href={exportUrl("csv")}>CSV</a>
+            <a href={exportUrl(GetApiUserByUsernameGamesExportFormat.Csv)}>CSV</a>
           </Button>
         </div>
       </section>

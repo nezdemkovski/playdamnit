@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Histogram } from "@/components/charts/histogram";
 import { ratingColor } from "@/lib/format";
 import { addedLine, backlogLine, finishedLine, playingLine, summarize } from "@/lib/voice";
+import { StatTone } from "@/lib/enums";
 
 /** Headline numbers in the scoreboard voice, the completion rate and the rating distribution */
 export function ProfileStats({
@@ -43,7 +44,7 @@ export function ProfileStats({
         <Stat
           label={t("profile.stats.finished")}
           value={s.finished}
-          tone={s.finished === 0 && s.total > 0 ? "bad" : undefined}
+          tone={s.finished === 0 && s.total > 0 ? StatTone.Bad : undefined}
           note={
             own
               ? finishedLine(entries)
@@ -114,7 +115,7 @@ function Stat({
   label: string;
   value: number;
   note: string;
-  tone?: "bad";
+  tone?: StatTone;
 }) {
   return (
     <div className="border-r border-border px-4 py-4 last:border-r-0 sm:px-5 [&:nth-child(2)]:border-r-0 sm:[&:nth-child(2)]:border-r [&:nth-child(-n+2)]:border-b sm:[&:nth-child(-n+2)]:border-b-0">
@@ -122,7 +123,7 @@ function Stat({
       <dd
         className={cn(
           "num my-1.5 text-4xl font-extrabold sm:text-5xl",
-          tone === "bad" && "text-signal",
+          tone === StatTone.Bad && "text-signal",
         )}
       >
         {value}

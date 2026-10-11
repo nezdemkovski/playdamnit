@@ -35,6 +35,7 @@ import { useMyLibrary } from "@/hooks/library";
 import { useListMutations } from "@/hooks/social";
 import { releaseYear } from "@/lib/format";
 import { AddGamePicker } from "@/components/lists/add-game-picker";
+import { IgdbSize } from "@/lib/enums";
 
 export const Route = createFileRoute("/lists/$id")({
   component: ListPage,
@@ -194,7 +195,7 @@ function ListPage() {
               <GameCover
                 url={game.cover?.url}
                 name={game.name}
-                size="cover_small"
+                size={IgdbSize.CoverSmall}
                 className="w-10 rounded-md"
               />
               <div className="min-w-0 flex-1 truncate font-semibold">{game.name}</div>

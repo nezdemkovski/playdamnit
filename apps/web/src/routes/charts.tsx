@@ -1,4 +1,9 @@
-import { useGetApiCatalog, useGetApiGames, type Game } from "@playdamnit/api-client";
+import {
+  GetApiGamesSort,
+  useGetApiCatalog,
+  useGetApiGames,
+  type Game,
+} from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   CalendarIcon,
@@ -24,15 +29,16 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
+import { IgdbSize } from "@/lib/enums";
+import { ChartTab } from "@/lib/enums";
 
 const TABS = [
-  { value: "popular", icon: FlameIcon, sort: "popular" },
-  { value: "best", icon: StarIcon, sort: "rating" },
-  { value: "wanted", icon: SparklesIcon, sort: "wanted" },
-  { value: "played", icon: UsersIcon, sort: "played" },
-  { value: "upcoming", icon: CalendarIcon, sort: "upcoming" },
+  { value: ChartTab.Popular, icon: FlameIcon, sort: GetApiGamesSort.Popular },
+  { value: ChartTab.Best, icon: StarIcon, sort: GetApiGamesSort.Rating },
+  { value: ChartTab.Wanted, icon: SparklesIcon, sort: GetApiGamesSort.Wanted },
+  { value: ChartTab.Played, icon: UsersIcon, sort: GetApiGamesSort.Played },
+  { value: ChartTab.Upcoming, icon: CalendarIcon, sort: GetApiGamesSort.Upcoming },
 ] as const;
-type Tab = (typeof TABS)[number]["value"];
 const PAGE = 50;
 const YEARS = Array.from(
   { length: new Date().getFullYear() + 2 - 1980 },
@@ -41,7 +47,7 @@ const YEARS = Array.from(
 
 export const Route = createFileRoute("/charts")({
   validateSearch: (raw: Record<string, unknown>) => ({
-    tab: (TABS.some((tb) => tb.value === raw.tab) ? raw.tab : "popular") as Tab,
+    tab: (TABS.some((tb) => tb.value === raw.tab) ? raw.tab : ChartTab.Popular) as ChartTab,
     genreId: typeof raw.genreId === "number" ? raw.genreId : undefined,
     platformId: typeof raw.platformId === "number" ? raw.platformId : undefined,
     year: typeof raw.year === "number" ? raw.year : undefined,
@@ -170,11 +176,11 @@ function ChartsPage() {
           </span>
         </h2>
         <span className="text-xs text-dimmed">
-          {tab.value === "best"
+          {tab.value === ChartTab.Best
             ? t("charts.blurb.best")
-            : tab.value === "popular"
+            : tab.value === ChartTab.Popular
               ? t("charts.blurb.popular")
-              : tab.value === "upcoming"
+              : tab.value === ChartTab.Upcoming
                 ? t("charts.blurb.upcoming")
                 : t("charts.blurb.members")}
         </span>
@@ -227,7 +233,7 @@ function ChartRow({
 }: {
   rank: number;
   game: Game;
-  tab: Tab;
+  tab: ChartTab;
   rating?: number | null;
 }) {
   const igdb = game.totalRating ? game.totalRating / 10 : null;
@@ -238,7 +244,7 @@ function ChartRow({
         <GameCover
           url={game.cover?.url}
           name={game.name}
-          size="cover_small"
+          size={IgdbSize.CoverSmall}
           className="rounded-md"
         />
       </Link>
@@ -265,7 +271,7 @@ function ChartRow({
       </div>
       <div className="flex shrink-0 items-center gap-3 text-sm">
         {rating ? <RatingValue value={rating} /> : null}
-        {tab !== "upcoming" && igdb ? (
+        {tab !== ChartTab.Upcoming && igdb ? (
           <span className="flex items-center gap-1 text-dimmed">
             <StarIcon className="size-3.5" />
             <RatingValue value={igdb} className="text-white" />

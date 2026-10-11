@@ -12,12 +12,14 @@ import en from "./locales/en.json";
  * Not translated on purpose: game data from IGDB (names, genres, platforms), user-written text
  * (reviews, bios, list names) and messages that come back from the API.
  */
-export const SUPPORTED_LANGUAGES = ["en"] as const;
-export type Language = (typeof SUPPORTED_LANGUAGES)[number];
-export const DEFAULT_LANGUAGE: Language = "en";
+export enum Language {
+  English = "en",
+}
+export const SUPPORTED_LANGUAGES = Object.values(Language);
+export const DEFAULT_LANGUAGE = Language.English;
 
 export const resources = {
-  en: { translation: en },
+  [Language.English]: { translation: en },
 } as const;
 
 void i18n.use(initReactI18next).init({

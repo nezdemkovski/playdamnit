@@ -3,6 +3,7 @@ import { Elysia, t } from "elysia";
 import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
 import { libraryGameParams } from "@/modules/userGame/model";
+import { StringFormat } from "@/utils/enums";
 
 const body = t.Object({
   startedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
@@ -15,7 +16,7 @@ const body = t.Object({
 const withPlaythrough = t.Object({
   username: t.String(),
   id: t.Numeric(),
-  playthroughId: t.String({ format: "uuid" }),
+  playthroughId: t.String({ format: StringFormat.Uuid }),
 });
 
 export const playthroughRoutes = new Elysia()

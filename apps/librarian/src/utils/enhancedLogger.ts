@@ -1,6 +1,16 @@
 import winston from "winston";
 import { format } from "winston";
 import "winston-daily-rotate-file";
+import {
+  LogDir,
+  LogFileDatePattern,
+  LogFileName,
+  LogLevel as ConfigLogLevel,
+  LogNamespace,
+  LogRotation,
+  LogTimestampFormat,
+  ServiceName,
+} from "./enums";
 
 const { combine, timestamp, printf, colorize, json } = format;
 
@@ -15,36 +25,36 @@ enum LogLevel {
 
 const consoleFormat = combine(
   colorize(),
-  timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  timestamp({ format: LogTimestampFormat.DateTime }),
   printf(({ timestamp, level, message, service, ...meta }) => {
     const metaString = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : "";
-    return `[${timestamp}] [${level}] [${service || "librarian"}] ${message} ${metaString}`;
+    return `[${timestamp}] [${level}] [${service || LogNamespace.Librarian}] ${message} ${metaString}`;
   }),
 );
 
 const winstonLogger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || ConfigLogLevel.Info,
   format: combine(timestamp(), json()),
-  defaultMeta: { service: "playdamnit-librarian" },
+  defaultMeta: { service: ServiceName.Librarian },
   transports: [
     new winston.transports.Console({
       format: consoleFormat,
     }),
     new winston.transports.DailyRotateFile({
-      filename: "error-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      level: "error",
-      dirname: process.env.LOG_DIR || "./logs",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: LogFileName.Error,
+      datePattern: LogFileDatePattern.Daily,
+      level: ConfigLogLevel.Error,
+      dirname: process.env.LOG_DIR || LogDir.Default,
+      maxSize: LogRotation.MaxSize,
+      maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
     new winston.transports.DailyRotateFile({
-      filename: "combined-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      dirname: process.env.LOG_DIR || "./logs",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: LogFileName.Combined,
+      datePattern: LogFileDatePattern.Daily,
+      dirname: process.env.LOG_DIR || LogDir.Default,
+      maxSize: LogRotation.MaxSize,
+      maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
   ],
@@ -122,5 +132,5 @@ export const createLogger = (namespace: string): EnhancedLogger => {
   };
 };
 
-const defaultLogger = createLogger("librarian");
+const defaultLogger = createLogger(LogNamespace.Librarian);
 export default defaultLogger;

@@ -6,13 +6,13 @@
 //   bun run scripts/enqueue.ts drain-dirty
 import { PgBoss } from "pg-boss";
 
-import { QUEUES } from "@playdamnit/db/jobs";
+import { QUEUES, SyncMode } from "@playdamnit/db/jobs";
 
 const [queue, arg] = process.argv.slice(2);
 const data: Record<string, unknown> | null = (() => {
   switch (queue) {
     case QUEUES.SYNC_CATALOG:
-      return arg === "full" || arg === "incremental" ? { mode: arg } : null;
+      return Object.values<string>(SyncMode).includes(arg) ? { mode: arg } : null;
     case QUEUES.SYNC_LOOKUPS:
       return { force: true };
     case QUEUES.FETCH_BY_IDS:

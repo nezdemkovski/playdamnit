@@ -21,13 +21,14 @@ import {
   sendEmail,
   sendVerificationEmailTemplate,
 } from "@/utils/email";
+import { Hostname, Origin } from "@/utils/enums";
 
 const { trustedOrigins, isDev, betterAuthUrl } = getConfig();
 
 // WebAuthn ties passkeys to the site's hostname (rpID) and accepts registrations only from the
 // listed browser origins: the web app's origins plus this API's own
 const DEV_WEB_ORIGINS = ["http://localhost:3000", "http://localhost:3030"];
-const rpID = betterAuthUrl ? new URL(betterAuthUrl).hostname : "localhost";
+const rpID = betterAuthUrl ? new URL(betterAuthUrl).hostname : Hostname.Localhost;
 const passkeyOrigins = [
   ...new Set([
     ...(betterAuthUrl ? [new URL(betterAuthUrl).origin] : []),
@@ -113,7 +114,7 @@ export const auth = betterAuth({
 
     if (!origin) return [];
 
-    if (isDev && origin.startsWith("http://localhost")) {
+    if (isDev && origin.startsWith(Origin.LocalhostHttp)) {
       return [origin];
     }
 

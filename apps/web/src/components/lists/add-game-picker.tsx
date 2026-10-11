@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { releaseYear } from "@/lib/format";
+import { IgdbSize } from "@/lib/enums";
 
 interface AddGamePickerProps {
   exclude: Set<number>;
@@ -52,7 +53,7 @@ export function AddGamePicker({ exclude, onPick, children }: AddGamePickerProps)
                 <GameCover
                   url={game.cover?.url}
                   name={game.name}
-                  size="cover_small"
+                  size={IgdbSize.CoverSmall}
                   className="w-8 rounded"
                 />
                 <div className="min-w-0 flex-1">

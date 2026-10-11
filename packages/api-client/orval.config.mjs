@@ -9,6 +9,9 @@ export default defineConfig({
       client: "react-query",
       httpClient: "axios",
       override: {
+        // Real TypeScript enums, not string unions: callers write `StatusEnum.Finished`
+        enumGenerationType: "enum",
+        namingConvention: { enum: "PascalCase" },
         mutator: {
           path: "./custom-axios.ts",
           name: "customInstance",

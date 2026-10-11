@@ -11,28 +11,19 @@ import {
   video,
   website,
 } from "@playdamnit/db/schema";
+import { WebhookEntity, WebhookMethod } from "@playdamnit/db/enums";
 
 // Child entities we can map back to a game: through the `game` field of the payload, or, when
 // IGDB sends only an id (deletes), through the row we hold for that id
+// (`involved_companies` has no table keyed by its id: only resolvable through `game`)
 const CHILD_TABLES = {
-  covers: cover,
-  screenshots: screenshot,
-  videos: video,
-  websites: website,
-  external_games: externalGame,
-  game_localizations: gameLocalization,
+  [WebhookEntity.Covers]: cover,
+  [WebhookEntity.Screenshots]: screenshot,
+  [WebhookEntity.Videos]: video,
+  [WebhookEntity.Websites]: website,
+  [WebhookEntity.ExternalGames]: externalGame,
+  [WebhookEntity.GameLocalizations]: gameLocalization,
 } as const;
-
-export const WEBHOOK_ENTITIES = [
-  "games",
-  ...(Object.keys(CHILD_TABLES) as (keyof typeof CHILD_TABLES)[]),
-  // No table keyed by involved_company id: only resolvable through `game`
-  "involved_companies",
-] as const;
-export const WEBHOOK_METHODS = ["create", "update", "delete"] as const;
-
-type WebhookEntity = (typeof WEBHOOK_ENTITIES)[number];
-type WebhookMethod = (typeof WEBHOOK_METHODS)[number];
 
 const DELETED_REASON = "deleted";
 
@@ -66,7 +57,7 @@ const resolveGameId = async (
   entity: WebhookEntity,
   payload: Record<string, unknown>,
 ): Promise<number | null> => {
-  if (entity === "games") return asId(payload.id);
+  if (entity === WebhookEntity.Games) return asId(payload.id);
 
   const fromPayload = asId(payload.game);
   if (fromPayload) return fromPayload;
@@ -96,7 +87,10 @@ export const markDirty = async (
   const gameId = await resolveGameId(entity, payload);
   if (!gameId) return null;
 
-  const reason = entity === "games" && method === "delete" ? DELETED_REASON : `${entity}:${method}`;
+  const reason =
+    entity === WebhookEntity.Games && method === WebhookMethod.Delete
+      ? DELETED_REASON
+      : `${entity}:${method}`;
 
   await db
     .insert(catalogDirty)

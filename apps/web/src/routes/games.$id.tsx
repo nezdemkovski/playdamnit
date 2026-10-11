@@ -1,4 +1,10 @@
-import { useGetApiGamesById, useGetApiGamesByIdReviews, type Game } from "@playdamnit/api-client";
+import {
+  GameFirstReleaseDatePrecision,
+  GetApiGamesByIdReviewsSort,
+  useGetApiGamesById,
+  useGetApiGamesByIdReviews,
+  type Game,
+} from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CameraIcon,
@@ -39,6 +45,7 @@ import {
   shortDate,
 } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
+import { IgdbSize, ImageLoading, PillSize } from "@/lib/enums";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -95,7 +102,7 @@ function GameDetail({ game }: { game: Game }) {
   const { byGameId } = useMyLibrary();
   const entry = byGameId.get(game.id)?.userGameData ?? null;
 
-  const hero = igdbImage(game.screenshots?.[0]?.url, "1080p");
+  const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
   const date = releaseDate(game.firstReleaseDate, game.firstReleaseDatePrecision);
   const igdbRating = game.totalRating ? game.totalRating / 10 : null;
@@ -103,7 +110,7 @@ function GameDetail({ game }: { game: Game }) {
   const links = (game.websites ?? []).filter((w) => w.url);
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
   const community = game.community!;
-  const [reviewSort, setReviewSort] = useState<"latest" | "top">("latest");
+  const [reviewSort, setReviewSort] = useState(GetApiGamesByIdReviewsSort.Latest);
   const reviews = useGetApiGamesByIdReviews(game.id, { sort: reviewSort, limit: 20 });
 
   return (
@@ -115,7 +122,7 @@ function GameDetail({ game }: { game: Game }) {
               src={hero}
               alt=""
               className="absolute inset-0 size-full object-cover"
-              loading="eager"
+              loading={ImageLoading.Eager}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
@@ -127,7 +134,7 @@ function GameDetail({ game }: { game: Game }) {
               url={game.cover?.url}
               name={game.name}
               className="w-24 shrink-0 shadow-2xl sm:w-32"
-              loading="eager"
+              loading={ImageLoading.Eager}
             />
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
               <Stat label={t("game.stats.igdb")}>
@@ -207,7 +214,7 @@ function GameDetail({ game }: { game: Game }) {
       {date && <div className="mt-1 text-dimmed">{date}</div>}
       {entry && (
         <div className="mt-3 flex items-center gap-2">
-          <StatusPill status={entry.status} size="md" />
+          <StatusPill status={entry.status} size={PillSize.Md} />
           {entry.endedAt && <span className="text-sm text-dimmed">{shortDate(entry.endedAt)}</span>}
         </div>
       )}
@@ -321,13 +328,13 @@ function GameDetail({ game }: { game: Game }) {
             {game.screenshots.map((shot) => (
               <a
                 key={shot.id}
-                href={igdbImage(shot.url, "1080p") ?? undefined}
+                href={igdbImage(shot.url, IgdbSize.P1080) ?? undefined}
                 target="_blank"
                 rel="noreferrer"
                 className="w-[85%] shrink-0 snap-start overflow-hidden rounded-lg bg-muted sm:w-[70%] md:w-[60%]"
               >
                 <img
-                  src={igdbImage(shot.url, "screenshot_big") ?? undefined}
+                  src={igdbImage(shot.url, IgdbSize.ScreenshotBig) ?? undefined}
                   alt=""
                   className="aspect-video w-full object-cover"
                   loading="lazy"
@@ -380,7 +387,10 @@ function GameDetail({ game }: { game: Game }) {
                 <GameCard game={r} rating={byGameId.get(r.id)?.userGameData.rating} />
                 <div className="mt-2 line-clamp-2 text-xs font-semibold">{r.name}</div>
                 <div className="text-xs text-dimmed">
-                  {[gameTypeName(r.gameType), releaseDate(r.firstReleaseDate, "year")]
+                  {[
+                    gameTypeName(r.gameType),
+                    releaseDate(r.firstReleaseDate, GameFirstReleaseDatePrecision.Year),
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
@@ -413,7 +423,7 @@ function GameDetail({ game }: { game: Game }) {
         count={community.reviews}
         action={
           <div className="flex gap-1 text-sm">
-            {(["latest", "top"] as const).map((sort) => (
+            {Object.values(GetApiGamesByIdReviewsSort).map((sort) => (
               <button
                 key={sort}
                 type="button"

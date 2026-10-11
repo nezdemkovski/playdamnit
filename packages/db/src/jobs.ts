@@ -35,8 +35,14 @@ export interface SyncCatalogCursor {
   startedAt?: number;
 }
 
+/** full: walk /games by id; incremental: only what IGDB updated since the last walk */
+export enum SyncMode {
+  Full = "full",
+  Incremental = "incremental",
+}
+
 export interface SyncCatalogJob {
-  mode: "full" | "incremental";
+  mode: SyncMode;
   cursor?: SyncCatalogCursor;
 }
 

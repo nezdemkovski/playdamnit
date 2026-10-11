@@ -43,6 +43,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { t } from "@/i18n";
+import { QueryKey, QueryKeySuffix } from "@/lib/enums";
 import { useSession } from "./auth";
 
 const apiError = (error: unknown, fallback: string) =>
@@ -58,8 +59,8 @@ export const useFollow = (username: string) => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameFollowersQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameFollowingQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiUsersQueryKey() });
-    queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/me/feed"] });
+    queryClient.invalidateQueries({ queryKey: [QueryKey.Users] });
+    queryClient.invalidateQueries({ queryKey: [QueryKey.Feed] });
   };
   const follow = usePostApiUserByUsernameFollow({
     mutation: { onSuccess: refresh, onError: onError(t("toast.followFailed")) },
@@ -104,7 +105,9 @@ export const useReviewReaction = () => {
   const refresh = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdReviewsQueryKey(gameId) });
     queryClient.invalidateQueries({ queryKey: getGetApiReviewsQueryKey() });
-    queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).endsWith("/reviews") });
+    queryClient.invalidateQueries({
+      predicate: (q) => String(q.queryKey[0]).endsWith(QueryKeySuffix.Reviews),
+    });
   };
   const react = usePutApiReviewsByIdReaction({
     mutation: { onError: onError(t("toast.reactFailed")) },
@@ -131,7 +134,7 @@ export const useProfileUpdate = () => {
   const queryClient = useQueryClient();
   const { user } = useSession();
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["session"] });
+    queryClient.invalidateQueries({ queryKey: [QueryKey.Session] });
     if (user?.username)
       queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(user.username) });
   };

@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
-import { GAME_SORTS, GameService, MAX_GAMES_PAGE_SIZE } from "@/modules/game/service";
+import { GameService, MAX_GAMES_PAGE_SIZE } from "@/modules/game/service";
+import { GameSort } from "@/utils/enums";
 
 const idList = (value: string | undefined) =>
   value
@@ -22,7 +23,7 @@ export const getGames = new Elysia().get(
       releasedTo: t.Optional(t.Numeric({ minimum: 0 })),
       types: t.Optional(t.String({ maxLength: 100 })),
       ids: t.Optional(t.String({ maxLength: 1000 })),
-      sort: t.Optional(t.Union(GAME_SORTS.map((s) => t.Literal(s)))),
+      sort: t.Optional(t.Enum(GameSort)),
     }),
   },
   ({ query }) =>

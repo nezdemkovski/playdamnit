@@ -1,4 +1,4 @@
-import { useGetApiUsers } from "@playdamnit/api-client";
+import { GetApiUsersSort, useGetApiUsers } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Gamepad2Icon, SearchIcon, UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -18,12 +18,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 
 const PAGE = 30;
-const SORTS = ["games", "followers", "newest"] as const;
 
 export const Route = createFileRoute("/community")({
   validateSearch: (raw: Record<string, unknown>) => ({
     q: typeof raw.q === "string" ? raw.q : "",
-    sort: (SORTS.includes(raw.sort as never) ? raw.sort : "games") as (typeof SORTS)[number],
+    sort: (Object.values<unknown>(GetApiUsersSort).includes(raw.sort)
+      ? raw.sort
+      : GetApiUsersSort.Games) as GetApiUsersSort,
     page: typeof raw.page === "number" && raw.page > 0 ? raw.page : 1,
   }),
   component: CommunityPage,
@@ -52,15 +53,19 @@ function CommunityPage() {
         </h1>
         <Select
           value={search.sort}
-          onValueChange={(v) => navigate({ search: { ...search, sort: v as never, page: 1 } })}
+          onValueChange={(v) =>
+            navigate({ search: { ...search, sort: v as GetApiUsersSort, page: 1 } })
+          }
         >
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="games">{t("community.sortGames")}</SelectItem>
-            <SelectItem value="followers">{t("community.sortFollowers")}</SelectItem>
-            <SelectItem value="newest">{t("community.sortNewest")}</SelectItem>
+            <SelectItem value={GetApiUsersSort.Games}>{t("community.sortGames")}</SelectItem>
+            <SelectItem value={GetApiUsersSort.Followers}>
+              {t("community.sortFollowers")}
+            </SelectItem>
+            <SelectItem value={GetApiUsersSort.Newest}>{t("community.sortNewest")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

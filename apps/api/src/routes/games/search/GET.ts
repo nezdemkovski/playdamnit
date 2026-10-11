@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 
 import { MAX_QUERY_LENGTH, MAX_SEARCH_LIMIT, searchGames } from "@/utils/searchGames";
 import { clientKey, createRateLimiter } from "@/utils/rateLimit";
+import { isFlagSet } from "@/utils/enums";
 
 const searchLimiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
@@ -31,7 +32,7 @@ export const getGamesSearch = new Elysia().get(
     const searchResults = await searchGames(query.q, {
       limit,
       offset,
-      includeEditions: query.editions === "true" || query.editions === "1",
+      includeEditions: isFlagSet(query.editions),
       gameTypes,
     });
 

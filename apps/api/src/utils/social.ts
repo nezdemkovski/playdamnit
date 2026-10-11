@@ -1,7 +1,8 @@
 import { and, eq, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { notification, user, userFollows, type NotificationType } from "@playdamnit/db/schema";
+import { notification, user, userFollows } from "@playdamnit/db/schema";
+import type { NotificationType } from "@playdamnit/db/enums";
 import { NotFoundError } from "@/utils/errors";
 
 export const PUBLIC_USER_COLUMNS = { id: true, username: true, name: true, image: true } as const;

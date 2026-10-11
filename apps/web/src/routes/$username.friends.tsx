@@ -10,10 +10,11 @@ import { FollowButton } from "@/components/social/follow-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { useProfileContext } from "@/hooks/profile";
+import { FriendsTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username/friends")({
   validateSearch: (raw: Record<string, unknown>) => ({
-    tab: (raw.tab === "following" ? "following" : "followers") as "followers" | "following",
+    tab: raw.tab === FriendsTab.Following ? FriendsTab.Following : FriendsTab.Followers,
   }),
   component: ProfileFriends,
 });
@@ -26,19 +27,19 @@ function ProfileFriends() {
   const followers = useGetApiUserByUsernameFollowers(
     username,
     { limit: 100 },
-    { query: { enabled: tab === "followers" } },
+    { query: { enabled: tab === FriendsTab.Followers } },
   );
   const following = useGetApiUserByUsernameFollowing(
     username,
     { limit: 100 },
-    { query: { enabled: tab === "following" } },
+    { query: { enabled: tab === FriendsTab.Following } },
   );
-  const query = tab === "followers" ? followers : following;
+  const query = tab === FriendsTab.Followers ? followers : following;
 
   return (
     <>
       <div className="flex gap-1">
-        {(["followers", "following"] as const).map((name) => (
+        {Object.values(FriendsTab).map((name) => (
           <button
             key={name}
             type="button"

@@ -1,18 +1,17 @@
 import { t } from "elysia";
 
-import { USER_GAME_STATUSES } from "@playdamnit/db/schema";
+import { UserGameStatus } from "@playdamnit/db/enums";
 
 export const MAX_REVIEW_LENGTH = 5000;
 
 // Statuses that describe a finished run, the only ones where endedAt makes sense
-export const ENDED_STATUSES: readonly string[] = ["finished", "dropped"];
+export const ENDED_STATUSES: readonly string[] = [UserGameStatus.Finished, UserGameStatus.Dropped];
 
-// Not t.UnionEnum: inside t.Optional, Elysia 1.4.30 fills a missing UnionEnum with its
-// first value, which turned a PATCH without `status` into status "finished"
-export const statusSchema = t.Union(
-  USER_GAME_STATUSES.map((status) => t.Literal(status)),
-  { error: `Status must be one of: ${USER_GAME_STATUSES.join(", ")}` },
-);
+// Not t.UnionEnum: inside t.Optional, Elysia fills a missing UnionEnum with its first value,
+// which turned a PATCH without `status` into status "finished". t.Enum keeps it missing.
+export const statusSchema = t.Enum(UserGameStatus, {
+  error: `Status must be one of: ${Object.values(UserGameStatus).join(", ")}`,
+});
 
 export const ratingSchema = t.Number({
   minimum: 0,

@@ -5,33 +5,38 @@ import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { scalePoint } from "@tanstack/charts/scales/point";
 import { tooltip } from "@tanstack/charts/tooltip";
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
 import { useMemo } from "react";
 
 import { t } from "@/i18n";
 import { format } from "@/i18n/date";
+import { ActivityCell, DateFormat, Weekday } from "@/lib/enums";
 
 const DAYS = 364;
 const MONTHS = 12;
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS = Object.values(Weekday);
 
-type Cell = "none" | "touched" | "added" | "finished";
-const CELL_RANK: Record<Cell, number> = { none: 0, touched: 1, added: 2, finished: 3 };
+const CELL_RANK: Record<ActivityCell, number> = {
+  [ActivityCell.None]: 0,
+  [ActivityCell.Touched]: 1,
+  [ActivityCell.Added]: 2,
+  [ActivityCell.Finished]: 3,
+};
 // Paint per bucket, in domain order; cells use the tokens through literal values the SVG understands
 const CELL_COLORS = {
-  none: "#17181b",
-  touched: "rgba(241,241,240,.35)",
-  added: "rgba(255,43,43,.55)",
-  finished: "#d7ff3b",
+  [ActivityCell.None]: "#17181b",
+  [ActivityCell.Touched]: "rgba(241,241,240,.35)",
+  [ActivityCell.Added]: "rgba(255,43,43,.55)",
+  [ActivityCell.Finished]: "#d7ff3b",
 };
 
 interface DayRow {
   key: string;
   week: number;
   weekday: string;
-  cell: Cell;
+  cell: ActivityCell;
   label: string;
 }
 
@@ -43,17 +48,17 @@ interface MonthRow {
 }
 
 const dayKey = (iso: string | null | undefined) =>
-  iso ? format(new Date(iso), "yyyy-MM-dd") : null;
+  iso ? format(new Date(iso), DateFormat.IsoDay) : null;
 const monthKey = (iso: string | null | undefined) =>
-  iso ? format(new Date(iso), "yyyy-MM") : null;
+  iso ? format(new Date(iso), DateFormat.IsoMonth) : null;
 
 const useYear = (entries: UserGameWithUserData[]) =>
   useMemo(() => {
     const today = new Date();
     const first = subDays(today, DAYS - 1);
     const gridStart = startOfWeek(first, { weekStartsOn: 1 });
-    const byDay = new Map<string, Cell>();
-    const bump = (key: string | null, cell: Cell) => {
+    const byDay = new Map<string, ActivityCell>();
+    const bump = (key: string | null, cell: ActivityCell) => {
       if (!key) return;
       const prev = byDay.get(key);
       if (!prev || CELL_RANK[cell] > CELL_RANK[prev]) byDay.set(key, cell);
@@ -62,26 +67,26 @@ const useYear = (entries: UserGameWithUserData[]) =>
     const finishedByMonth = new Map<string, number>();
     for (const e of entries) {
       const d = e.userGameData;
-      bump(dayKey(d.addedAt), "added");
-      bump(dayKey(d.updatedAt), "touched");
-      if (d.status === "finished") bump(dayKey(d.endedAt), "finished");
+      bump(dayKey(d.addedAt), ActivityCell.Added);
+      bump(dayKey(d.updatedAt), ActivityCell.Touched);
+      if (d.status === StatusEnum.Finished) bump(dayKey(d.endedAt), ActivityCell.Finished);
       const am = monthKey(d.addedAt);
       if (am) addedByMonth.set(am, (addedByMonth.get(am) ?? 0) + 1);
-      const fm = d.status === "finished" ? monthKey(d.endedAt) : null;
+      const fm = d.status === StatusEnum.Finished ? monthKey(d.endedAt) : null;
       if (fm) finishedByMonth.set(fm, (finishedByMonth.get(fm) ?? 0) + 1);
     }
     const days: DayRow[] = [];
     for (let i = 0; i < DAYS; i++) {
       const date = subDays(today, DAYS - 1 - i);
-      const key = format(date, "yyyy-MM-dd");
-      const cellValue = byDay.get(key) ?? "none";
+      const key = format(date, DateFormat.IsoDay);
+      const cellValue = byDay.get(key) ?? ActivityCell.None;
       days.push({
         key,
         week: Math.floor(differenceInCalendarDays(date, gridStart) / 7),
         weekday: WEEKDAYS[(date.getDay() + 6) % 7],
         cell: cellValue,
         label: t("profile.evenings.dayLabel", {
-          date: format(date, "MMM d"),
+          date: format(date, DateFormat.MonthDay),
           state: t(`profile.evenings.cell.${cellValue}`),
         }),
       });
@@ -89,10 +94,10 @@ const useYear = (entries: UserGameWithUserData[]) =>
     const months: MonthRow[] = [];
     for (let i = MONTHS - 1; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const m = format(d, "yyyy-MM");
+      const m = format(d, DateFormat.IsoMonth);
       months.push({
         index: months.length,
-        month: format(d, "MMM"),
+        month: format(d, DateFormat.MonthShort),
         added: addedByMonth.get(m) ?? 0,
         finished: finishedByMonth.get(m) ?? 0,
       });
@@ -106,7 +111,7 @@ const useYear = (entries: UserGameWithUserData[]) =>
  */
 export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] }) {
   const { days, months, first } = useYear(entries);
-  const greenDays = days.filter((d) => d.cell === "finished").length;
+  const greenDays = days.filter((d) => d.cell === ActivityCell.Finished).length;
   const totalAdded = months.reduce((s, m) => s + m.added, 0);
   const totalFinished = months.reduce((s, m) => s + m.finished, 0);
 
@@ -131,9 +136,9 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
             },
           },
           color: {
-            scale: scaleOrdinal<Cell, string>(
-              ["none", "touched", "added", "finished"],
-              [CELL_COLORS.none, CELL_COLORS.touched, CELL_COLORS.added, CELL_COLORS.finished],
+            scale: scaleOrdinal<ActivityCell, string>(
+              Object.values(ActivityCell),
+              Object.values(ActivityCell).map((cell) => CELL_COLORS[cell]),
             ),
           },
         },
@@ -188,7 +193,8 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
             {t("profile.evenings.title", { days: DAYS, green: greenDays })}
           </h3>
           <span className="eyebrow">
-            {format(first, "MMM yyyy")} → {format(new Date(), "MMM yyyy")}
+            {format(first, DateFormat.MonthYearShort)} →{" "}
+            {format(new Date(), DateFormat.MonthYearShort)}
           </span>
         </div>
         <div className="mt-3 text-foreground">
@@ -200,10 +206,16 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
           />
         </div>
         <div className="eyebrow mt-2 flex flex-wrap gap-4 normal-case tracking-normal">
-          <Legend color={CELL_COLORS.none}>{t("profile.evenings.cell.none")}</Legend>
-          <Legend color={CELL_COLORS.touched}>{t("profile.evenings.cell.touched")}</Legend>
-          <Legend color={CELL_COLORS.added}>{t("profile.evenings.cell.added")}</Legend>
-          <Legend color={CELL_COLORS.finished}>{t("profile.evenings.cell.finished")}</Legend>
+          <Legend color={CELL_COLORS[ActivityCell.None]}>{t("profile.evenings.cell.none")}</Legend>
+          <Legend color={CELL_COLORS[ActivityCell.Touched]}>
+            {t("profile.evenings.cell.touched")}
+          </Legend>
+          <Legend color={CELL_COLORS[ActivityCell.Added]}>
+            {t("profile.evenings.cell.added")}
+          </Legend>
+          <Legend color={CELL_COLORS[ActivityCell.Finished]}>
+            {t("profile.evenings.cell.finished")}
+          </Legend>
         </div>
       </div>
       <div className="bg-background p-5">

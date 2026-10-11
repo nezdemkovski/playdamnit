@@ -2,8 +2,9 @@ import { Client } from "pg";
 
 import { NOTIFY_CHANNEL, type CatalogUpdatedPayload } from "@playdamnit/db/jobs";
 import { createLogger } from "@/utils/enhancedLogger";
+import { LogNamespace } from "@/utils/enums";
 
-const logger = createLogger("pg-notify");
+const logger = createLogger(LogNamespace.PgNotify);
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_RECONNECT_DELAY_MS = 30_000;

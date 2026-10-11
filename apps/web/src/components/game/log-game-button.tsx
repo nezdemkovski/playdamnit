@@ -6,12 +6,15 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { LogGameDialog } from "./log-game-dialog";
 import { RatingValue, StatusPill } from "./rating";
+import type { ComponentProps } from "react";
+
+type ButtonProps = ComponentProps<typeof Button>;
 
 interface LogGameButtonProps {
   game: Pick<Game, "id" | "name" | "cover" | "platforms" | "firstReleaseDate">;
   entry?: UserGameData | null;
-  size?: "sm" | "default" | "lg";
-  variant?: "default" | "secondary" | "outline" | "ghost";
+  size?: ButtonProps["size"];
+  variant?: ButtonProps["variant"];
 }
 
 /** "+ Add game" or the current rating/status with an edit affordance; opens the log dialog */

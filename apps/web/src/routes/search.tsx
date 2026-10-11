@@ -1,4 +1,4 @@
-import { useGetApiGamesSearch } from "@playdamnit/api-client";
+import { GetApiGamesSearchEditions, useGetApiGamesSearch } from "@playdamnit/api-client";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -35,7 +35,12 @@ function SearchPage() {
   const q = search.q.trim();
   const enabled = q.length >= 2;
   const { data, isPending } = useGetApiGamesSearch(
-    { q, limit: PAGE, offset: (search.page - 1) * PAGE, ...(search.editions && { editions: "1" }) },
+    {
+      q,
+      limit: PAGE,
+      offset: (search.page - 1) * PAGE,
+      ...(search.editions && { editions: GetApiGamesSearchEditions.True }),
+    },
     { query: { enabled, placeholderData: (prev) => prev } },
   );
 

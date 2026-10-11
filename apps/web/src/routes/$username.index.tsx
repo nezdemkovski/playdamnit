@@ -1,4 +1,4 @@
-import { useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
+import { StatusEnum, useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AwardIcon, Gamepad2Icon, MessageSquareTextIcon } from "lucide-react";
 import { useMemo } from "react";
@@ -35,7 +35,7 @@ function ProfileOverview() {
   if (isPrivate) return <PrivateNotice />;
   if (library.isPending) return <Skeleton className="h-40 rounded-card" />;
 
-  const playing = entries.filter((e) => e.userGameData.status === "playing").slice(0, 12);
+  const playing = entries.filter((e) => e.userGameData.status === StatusEnum.Playing).slice(0, 12);
   const recent = [...entries]
     .filter((e) => e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))

@@ -5,11 +5,12 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
 import { useFollow } from "@/hooks/social";
+import type { ComponentProps } from "react";
 
 interface FollowButtonProps {
   username: string;
   isFollowing: boolean;
-  size?: "xs" | "sm" | "default";
+  size?: ComponentProps<typeof Button>["size"];
 }
 
 export function FollowButton({ username, isFollowing, size = "sm" }: FollowButtonProps) {

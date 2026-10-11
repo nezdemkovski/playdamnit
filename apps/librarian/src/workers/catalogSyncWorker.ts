@@ -2,13 +2,14 @@ import { PgBoss, type Job } from "pg-boss";
 
 import { db } from "@/db/postgres";
 import { syncState } from "@playdamnit/db/schema";
-import { QUEUES, type SyncCatalogCursor, type SyncCatalogJob } from "@playdamnit/db/jobs";
+import { QUEUES, SyncMode, type SyncCatalogCursor, type SyncCatalogJob } from "@playdamnit/db/jobs";
 import { GAME_FIELDS, GAME_PAGE_SIZE, igdbQuery, isPayloadTooLarge } from "../utils/igdb/utils";
 import type { IGDBGameResponse } from "../utils/igdb/types";
 import { writeGamesBatch } from "../catalog/writeGames";
 import { createLogger } from "../utils/enhancedLogger";
+import { Schedule, LogNamespace } from "../utils/enums";
 
-const logger = createLogger("catalog-sync");
+const logger = createLogger(LogNamespace.CatalogSync);
 
 // Pages per job run; the job re-enqueues itself with the cursor, so a run stays short and
 // pg-boss's expiration never bites a multi-hour walk
@@ -20,18 +21,14 @@ const FULL_WALK_MARGIN_SECONDS = 60 * 60;
 
 const JOB_OPTIONS = { retryLimit: 5, retryDelay: 60, retryBackoff: true, expireInSeconds: 1800 };
 
-const stateKey = (mode: SyncCatalogJob["mode"]) => `catalog:${mode}`;
+const stateKey = (mode: SyncMode) => `catalog:${mode}`;
 
-const loadCursor = async (mode: SyncCatalogJob["mode"]): Promise<SyncCatalogCursor | null> => {
+const loadCursor = async (mode: SyncMode): Promise<SyncCatalogCursor | null> => {
   const row = await db.query.syncState.findFirst({ where: { entity: stateKey(mode) } });
   return row?.cursor ? (JSON.parse(row.cursor) as SyncCatalogCursor) : null;
 };
 
-const saveCursor = async (
-  mode: SyncCatalogJob["mode"],
-  cursor: SyncCatalogCursor | null,
-  finished: boolean,
-) => {
+const saveCursor = async (mode: SyncMode, cursor: SyncCatalogCursor | null, finished: boolean) => {
   const values = {
     entity: stateKey(mode),
     cursor: cursor ? JSON.stringify(cursor) : null,
@@ -135,7 +132,7 @@ const handleSyncCatalog = async (boss: PgBoss, [job]: Job<SyncCatalogJob>[]) => 
   const { mode } = job.data;
   const stored = job.data.cursor ?? (await loadCursor(mode));
 
-  if (mode === "incremental" && !stored?.updatedAt) {
+  if (mode === SyncMode.Incremental && !stored?.updatedAt) {
     logger.warn("sync-catalog incremental has no cursor; run a full sync first");
     return;
   }
@@ -146,7 +143,7 @@ const handleSyncCatalog = async (boss: PgBoss, [job]: Job<SyncCatalogJob>[]) => 
   };
   logger.info(`sync-catalog ${mode} step`, cursor);
 
-  const result = mode === "full" ? await fullStep(cursor) : await incrementalStep(cursor);
+  const result = mode === SyncMode.Full ? await fullStep(cursor) : await incrementalStep(cursor);
 
   if (!result.done) {
     await saveCursor(mode, result.cursor, false);
@@ -158,23 +155,23 @@ const handleSyncCatalog = async (boss: PgBoss, [job]: Job<SyncCatalogJob>[]) => 
     return;
   }
 
-  if (mode === "full") {
+  if (mode === SyncMode.Full) {
     // The walk is over: forget the id cursor and let incremental runs start from when it began
-    await saveCursor("full", { startedAt: cursor.startedAt }, true);
-    const incremental = await loadCursor("incremental");
+    await saveCursor(SyncMode.Full, { startedAt: cursor.startedAt }, true);
+    const incremental = await loadCursor(SyncMode.Incremental);
     if (
       !incremental?.updatedAt ||
       incremental.updatedAt < cursor.startedAt! - FULL_WALK_MARGIN_SECONDS
     ) {
       await saveCursor(
-        "incremental",
+        SyncMode.Incremental,
         { updatedAt: cursor.startedAt! - FULL_WALK_MARGIN_SECONDS },
         false,
       );
     }
   } else {
     await saveCursor(
-      "incremental",
+      SyncMode.Incremental,
       { updatedAt: result.cursor.updatedAt, updatedAtId: undefined },
       true,
     );
@@ -195,8 +192,8 @@ export const registerCatalogSyncWorker = async (boss: PgBoss): Promise<void> => 
   // Daily delta; a full walk is started by hand (`bun run scripts/enqueue.ts sync-catalog full`)
   await boss.schedule(
     QUEUES.SYNC_CATALOG,
-    "0 2 * * *",
-    { mode: "incremental" } satisfies SyncCatalogJob,
+    Schedule.SyncCatalog,
+    { mode: SyncMode.Incremental } satisfies SyncCatalogJob,
     JOB_OPTIONS,
   );
 };

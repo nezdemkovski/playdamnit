@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Histogram } from "@/components/charts/histogram";
 import { STATUSES } from "@/lib/statuses";
 import { ratingColor } from "@/lib/format";
+import { HistogramNoun } from "@/lib/enums";
 
 /** What members did with the game: average, histogram and status counts */
 export function CommunityStats({
@@ -41,7 +42,7 @@ export function CommunityStats({
             highlight={mine ? Math.min(10, Math.max(1, Math.ceil(mine))) : null}
             height={56}
             ariaLabel={t("community.histogramLabel")}
-            noun="ratings"
+            noun={HistogramNoun.Ratings}
           />
         </div>
       </div>

@@ -3,6 +3,8 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
 import { Elysia } from "elysia";
+import { WebhookEntity, WebhookMethod } from "@playdamnit/db/enums";
+import { HttpHeader, HttpMethod, MimeType } from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 // Set by tests/setup.ts before any module reads the config
@@ -12,13 +14,18 @@ describe.skipIf(!TEST_URL)("IGDB webhook receiver (integration)", () => {
   let pg: Client;
   let app: { handle: (request: Request) => Promise<Response> };
 
-  const post = (path: string, body: unknown, secret: string | null = SECRET) =>
+  const post = (
+    entity: WebhookEntity | string,
+    method: WebhookMethod | string,
+    body: unknown,
+    secret: string | null = SECRET,
+  ) =>
     app.handle(
-      new Request(`http://localhost/webhooks/igdb/${path}`, {
-        method: "POST",
+      new Request(`http://localhost/webhooks/igdb/${entity}/${method}`, {
+        method: HttpMethod.Post,
         headers: {
-          "content-type": "application/json",
-          ...(secret !== null && { "x-secret": secret }),
+          [HttpHeader.ContentType]: MimeType.Json,
+          ...(secret !== null && { [HttpHeader.Secret]: secret }),
         },
         body: JSON.stringify(body),
       }),
@@ -50,22 +57,29 @@ describe.skipIf(!TEST_URL)("IGDB webhook receiver (integration)", () => {
   });
 
   test("rejects a missing or wrong secret", async () => {
-    expect((await post("games/update", { id: 910001 }, null)).status).toBe(403);
-    expect((await post("games/update", { id: 910001 }, "nope")).status).toBe(403);
+    expect(
+      (await post(WebhookEntity.Games, WebhookMethod.Update, { id: 910001 }, null)).status,
+    ).toBe(403);
+    expect(
+      (await post(WebhookEntity.Games, WebhookMethod.Update, { id: 910001 }, "nope")).status,
+    ).toBe(403);
     expect(await dirty()).toEqual([]);
   });
 
   test("queues the game of an event, and a delete wins over an update", async () => {
-    const res = await post("games/update", { id: 910001, name: "Hooked" });
+    const res = await post(WebhookEntity.Games, WebhookMethod.Update, {
+      id: 910001,
+      name: "Hooked",
+    });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, gameId: 910001 });
     expect(await dirty()).toEqual([{ igdb_id: 910001, reason: "games:update" }]);
 
-    await post("games/delete", { id: 910001 });
+    await post(WebhookEntity.Games, WebhookMethod.Delete, { id: 910001 });
     expect(await dirty()).toEqual([{ igdb_id: 910001, reason: "deleted" }]);
 
     // Later non-delete events don't downgrade the reason
-    await post("games/update", { id: 910001 });
+    await post(WebhookEntity.Games, WebhookMethod.Update, { id: 910001 });
     expect(await dirty()).toEqual([{ igdb_id: 910001, reason: "deleted" }]);
   });
 
@@ -73,11 +87,15 @@ describe.skipIf(!TEST_URL)("IGDB webhook receiver (integration)", () => {
     await pg.query(`truncate catalog_dirty`);
 
     // A new cover carries its game
-    await post("covers/create", { id: 910101, game: 910002, image_id: "co1111" });
+    await post(WebhookEntity.Covers, WebhookMethod.Create, {
+      id: 910101,
+      game: 910002,
+      image_id: "co1111",
+    });
     // A deleted cover carries only its id: the cover row says which game it belonged to
-    await post("covers/delete", { id: 910100 });
+    await post(WebhookEntity.Covers, WebhookMethod.Delete, { id: 910100 });
     // Nothing to resolve: acknowledged and ignored
-    const res = await post("covers/delete", { id: 999999 });
+    const res = await post(WebhookEntity.Covers, WebhookMethod.Delete, { id: 999999 });
     expect(await res.json()).toEqual({ ok: true, gameId: null });
 
     expect(await dirty()).toEqual([
@@ -87,8 +105,8 @@ describe.skipIf(!TEST_URL)("IGDB webhook receiver (integration)", () => {
   });
 
   test("validates entity, method and body", async () => {
-    expect((await post("companies/update", { id: 1 })).status).toBe(422);
-    expect((await post("games/patch", { id: 1 })).status).toBe(422);
-    expect((await post("games/update", [1, 2])).status).toBe(400);
+    expect((await post("companies", WebhookMethod.Update, { id: 1 })).status).toBe(422);
+    expect((await post(WebhookEntity.Games, "patch", { id: 1 })).status).toBe(422);
+    expect((await post(WebhookEntity.Games, WebhookMethod.Update, [1, 2])).status).toBe(400);
   });
 });

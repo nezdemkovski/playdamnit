@@ -17,6 +17,15 @@ Bun workspaces + Turborepo. Use **Bun** only (never npm, node, pnpm or yarn for 
 
 Workspace packages are imported by name (`@playdamnit/db/schema`, `@playdamnit/db/jobs`, ...) — never with relative paths across packages. `packages/db` ships TypeScript source; Bun and the bundler resolve it directly.
 
+### No string literals for closed sets
+
+Never write a value from a closed set (status, sort, kind, tab, mime type, header name, HTTP method, log namespace, date-fns pattern, ...) as a string literal. Use a TypeScript string `enum`; UI text goes through i18n (below).
+
+- Shared by API and librarian: `packages/db/src/enums.ts` (`UserGameStatus`, `ReactionEmoji`, `WebhookEntity`, `ReleaseDatePrecision`, ...) and `SyncMode` in `src/jobs.ts`. `enumValues(E)` feeds Drizzle's `text(..., { enum })`.
+- Service-local: `apps/api/src/utils/enums.ts`, `apps/librarian/src/utils/enums.ts`.
+- Web: values that come from the API are enums generated into `@playdamnit/api-client` (orval `enumGenerationType: "enum"`; give members names with `x-enumNames` in `spec.yaml` when the values are not identifiers); the rest are in `apps/web/src/lib/enums.ts`.
+- Not covered on purpose: UI text (i18n), error and log messages, CSS classes, property and column names, SQL, and values that belong to a library's own API (shadcn `variant`/`size`, HTML `type=`, AI SDK protocol strings in test fixtures, `credentials: "include"`).
+
 ### Commands (repo root)
 
 ```bash
@@ -66,7 +75,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 - Route options come **before** the handler: `.get("/path", { auth: true, query: t.Object(...) }, handler)`.
 - Hooks have no `on` prefix. The global `.error()` in `src/index.ts` dispatches with `instanceof` (`ValidationError`, `ParseError`, `NotFound`, `ElysiaStatus`, our `AppError`). Validation errors map to 400 (Elysia's default is 422) to keep the API contract.
 - Macros use the object form with `derive`; `src/lib/betterAuth.ts` derives `user`/`session` for `auth: true`.
-- TypeBox 1.x: `t.Transform` is `t.Codec`. Use `t.Union([t.Literal(...)])` for enums — an optional `t.UnionEnum` was filled with its first value (unit-tested).
+- TypeBox 1.x: `t.Transform` is `t.Codec`. Use `t.Enum(SomeEnum)` for enums (checked at runtime: an optional `t.Enum` stays missing, unlike `t.UnionEnum`, which was filled with its first value).
 - File-based routes in `src/routes/` (one file per method), composed in `src/routes/index.ts`. Routes stay thin; logic lives in `src/modules/*/service.ts`, shared request schemas in `src/modules/*/model.ts`. Services **throw** `AppError` subclasses (`src/utils/errors.ts`).
 - Rate limits (`src/utils/rateLimit.ts`, in-memory per instance) guard search, import and AI chat.
 - AI chat (`POST /api/chat/ai`): a `ToolLoopAgent` (AI SDK 7) in `src/modules/chat/agent.ts` with one `search_games` tool, streamed with `createAgentUIStreamResponse` (UI message stream protocol). The body is useChat's UI messages (`user`/`assistant` only) plus `showOnlyGames`. The tool returns full game cards to the UI but `toModelOutput` gives the model only id/name/year. Test with `MockLanguageModelV4` from `ai/test` (see the integration test) — never hit OpenAI from tests.
@@ -93,7 +102,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 ### API client (`packages/api-client`)
 
 - `spec.yaml` is the hand-maintained OpenAPI contract. **Update it with every route change.** `bun run generate` runs orval (`index.ts` is generated and gitignored), `build` bundles it.
-- Calls return the response body directly (the axios mutator unwraps `response.data`). Apps set the API URL with `configureApiClient({ baseURL })`; `generated.ts` is orval output (gitignored), `index.ts` is the hand-written entry.
+- Enums in the spec become real TypeScript enums (`StatusEnum.Finished`), see "No string literals" above. Calls return the response body directly (the axios mutator unwraps `response.data`). Apps set the API URL with `configureApiClient({ baseURL })`; `generated.ts` is orval output (gitignored), `index.ts` is the hand-written entry.
 - The package is consumed only by `apps/web` through the workspace; it is not published anywhere.
 
 ### Web (`apps/web`)

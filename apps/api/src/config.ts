@@ -1,11 +1,13 @@
-const isDev = process.env.NODE_ENV === "development";
+import { Hostname, NodeEnv, OpenAiModel } from "@/utils/enums";
+
+const isDev = process.env.NODE_ENV === NodeEnv.Development;
 const postgresUrl = process.env.POSTGRES_URL;
 const trustedOrigins =
   process.env.TRUSTED_ORIGINS?.split(",")
     .map((s) => s.trim())
     .filter(Boolean) ?? [];
 const openaiApiKey = process.env.OPENAI_API_KEY;
-const openaiModel = process.env.OPENAI_MODEL || "gpt-4o";
+const openaiModel = process.env.OPENAI_MODEL || OpenAiModel.Gpt4o;
 const resendApiKey = process.env.RESEND_API_KEY;
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 // Public URL of this API; Better Auth derives callback links and the passkey relying party from it

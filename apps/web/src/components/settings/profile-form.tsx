@@ -12,6 +12,7 @@ import { useUpdateProfile } from "@/hooks/auth";
 import { useProfileUpdate } from "@/hooks/social";
 import { t } from "@/i18n";
 import type { SessionUser } from "@/lib/authClient";
+import { UploadFileName, UploadMimeType } from "@/lib/enums";
 
 const AVATAR_SIZE = 256;
 const MAX_BIO = 300;
@@ -46,9 +47,9 @@ const resizeAvatar = (file: File): Promise<File> =>
       canvas.toBlob(
         (blob) =>
           blob
-            ? resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" }))
+            ? resolve(new File([blob], UploadFileName.Avatar, { type: UploadMimeType.Jpeg }))
             : reject(new Error(t("settings.profile.errors.encode"))),
-        "image/jpeg",
+        UploadMimeType.Jpeg,
         0.88,
       );
     };

@@ -6,6 +6,7 @@ import { libraryParams } from "@/modules/userGame/model";
 import { parseCSV } from "@/modules/userGame/csv";
 import { BadRequestError } from "@/utils/errors";
 import { clientKey, createRateLimiter } from "@/utils/rateLimit";
+import { FileExtension, isFlagSet, MimeType } from "@/utils/enums";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -20,7 +21,7 @@ const readImportFile = async (file: File): Promise<ImportGameInput[]> => {
 
   const content = await file.text();
 
-  if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+  if (file.type === MimeType.Csv || file.name.endsWith(FileExtension.Csv)) {
     return parseCSV(content);
   }
 
@@ -69,7 +70,7 @@ export const importUserGames = new Elysia().use(betterAuth).post(
     importLimiter.check(clientKey({ request, server }, user.id));
 
     const rows = "games" in body ? body.games : await readImportFile(body.file);
-    const overwriteExisting = body.overwriteExisting === true || body.overwriteExisting === "true";
+    const overwriteExisting = isFlagSet(body.overwriteExisting);
 
     return UserGameService.importUserGames(user.id, rows, overwriteExisting);
   },

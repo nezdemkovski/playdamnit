@@ -1,7 +1,8 @@
 import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
-import { REVIEW_SORTS, ReviewService } from "@/modules/review/service";
+import { ReviewService } from "@/modules/review/service";
+import { ReviewSort } from "@/utils/enums";
 
 export const getGameReviews = new Elysia().use(betterAuth).get(
   "/games/:id/reviews",
@@ -9,7 +10,7 @@ export const getGameReviews = new Elysia().use(betterAuth).get(
     viewer: true,
     params: t.Object({ id: t.Numeric() }),
     query: t.Object({
-      sort: t.Optional(t.Union(REVIEW_SORTS.map((s) => t.Literal(s)))),
+      sort: t.Optional(t.Enum(ReviewSort)),
       limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
       offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
     }),

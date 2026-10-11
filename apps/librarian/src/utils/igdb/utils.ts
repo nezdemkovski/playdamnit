@@ -1,8 +1,9 @@
 import { createLogger } from "../enhancedLogger";
 import { getIGDBToken, invalidateIGDBToken } from "./token";
 import type { IGDBGameResponse } from "./types";
+import { HttpHeader, HttpMethod, MimeType, LogNamespace } from "../enums";
 
-const logger = createLogger("igdb");
+const logger = createLogger(LogNamespace.Igdb);
 
 const IGDB_BASE_URL = "https://api.igdb.com/v4";
 
@@ -64,7 +65,7 @@ const pauseThrottle = (ms: number) => {
  * transient 5xx/network failures. Throws IGDBError once the retries are spent.
  */
 const igdbRequest = async (
-  method: "GET" | "POST" | "DELETE",
+  method: HttpMethod,
   path: string,
   init: { body?: string | URLSearchParams; contentType?: string },
 ): Promise<Response> => {
@@ -77,9 +78,9 @@ const igdbRequest = async (
       response = await fetch(`${IGDB_BASE_URL}/${path}`, {
         method,
         headers: {
-          "Client-ID": process.env.TWITCH_CLIENT_ID ?? "",
-          Authorization: await getIGDBToken(),
-          ...(init.contentType && { "Content-Type": init.contentType }),
+          [HttpHeader.ClientId]: process.env.TWITCH_CLIENT_ID ?? "",
+          [HttpHeader.Authorization]: await getIGDBToken(),
+          ...(init.contentType && { [HttpHeader.ContentType]: init.contentType }),
         },
         ...(init.body !== undefined && { body: init.body }),
       });
@@ -122,17 +123,15 @@ const igdbRequest = async (
 
 /** An Apicalypse query against an endpoint. */
 export const igdbQuery = async <T>(endpoint: string, body: string): Promise<T> =>
-  (await igdbRequest("POST", endpoint, { body, contentType: "text/plain" })).json() as Promise<T>;
+  (
+    await igdbRequest(HttpMethod.Post, endpoint, { body, contentType: MimeType.PlainText })
+  ).json() as Promise<T>;
 
 /** Any other authenticated IGDB call (webhook management): GET/DELETE, or a form-encoded POST. */
-export const igdbFetch = (
-  method: "GET" | "POST" | "DELETE",
-  path: string,
-  form?: URLSearchParams,
-) =>
+export const igdbFetch = (method: HttpMethod, path: string, form?: URLSearchParams) =>
   igdbRequest(method, path, {
     body: form,
-    contentType: form ? "application/x-www-form-urlencoded" : undefined,
+    contentType: form ? MimeType.FormUrlEncoded : undefined,
   });
 
 /**

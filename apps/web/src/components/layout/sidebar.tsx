@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession, useSignOut } from "@/hooks/auth";
 import { useNotifications } from "@/hooks/social";
+import { RoutePath } from "@/lib/enums";
 
 type To =
   | "/"
@@ -119,19 +120,19 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         label={t("nav.calendar")}
         icon={CalendarDaysIcon}
         to="/calendar"
-        active={pathname.startsWith("/calendar")}
+        active={pathname.startsWith(RoutePath.Calendar)}
       />
       <RailItem
         label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
-        active={pathname.startsWith("/charts")}
+        active={pathname.startsWith(RoutePath.Charts)}
       />
       <RailItem
         label={t("nav.community")}
         icon={UsersIcon}
         to="/community"
-        active={pathname.startsWith("/community")}
+        active={pathname.startsWith(RoutePath.Community)}
       />
     </>
   );
@@ -177,7 +178,7 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
-        active={pathname.startsWith("/charts")}
+        active={pathname.startsWith(RoutePath.Charts)}
       />
       <RailItem
         label={t("nav.myGames")}
@@ -197,7 +198,7 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         label={t("nav.community")}
         icon={UsersIcon}
         to="/community"
-        active={pathname.startsWith("/community")}
+        active={pathname.startsWith(RoutePath.Community)}
       />
     </>
   ) : (
@@ -207,13 +208,13 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         label={t("nav.charts")}
         icon={BarChart3Icon}
         to="/charts"
-        active={pathname.startsWith("/charts")}
+        active={pathname.startsWith(RoutePath.Charts)}
       />
       <RailItem
         label={t("nav.calendar")}
         icon={CalendarDaysIcon}
         to="/calendar"
-        active={pathname.startsWith("/calendar")}
+        active={pathname.startsWith(RoutePath.Calendar)}
       />
       <RailItem label={t("nav.signIn")} icon={LogInIcon} to="/auth" active={is("/auth")} />
     </>

@@ -1,4 +1,4 @@
-import type { Game, UserGameData } from "@playdamnit/api-client";
+import { StatusEnum, type Game, type UserGameData } from "@playdamnit/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDownIcon, Trash2Icon } from "lucide-react";
 import { cn } from "cn";
@@ -68,7 +68,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const platforms = usePlayPlatforms(game.platforms);
 
   const [rating, setRating] = useState(0);
-  const [status, setStatus] = useState<LibraryStatus>("want_to_play");
+  const [status, setStatus] = useState<LibraryStatus>(StatusEnum.WantToPlay);
   const [platformId, setPlatformId] = useState<string>("");
   const [endedAt, setEndedAt] = useState("");
   const [review, setReview] = useState("");
@@ -81,7 +81,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   useEffect(() => {
     if (!open) return;
     setRating(entry?.rating ?? 0);
-    setStatus(entry?.status ?? "want_to_play");
+    setStatus(entry?.status ?? StatusEnum.WantToPlay);
     setPlatformId(String(entry?.platformId ?? game.platforms[0]?.id ?? ""));
     setEndedAt(toDateInput(entry?.endedAt));
     setReview(entry?.review ?? "");
@@ -226,7 +226,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
               {showEnded && (
                 <div className="space-y-2">
                   <Label htmlFor="endedAt">
-                    {status === "dropped" ? t("log.droppedOn") : t("log.finishedOn")}
+                    {status === StatusEnum.Dropped ? t("log.droppedOn") : t("log.finishedOn")}
                   </Label>
                   <Input
                     id="endedAt"

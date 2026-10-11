@@ -1,26 +1,17 @@
+import { WebhookEntity, WebhookMethod } from "@playdamnit/db/enums";
+import { HttpMethod, LogNamespace } from "../enums";
 import { igdbFetch } from "./utils";
 import { createLogger } from "../enhancedLogger";
 
-const logger = createLogger("igdb-webhooks");
+const logger = createLogger(LogNamespace.IgdbWebhooks);
 
-// Entities whose changes re-fetch a game: the game itself and every child row we store, since
-// a new cover, screenshot or store link doesn't bump the game's updated_at. The API receiver
-// resolves each of them to a game id (see apps/api/src/modules/webhook/service.ts).
-const WEBHOOK_ENTITIES = [
-  "games",
-  "covers",
-  "screenshots",
-  "videos",
-  "websites",
-  "external_games",
-  "game_localizations",
-  "involved_companies",
-] as const;
-// Where the receiver path and IGDB's endpoint name differ
-const IGDB_ENDPOINT: Partial<Record<(typeof WEBHOOK_ENTITIES)[number], string>> = {
-  videos: "game_videos",
+// Every entity whose change re-fetches a game: the game itself and every child row we store,
+// since a new cover, screenshot or store link doesn't bump the game's updated_at. The API
+// receiver resolves each of them to a game id (see apps/api/src/modules/webhook/service.ts).
+// Where the receiver path and IGDB's endpoint name differ:
+const IGDB_ENDPOINT: Partial<Record<WebhookEntity, string>> = {
+  [WebhookEntity.Videos]: "game_videos",
 };
-const WEBHOOK_METHODS = ["create", "update", "delete"] as const;
 
 interface IGDBWebhook {
   id: number;
@@ -35,7 +26,7 @@ const webhookUrl = (baseUrl: string, entity: string, method: string) =>
   `${baseUrl.replace(/\/+$/, "")}/api/webhooks/igdb/${entity}/${method}`;
 
 const listWebhooks = async (): Promise<IGDBWebhook[]> =>
-  (await igdbFetch("GET", "webhooks")).json() as Promise<IGDBWebhook[]>;
+  (await igdbFetch(HttpMethod.Get, "webhooks")).json() as Promise<IGDBWebhook[]>;
 
 /**
  * Make sure IGDB has an active webhook for every entity × method we rely on, pointing at this
@@ -47,8 +38,8 @@ export const ensureWebhooks = async (opts: { baseUrl: string; secret: string }) 
   const byUrl = new Map(existing.map((hook) => [hook.url, hook]));
   const result = { existing: existing.length, created: 0, recreated: 0, active: 0, failed: 0 };
 
-  for (const entity of WEBHOOK_ENTITIES) {
-    for (const method of WEBHOOK_METHODS) {
+  for (const entity of Object.values(WebhookEntity)) {
+    for (const method of Object.values(WebhookMethod)) {
       const url = webhookUrl(opts.baseUrl, entity, method);
       const hook = byUrl.get(url);
 
@@ -59,10 +50,10 @@ export const ensureWebhooks = async (opts: { baseUrl: string; secret: string }) 
       // One bad hook must not stop the others from being registered
       try {
         if (hook) {
-          await igdbFetch("DELETE", `webhooks/${hook.id}`);
+          await igdbFetch(HttpMethod.Delete, `webhooks/${hook.id}`);
         }
         await igdbFetch(
-          "POST",
+          HttpMethod.Post,
           `${IGDB_ENDPOINT[entity] ?? entity}/webhooks/`,
           new URLSearchParams({ url, method, secret: opts.secret }),
         );

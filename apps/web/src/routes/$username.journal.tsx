@@ -1,4 +1,8 @@
-import { useGetApiUserByUsernameJournal, type JournalItem } from "@playdamnit/api-client";
+import {
+  JournalItemKind,
+  useGetApiUserByUsernameJournal,
+  type JournalItem,
+} from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { parse } from "date-fns";
 import { RepeatIcon, TrophyIcon } from "lucide-react";
@@ -18,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
 import { format } from "@/i18n/date";
+import { AllOption, DateFormat, IgdbSize } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username/journal")({
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -25,8 +30,6 @@ export const Route = createFileRoute("/$username/journal")({
   }),
   component: ProfileJournal,
 });
-
-const ALL = "all";
 
 /** Playthroughs and finished entries by month, like Backloggd's journal */
 function ProfileJournal() {
@@ -55,14 +58,16 @@ function ProfileJournal() {
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-dimmed">{t("profile.journal.intro")}</p>
         <Select
-          value={search.year !== undefined ? String(search.year) : ALL}
-          onValueChange={(v) => navigate({ search: { year: v === ALL ? undefined : Number(v) } })}
+          value={search.year !== undefined ? String(search.year) : AllOption.All}
+          onValueChange={(v) =>
+            navigate({ search: { year: v === AllOption.All ? undefined : Number(v) } })
+          }
         >
           <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>{t("profile.journal.allYears")}</SelectItem>
+            <SelectItem value={AllOption.All}>{t("profile.journal.allYears")}</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
@@ -80,7 +85,7 @@ function ProfileJournal() {
       {months.map(([month, items]) => (
         <section key={month} className="mt-6">
           <h2 className="mb-2 text-lg font-bold">
-            {format(parse(month, "yyyy-MM", new Date()), "MMMM yyyy")}
+            {format(parse(month, DateFormat.IsoMonth, new Date()), DateFormat.MonthYear)}
           </h2>
           <ol className="space-y-1">
             {items.map((item) => (
@@ -96,7 +101,7 @@ function ProfileJournal() {
                   <GameCover
                     url={item.game.cover?.url}
                     name={item.game.name}
-                    size="cover_small"
+                    size={IgdbSize.CoverSmall}
                     className="rounded-md"
                   />
                 </Link>
@@ -109,7 +114,7 @@ function ProfileJournal() {
                     {item.game.name}
                   </Link>
                   <div className="truncate text-xs text-dimmed">
-                    {item.kind === "playthrough" ? (
+                    {item.kind === JournalItemKind.Playthrough ? (
                       <>
                         <RepeatIcon className="mr-1 inline size-3" />
                         {[

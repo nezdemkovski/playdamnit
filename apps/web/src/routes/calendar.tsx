@@ -1,4 +1,10 @@
-import { useGetApiGames, type Game } from "@playdamnit/api-client";
+import {
+  GetApiGamesSort,
+  useGetApiGames,
+  type Game,
+  getApiGames,
+  getGetApiGamesQueryKey,
+} from "@playdamnit/api-client";
 import { useQueries } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { addMonths, isToday, parse } from "date-fns";
@@ -13,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { format } from "@/i18n/date";
-import { getApiGames, getGetApiGamesQueryKey } from "@playdamnit/api-client";
+import { ChartTab, DateFormat } from "@/lib/enums";
 
 const PAGE = 100;
 const MAX_PAGES = 6;
@@ -23,7 +29,7 @@ export const Route = createFileRoute("/calendar")({
     month:
       typeof raw.month === "string" && /^\d{4}-\d{2}$/.test(raw.month)
         ? raw.month
-        : format(new Date(), "yyyy-MM"),
+        : format(new Date(), DateFormat.IsoMonth),
     hot: raw.hot === true,
     mine: raw.mine === true,
   }),
@@ -31,7 +37,7 @@ export const Route = createFileRoute("/calendar")({
 });
 
 const monthBounds = (month: string) => {
-  const start = parse(month, "yyyy-MM", new Date());
+  const start = parse(month, DateFormat.IsoMonth, new Date());
   const end = addMonths(start, 1);
   return {
     from: Math.floor(Date.UTC(start.getFullYear(), start.getMonth(), 1) / 1000),
@@ -48,7 +54,7 @@ function CalendarPage() {
   const { user } = useSession();
   const { byGameId } = useMyLibrary();
   const { from, to, start } = monthBounds(search.month);
-  const params = { sort: "date" as const, releasedFrom: from, releasedTo: to, limit: PAGE };
+  const params = { sort: GetApiGamesSort.Date, releasedFrom: from, releasedTo: to, limit: PAGE };
 
   const first = useGetApiGames({ ...params, offset: 0 });
   const total = first.data?.meta.total ?? 0;
@@ -76,14 +82,16 @@ function CalendarPage() {
     const map = new Map<string, Game[]>();
     for (const g of games) {
       if (!g.firstReleaseDate) continue;
-      const key = format(new Date(g.firstReleaseDate * 1000), "yyyy-MM-dd");
+      const key = format(new Date(g.firstReleaseDate * 1000), DateFormat.IsoDay);
       map.set(key, [...(map.get(key) ?? []), g]);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [games]);
 
   const go = (delta: number) =>
-    navigate({ search: { ...search, month: format(addMonths(start, delta), "yyyy-MM") } });
+    navigate({
+      search: { ...search, month: format(addMonths(start, delta), DateFormat.IsoMonth) },
+    });
 
   return (
     <>
@@ -98,7 +106,9 @@ function CalendarPage() {
           >
             <ChevronLeftIcon />
           </Button>
-          <span className="min-w-36 text-center font-semibold">{format(start, "MMMM yyyy")}</span>
+          <span className="min-w-36 text-center font-semibold">
+            {format(start, DateFormat.MonthYear)}
+          </span>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -111,7 +121,7 @@ function CalendarPage() {
             variant="secondary"
             size="xs"
             onClick={() =>
-              navigate({ search: { ...search, month: format(new Date(), "yyyy-MM") } })
+              navigate({ search: { ...search, month: format(new Date(), DateFormat.IsoMonth) } })
             }
           >
             {t("common.today")}
@@ -154,11 +164,11 @@ function CalendarPage() {
         <div className="panel mt-6 p-12 text-center text-dimmed">{t("calendar.empty")}</div>
       ) : (
         days.map(([day, list]) => {
-          const date = parse(day, "yyyy-MM-dd", new Date());
+          const date = parse(day, DateFormat.IsoDay, new Date());
           return (
             <section key={day} className="mt-8">
               <h2 className="mb-3 flex items-baseline gap-2 text-lg font-bold">
-                {format(date, "MMMM d")}
+                {format(date, DateFormat.MonthDayLong)}
                 {isToday(date) && (
                   <span className="rounded-full bg-white/10 px-2 text-xs font-semibold">
                     {t("common.today")}
@@ -185,7 +195,7 @@ function CalendarPage() {
                 <Link
                   to="/charts"
                   search={{
-                    tab: "upcoming",
+                    tab: ChartTab.Upcoming,
                     genreId: undefined,
                     platformId: undefined,
                     year: undefined,

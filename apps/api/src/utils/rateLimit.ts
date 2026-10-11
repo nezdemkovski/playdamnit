@@ -1,6 +1,7 @@
 import type { Server } from "bun";
 
 import { TooManyRequestsError } from "@/utils/errors";
+import { isFlagSet } from "@/utils/enums";
 
 // In-memory fixed-window limiter. State is per process: with several backend
 // instances each one enforces its own budget, which is fine as an abuse guard.
@@ -51,7 +52,7 @@ export const createRateLimiter = (opts: {
   };
 };
 
-const trustProxy = process.env.TRUST_PROXY === "true";
+const trustProxy = isFlagSet(process.env.TRUST_PROXY);
 
 /**
  * Identify the caller: the user id when authenticated, otherwise the client IP.

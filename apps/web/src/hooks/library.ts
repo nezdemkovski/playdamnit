@@ -16,6 +16,7 @@ import { useMemo } from "react";
 import { toast } from "sonner";
 
 import { t } from "@/i18n";
+import { LibraryAction } from "@/lib/enums";
 import { summarize, toastFor } from "@/lib/voice";
 import { useSession } from "./auth";
 
@@ -47,7 +48,7 @@ export const useLibraryMutations = () => {
   const { user } = useSession();
   const username = user?.username ?? "";
   const { entries } = useMyLibrary();
-  const voice = (kind: "add" | "update" | "remove", status?: string) =>
+  const voice = (kind: LibraryAction, status?: string) =>
     toastFor(kind, status, summarize(entries));
 
   const refresh = (gameId: number) => {
@@ -59,7 +60,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.data.gameId);
-        toast.success(voice("add", vars.data.status));
+        toast.success(voice(LibraryAction.Add, vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, t("toast.addGameFailed"))),
     },
@@ -69,7 +70,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.id);
-        toast.success(voice("update", vars.data.status));
+        toast.success(voice(LibraryAction.Update, vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, t("toast.saveGameFailed"))),
     },
@@ -79,7 +80,7 @@ export const useLibraryMutations = () => {
     mutation: {
       onSuccess: (_data, vars) => {
         refresh(vars.id);
-        toast.success(voice("remove"));
+        toast.success(voice(LibraryAction.Remove));
       },
       onError: (error) => toast.error(apiError(error, t("toast.removeGameFailed"))),
     },

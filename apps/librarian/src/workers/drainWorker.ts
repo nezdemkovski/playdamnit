@@ -7,8 +7,9 @@ import { QUEUES } from "@playdamnit/db/jobs";
 import { fetchIGDBByIds } from "../utils/igdb/utils";
 import { writeGamesBatch } from "../catalog/writeGames";
 import { createLogger } from "../utils/enhancedLogger";
+import { Schedule, LogNamespace } from "../utils/enums";
 
-const logger = createLogger("drain-worker");
+const logger = createLogger(LogNamespace.DrainWorker);
 
 const DELETED_REASON = "deleted";
 const BATCH_SIZE = 500;
@@ -83,5 +84,5 @@ export const registerDrainWorker = async (boss: PgBoss): Promise<void> => {
       throw error;
     }
   });
-  await boss.schedule(QUEUES.DRAIN_DIRTY, "* * * * *");
+  await boss.schedule(QUEUES.DRAIN_DIRTY, Schedule.DrainDirty);
 };

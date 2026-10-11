@@ -1,13 +1,8 @@
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
-import {
-  platform,
-  playthrough,
-  userGames,
-  USER_GAME_STATUSES,
-  type UserGameStatus,
-} from "@playdamnit/db/schema";
+import { platform, playthrough, userGames } from "@playdamnit/db/schema";
+import { PgErrorCode, UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
@@ -84,7 +79,7 @@ const assertPlatformExists = async (platformId: number | null | undefined) => {
 
 const isUniqueViolation = (error: unknown): boolean => {
   const code = (error as { code?: unknown })?.code;
-  if (code === "23505") return true;
+  if (code === PgErrorCode.UniqueViolation) return true;
   const cause = (error as { cause?: unknown })?.cause;
   return cause !== undefined && cause !== error && isUniqueViolation(cause);
 };
@@ -177,7 +172,7 @@ export abstract class UserGameService {
           allowReactions: input.allowReactions ?? true,
           endedAt: parseEndedAt(input.endedAt) ?? null,
           platformId: input.platformId ?? null,
-          source: "manual",
+          source: UserGameSource.Manual,
         })
         .onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
         .returning();
@@ -336,7 +331,7 @@ export abstract class UserGameService {
     }
 
     const status = String(raw.status ?? "");
-    if (!(USER_GAME_STATUSES as readonly string[]).includes(status)) {
+    if (!Object.values<string>(UserGameStatus).includes(status)) {
       return { ok: false, gameId, error: "Invalid or missing status" };
     }
 
@@ -471,7 +466,7 @@ export abstract class UserGameService {
         review: value.review ?? null,
         platformId: value.platformId ?? null,
         endedAt: parseEndedAt(value.endedAt) ?? null,
-        source: "manual",
+        source: UserGameSource.Manual,
       });
     }
 

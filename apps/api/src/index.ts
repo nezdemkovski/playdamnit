@@ -19,6 +19,7 @@ import { initNotifyListener, closeNotifyListener } from "@/utils/pgNotify";
 import { AppError, TooManyRequestsError } from "@/utils/errors";
 import { db, closeDb } from "@/db/postgres";
 import { sql } from "drizzle-orm";
+import { HealthStatus, HttpHeader, HttpMethod, LogSource, RoutePath } from "@/utils/enums";
 
 const { postgresUrl, betterAuthSecret, resendApiKey, isDev } = getConfig();
 
@@ -42,7 +43,7 @@ const validateEnvironment = () => {
   return true;
 };
 
-const logLevel = (process.env.LOG_LEVEL || "info") as LogLevel;
+const logLevel = (process.env.LOG_LEVEL || LogLevel.INFO) as LogLevel;
 
 logger.level = logLevel;
 logger.system(`Starting playdamnit API with log level: ${logLevel}`);
@@ -63,8 +64,8 @@ if (sentryEnabled) {
 }
 
 const betterAuthView = (context: Context) => {
-  const BETTER_AUTH_ACCEPT_METHODS = ["POST", "GET"];
-  if (BETTER_AUTH_ACCEPT_METHODS.includes(context.request.method)) {
+  const BETTER_AUTH_ACCEPT_METHODS = [HttpMethod.Post, HttpMethod.Get];
+  if (BETTER_AUTH_ACCEPT_METHODS.includes(context.request.method as HttpMethod)) {
     return auth.handler(context.request);
   } else {
     return new Response("Method Not Allowed", { status: 405 });
@@ -86,7 +87,7 @@ const setupApp = async () => {
       if (error instanceof ElysiaStatus) return error;
 
       // Special case: don't log favicon 404s
-      if (error instanceof NotFound && path === "/favicon.ico") {
+      if (error instanceof NotFound && path === RoutePath.Favicon) {
         return status(204, null);
       }
 
@@ -96,7 +97,7 @@ const setupApp = async () => {
           logger.exception(error, { path, method: request.method });
         }
         if (error instanceof TooManyRequestsError && error.retryAfterSeconds) {
-          set.headers["retry-after"] = String(error.retryAfterSeconds);
+          set.headers[HttpHeader.RetryAfter] = String(error.retryAfterSeconds);
         }
         return status(error.statusCode, {
           error: error.errorType,
@@ -132,15 +133,12 @@ const setupApp = async () => {
 
       return status(500, {
         error: "Internal Server Error",
-        message:
-          process.env.NODE_ENV === "development" && error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+        message: isDev && error instanceof Error ? error.message : "An unexpected error occurred",
       });
     })
     .get("/health", async () => {
       await db.execute(sql`select 1`);
-      return { status: "ok" };
+      return { status: HealthStatus.Ok };
     })
     .group("/api", (app) => app.all("/auth/*", betterAuthView).use(routes));
 
@@ -163,7 +161,7 @@ setupApp()
     appInstance = app;
   })
   .catch((error) => {
-    logger.exception(error, { source: "app-setup" });
+    logger.exception(error, { source: LogSource.AppSetup });
     process.exit(1);
   });
 
@@ -189,7 +187,7 @@ const shutdown = async () => {
     logger.system("Application shut down successfully");
     process.exit(0);
   } catch (error) {
-    logger.exception(error, { source: "shutdown" });
+    logger.exception(error, { source: LogSource.Shutdown });
     process.exit(1);
   }
 };

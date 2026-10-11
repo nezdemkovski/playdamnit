@@ -2,11 +2,17 @@ import { isStepCount, tool, ToolLoopAgent, type LanguageModel } from "ai";
 import { z } from "zod";
 
 import { searchGames } from "@/utils/searchGames";
+import { UserGameStatus } from "@playdamnit/db/enums";
 
 const SEARCH_RESULT_LIMIT = 10;
 
 // The statuses the web app's add-game form offers
-const CHAT_STATUSES = ["finished", "playing", "dropped", "want_to_play"] as const;
+const CHAT_STATUSES = [
+  UserGameStatus.Finished,
+  UserGameStatus.Playing,
+  UserGameStatus.Dropped,
+  UserGameStatus.WantToPlay,
+] as const;
 
 // IGDB game_type ids that count as "games" for the assistant's "games only" filter:
 // Main Game, Remake, Remaster, Expanded Game

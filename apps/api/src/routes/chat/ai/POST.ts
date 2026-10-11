@@ -8,8 +8,9 @@ import { createChatAgent } from "@/modules/chat/agent";
 import { createLogger } from "@/utils/enhancedLogger";
 import { BadRequestError, ServiceUnavailableError } from "@/utils/errors";
 import { clientKey, createRateLimiter } from "@/utils/rateLimit";
+import { ChatRole, LogNamespace } from "@/utils/enums";
 
-const logger = createLogger("ai-chat");
+const logger = createLogger(LogNamespace.AiChat);
 
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_LENGTH = 4000;
@@ -28,7 +29,7 @@ export const postAIChat = new Elysia().use(betterAuth).post(
           {
             id: t.String(),
             // No "system": the instructions are ours
-            role: t.Union([t.Literal("user"), t.Literal("assistant")]),
+            role: t.Enum(ChatRole),
             parts: t.Array(t.Object({ type: t.String() }, { additionalProperties: true })),
           },
           { additionalProperties: true },

@@ -10,17 +10,16 @@ import {
   userFollows,
   userGames,
 } from "@playdamnit/db/schema";
+import { NotificationType } from "@playdamnit/db/enums";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
+import { ConnectionKind, JournalKind, MimeType, UrlProtocol, UserSort } from "@/utils/enums";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { canSeeList, isFollowing, notify, PUBLIC_USER_COLUMNS, requireUser } from "@/utils/social";
-
-export const USER_SORTS = ["games", "followers", "newest"] as const;
-export type UserSort = (typeof USER_SORTS)[number];
 
 const MAX_BIO = 300;
 const MAX_LINKS = 5;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const AVATAR_TYPES = new Set<string>([MimeType.Jpeg, MimeType.Png, MimeType.Webp, MimeType.Gif]);
 
 // Correlated to the outer "user" row; written by hand because Drizzle drops the qualifier on
 // the main table's columns inside a subquery, which makes `id` ambiguous
@@ -133,7 +132,7 @@ export abstract class UserService {
         } catch {
           throw new BadRequestError(`Not a URL: ${link}`);
         }
-        if (url.protocol !== "https:" && url.protocol !== "http:") {
+        if (url.protocol !== UrlProtocol.Https && url.protocol !== UrlProtocol.Http) {
           throw new BadRequestError(`Not a web link: ${link}`);
         }
       }
@@ -159,11 +158,11 @@ export abstract class UserService {
   }) {
     const q = opts.q?.trim();
     const where = q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined;
-    const sort = opts.sort ?? "games";
+    const sort = opts.sort ?? UserSort.Games;
     const order =
-      sort === "followers"
+      sort === UserSort.Followers
         ? [sql`${followersCount} desc`, desc(user.createdAt)]
-        : sort === "newest"
+        : sort === UserSort.Newest
           ? [desc(user.createdAt)]
           : [sql`${gamesCount} desc`, desc(user.createdAt)];
 
@@ -207,7 +206,7 @@ export abstract class UserService {
       .insert(userFollows)
       .values({ followerId, followingId: target.id })
       .onConflictDoNothing();
-    await notify({ userId: target.id, actorId: followerId, type: "follow" });
+    await notify({ userId: target.id, actorId: followerId, type: NotificationType.Follow });
     return { following: true };
   }
 
@@ -221,12 +220,13 @@ export abstract class UserService {
 
   static async connections(
     username: string,
-    kind: "followers" | "following",
+    kind: ConnectionKind,
     opts: { limit: number; offset: number; viewerId: string | null },
   ) {
     const target = await requireUser(username);
     const rows = await postgresDb.query.userFollows.findMany({
-      where: kind === "followers" ? { followingId: target.id } : { followerId: target.id },
+      where:
+        kind === ConnectionKind.Followers ? { followingId: target.id } : { followerId: target.id },
       orderBy: { createdAt: "desc" },
       limit: opts.limit,
       offset: opts.offset,
@@ -239,11 +239,13 @@ export abstract class UserService {
       .select({ total: count() })
       .from(userFollows)
       .where(
-        kind === "followers"
+        kind === ConnectionKind.Followers
           ? eq(userFollows.followingId, target.id)
           : eq(userFollows.followerId, target.id),
       );
-    const users = rows.map((row) => (kind === "followers" ? row.follower : row.following));
+    const users = rows.map((row) =>
+      kind === ConnectionKind.Followers ? row.follower : row.following,
+    );
     const following = await Promise.all(users.map((u) => isFollowing(opts.viewerId, u.id)));
     return {
       results: users.map((u, i) => ({ ...u, isFollowing: following[i] })),
@@ -350,7 +352,7 @@ export abstract class UserService {
     const items = [
       ...runs.map((run) => ({
         id: run.id,
-        kind: "playthrough" as const,
+        kind: JournalKind.Playthrough as const,
         date: run.endedAt ?? run.startedAt ?? run.createdAt.toISOString().slice(0, 10),
         startedAt: run.startedAt,
         endedAt: run.endedAt,
@@ -363,7 +365,7 @@ export abstract class UserService {
         .filter((entry) => !withRuns.has(entry.gameId))
         .map((entry) => ({
           id: entry.id,
-          kind: "entry" as const,
+          kind: JournalKind.Entry as const,
           date: entry.endedAt!.toISOString().slice(0, 10),
           startedAt: null,
           endedAt: entry.endedAt!.toISOString().slice(0, 10),

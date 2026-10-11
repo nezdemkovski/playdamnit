@@ -1,7 +1,8 @@
 import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
-import { USER_SORTS, UserService } from "@/modules/user/service";
+import { UserService } from "@/modules/user/service";
+import { UserSort } from "@/utils/enums";
 
 export const getUsers = new Elysia().use(betterAuth).get(
   "/users",
@@ -9,7 +10,7 @@ export const getUsers = new Elysia().use(betterAuth).get(
     viewer: true,
     query: t.Object({
       q: t.Optional(t.String({ maxLength: 50 })),
-      sort: t.Optional(t.Union(USER_SORTS.map((s) => t.Literal(s)))),
+      sort: t.Optional(t.Enum(UserSort)),
       limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 30 })),
       offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
     }),

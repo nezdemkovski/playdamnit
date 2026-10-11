@@ -1,23 +1,24 @@
 import { Gamepad2Icon } from "lucide-react";
 import { cn } from "cn";
 
-import { igdbImage, type IgdbSize } from "@/lib/image";
+import { IgdbSize, ImageLoading } from "@/lib/enums";
+import { igdbImage } from "@/lib/image";
 
 interface GameCoverProps {
   url: string | null | undefined;
   name: string;
   size?: IgdbSize;
   className?: string;
-  loading?: "lazy" | "eager";
+  loading?: ImageLoading;
 }
 
 /** Poster image with the catalog's 3:4 shape and a placeholder when IGDB has no cover */
 export function GameCover({
   url,
   name,
-  size = "cover_big",
+  size = IgdbSize.CoverBig,
   className,
-  loading = "lazy",
+  loading = ImageLoading.Lazy,
 }: GameCoverProps) {
   const src = igdbImage(url, size);
   return (

@@ -16,7 +16,7 @@ import type {
   website,
   websiteType,
 } from "@playdamnit/db/schema";
-import { ImageSourceEnum } from "@playdamnit/db/schema";
+import { ImageSource, ReleaseDatePrecision } from "@playdamnit/db/enums";
 
 import type { IGDBGameResponse, IGDBNamed, IGDBTyped } from "../utils/igdb/types";
 
@@ -24,15 +24,15 @@ import type { IGDBGameResponse, IGDBNamed, IGDBTyped } from "../utils/igdb/types
 const POPULAR_RATING_COUNT = 100;
 
 // IGDB date_formats ids → how precise first_release_date is
-const DATE_PRECISION: Record<number, string> = {
-  0: "day",
-  1: "month",
-  2: "year",
-  3: "quarter",
-  4: "quarter",
-  5: "quarter",
-  6: "quarter",
-  7: "tbd",
+const DATE_PRECISION: Record<number, ReleaseDatePrecision> = {
+  0: ReleaseDatePrecision.Day,
+  1: ReleaseDatePrecision.Month,
+  2: ReleaseDatePrecision.Year,
+  3: ReleaseDatePrecision.Quarter,
+  4: ReleaseDatePrecision.Quarter,
+  5: ReleaseDatePrecision.Quarter,
+  6: ReleaseDatePrecision.Quarter,
+  7: ReleaseDatePrecision.Tbd,
 };
 
 type GameRow = typeof game.$inferInsert;
@@ -75,7 +75,7 @@ const uniqueIds = (rows: { id: number }[] | undefined) => [
 ];
 
 /** The precision of first_release_date, taken from the release date that defines it. */
-const releasePrecision = (raw: IGDBGameResponse): string | null => {
+const releasePrecision = (raw: IGDBGameResponse): ReleaseDatePrecision | null => {
   if (!raw.first_release_date || !raw.release_dates?.length) return null;
   const first = raw.release_dates
     .filter((rd) => rd.date === raw.first_release_date && rd.date_format !== undefined)
@@ -161,7 +161,7 @@ export const deriveGame = (raw: IGDBGameResponse, now: Date): DerivedGame => {
           id: raw.cover.id,
           gameId: raw.id,
           hash: raw.cover.image_id,
-          source: ImageSourceEnum.IGDB,
+          source: ImageSource.Igdb,
           width: raw.cover.width ?? null,
           height: raw.cover.height ?? null,
         }
@@ -170,7 +170,7 @@ export const deriveGame = (raw: IGDBGameResponse, now: Date): DerivedGame => {
       id: ss.id,
       gameId: raw.id,
       hash: ss.image_id,
-      source: ImageSourceEnum.IGDB,
+      source: ImageSource.Igdb,
       width: ss.width ?? null,
       height: ss.height ?? null,
     })),

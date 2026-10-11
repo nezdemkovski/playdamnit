@@ -10,6 +10,7 @@ import { ProfileForm } from "@/components/settings/profile-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/hooks/auth";
+import { SettingsTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/$username_/settings")({
   component: SettingsPage,
@@ -41,31 +42,31 @@ function SettingsPage() {
       <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
       <p className="mt-1 text-sm text-dimmed">{t("settings.subtitle")}</p>
 
-      <Tabs defaultValue="profile" className="mt-6">
+      <Tabs defaultValue={SettingsTab.Profile} className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="profile">
+          <TabsTrigger value={SettingsTab.Profile}>
             <UserIcon /> {t("settings.tabs.profile")}
           </TabsTrigger>
-          <TabsTrigger value="account">
+          <TabsTrigger value={SettingsTab.Account}>
             <KeyRoundIcon /> {t("settings.tabs.account")}
           </TabsTrigger>
-          <TabsTrigger value="passkeys">
+          <TabsTrigger value={SettingsTab.Passkeys}>
             <FingerprintIcon /> {t("settings.tabs.passkeys")}
           </TabsTrigger>
-          <TabsTrigger value="data">
+          <TabsTrigger value={SettingsTab.Data}>
             <DatabaseIcon /> {t("settings.tabs.data")}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="profile" className="mt-8">
+        <TabsContent value={SettingsTab.Profile} className="mt-8">
           <ProfileForm user={user} />
         </TabsContent>
-        <TabsContent value="account" className="mt-8">
+        <TabsContent value={SettingsTab.Account} className="mt-8">
           <PasswordForm user={user} />
         </TabsContent>
-        <TabsContent value="passkeys" className="mt-8">
+        <TabsContent value={SettingsTab.Passkeys} className="mt-8">
           <PasskeySettings />
         </TabsContent>
-        <TabsContent value="data" className="mt-8">
+        <TabsContent value={SettingsTab.Data} className="mt-8">
           <DataSettings username={user.username ?? ""} />
         </TabsContent>
       </Tabs>

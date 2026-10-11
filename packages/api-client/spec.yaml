@@ -253,7 +253,8 @@ components:
         firstReleaseDatePrecision:
           type: string
           nullable: true
-          description: day, month, year, quarter or tbd
+          enum: [day, month, year, quarter, tbd, null]
+          description: How precise the release date is
         gameType:
           type: number
           nullable: true
@@ -3059,6 +3060,7 @@ paths:
                 emoji:
                   type: string
                   enum: ["❤️", "🔥", "👏", "😂", "🤔", "😢", "💀", "👀"]
+                  x-enumNames: [Heart, Fire, Clap, Laugh, Thinking, Sad, Skull, Eyes]
               required:
                 - emoji
       responses:

@@ -2,6 +2,16 @@ import winston from "winston";
 import { format } from "winston";
 import * as Sentry from "@sentry/bun";
 import "winston-daily-rotate-file";
+import {
+  LogDir,
+  LogFileDatePattern,
+  LogFileName,
+  LogNamespace,
+  LogRotation,
+  LogTimestampFormat,
+  NodeEnv,
+  SentrySeverity,
+} from "@/utils/enums";
 
 const { combine, timestamp, printf, colorize, json } = format;
 
@@ -28,8 +38,8 @@ export const initSentry = (): boolean => {
   try {
     Sentry.init({
       dsn,
-      environment: process.env.NODE_ENV || "development",
-      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
+      environment: process.env.NODE_ENV || NodeEnv.Development,
+      tracesSampleRate: process.env.NODE_ENV === NodeEnv.Production ? 0.2 : 1.0,
     });
 
     sentryEnabled = true;
@@ -65,7 +75,7 @@ export const flushSentry = async (): Promise<boolean> => {
 
 const consoleFormat = combine(
   colorize(),
-  timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  timestamp({ format: LogTimestampFormat.DateTime }),
   printf(({ timestamp, level, message, service, ...meta }) => {
     const metaString = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : "";
     return `[${timestamp}] [${level}] [${service || "app"}] ${message} ${metaString}`;
@@ -73,7 +83,7 @@ const consoleFormat = combine(
 );
 
 const winstonLogger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || LogLevel.INFO,
   format: combine(timestamp(), json()),
   defaultMeta: { service: "playdamnit-api" },
   transports: [
@@ -81,29 +91,29 @@ const winstonLogger = winston.createLogger({
       format: consoleFormat,
     }),
     new winston.transports.DailyRotateFile({
-      filename: "error-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      level: "error",
-      dirname: process.env.LOG_DIR || "./logs",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: LogFileName.Error,
+      datePattern: LogFileDatePattern.Daily,
+      level: LogLevel.ERROR,
+      dirname: process.env.LOG_DIR || LogDir.Default,
+      maxSize: LogRotation.MaxSize,
+      maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
     new winston.transports.DailyRotateFile({
-      filename: "combined-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      dirname: process.env.LOG_DIR || "./logs",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: LogFileName.Combined,
+      datePattern: LogFileDatePattern.Daily,
+      dirname: process.env.LOG_DIR || LogDir.Default,
+      maxSize: LogRotation.MaxSize,
+      maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
     new winston.transports.DailyRotateFile({
-      filename: "info-%DATE%.log",
-      datePattern: "YYYY-MM-DD",
-      level: "info",
-      dirname: process.env.LOG_DIR || "./logs",
-      maxSize: "20m",
-      maxFiles: "14d",
+      filename: LogFileName.Info,
+      datePattern: LogFileDatePattern.Daily,
+      level: LogLevel.INFO,
+      dirname: process.env.LOG_DIR || LogDir.Default,
+      maxSize: LogRotation.MaxSize,
+      maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
   ],
@@ -141,7 +151,7 @@ export const createLogger = (namespace: string): EnhancedLogger => {
 
       if (sentryEnabled) {
         Sentry.captureMessage(message, {
-          level: "error",
+          level: SentrySeverity.Error,
           tags: { namespace },
           extra: meta,
         });
@@ -153,7 +163,7 @@ export const createLogger = (namespace: string): EnhancedLogger => {
 
       if (sentryEnabled) {
         Sentry.captureMessage(message, {
-          level: "warning",
+          level: SentrySeverity.Warning,
           tags: { namespace },
           extra: meta,
         });
@@ -165,7 +175,7 @@ export const createLogger = (namespace: string): EnhancedLogger => {
 
       if (sentryEnabled && meta && meta.sendToSentry) {
         Sentry.captureMessage(message, {
-          level: "info",
+          level: SentrySeverity.Info,
           tags: { namespace },
           extra: meta,
         });
@@ -228,5 +238,5 @@ export const createLogger = (namespace: string): EnhancedLogger => {
   };
 };
 
-const defaultLogger = createLogger("app");
+const defaultLogger = createLogger(LogNamespace.App);
 export default defaultLogger;

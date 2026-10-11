@@ -2,8 +2,9 @@ import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
 import { ListService, MAX_LIST_GAMES } from "@/modules/list/service";
+import { StringFormat } from "@/utils/enums";
 
-const params = t.Object({ id: t.String({ format: "uuid" }) });
+const params = t.Object({ id: t.String({ format: StringFormat.Uuid }) });
 
 export const listRoutes = new Elysia()
   .use(betterAuth)
@@ -42,6 +43,9 @@ export const listRoutes = new Elysia()
   )
   .delete(
     "/lists/:id/games/:gameId",
-    { auth: true, params: t.Object({ id: t.String({ format: "uuid" }), gameId: t.Numeric() }) },
+    {
+      auth: true,
+      params: t.Object({ id: t.String({ format: StringFormat.Uuid }), gameId: t.Numeric() }),
+    },
     ({ params, user }) => ListService.removeGame(params.id, user.id, params.gameId),
   );

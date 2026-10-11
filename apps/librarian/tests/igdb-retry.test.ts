@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
+import { HttpMethod } from "@/utils/enums";
+
 // Twitch token request must never leave the test
 process.env.TWITCH_CLIENT_ID = "test";
 process.env.TWITCH_CLIENT_SECRET = "test";
@@ -54,7 +56,7 @@ describe("IGDB request retries", () => {
 
   test("does not retry client errors", async () => {
     const calls = scriptFetch([() => new Response("nope", { status: 400 })]);
-    await expect(igdbFetch("GET", "webhooks")).rejects.toThrow("failed with 400");
+    await expect(igdbFetch(HttpMethod.Get, "webhooks")).rejects.toThrow("failed with 400");
     expect(calls.length).toBe(1);
   });
 });

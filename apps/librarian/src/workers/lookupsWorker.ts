@@ -20,8 +20,9 @@ import {
 import { QUEUES } from "@playdamnit/db/jobs";
 import { fetchAllIGDB } from "../utils/igdb/utils";
 import { createLogger } from "../utils/enhancedLogger";
+import { Schedule, LogNamespace } from "../utils/enums";
 
-const logger = createLogger("lookups-worker");
+const logger = createLogger(LogNamespace.LookupsWorker);
 
 // A startup run is skipped when the last one finished less recently than this
 const MIN_INTERVAL_MS = 20 * 60 * 60 * 1000;
@@ -192,7 +193,7 @@ export const registerLookupsWorker = async (boss: PgBoss): Promise<void> => {
   await boss.work<{ force?: boolean }>(QUEUES.SYNC_LOOKUPS, async ([job]) => {
     await syncLookups(job.data ?? {});
   });
-  await boss.schedule(QUEUES.SYNC_LOOKUPS, "30 3 * * *", { force: true });
+  await boss.schedule(QUEUES.SYNC_LOOKUPS, Schedule.SyncLookups, { force: true });
 
   // Catch up after a deploy; the handler skips the run if the last one is recent enough
   await boss.send(

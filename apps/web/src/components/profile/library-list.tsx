@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { type UserGameWithUserData, StatusEnum } from "@playdamnit/api-client";
 import { ArrowDownUpIcon, LayoutGridIcon, ListIcon, SearchIcon } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
@@ -24,31 +24,30 @@ import { GameCard } from "@/components/game/game-card";
 import { STATUSES, type LibraryStatus } from "@/lib/statuses";
 import { idleDays } from "@/lib/voice";
 import { LibraryRow } from "./library-row";
+import { AllOption, LibrarySort, LibraryView, StorageKey } from "@/lib/enums";
 
-const ALL_YEARS = "all";
-
-type Sort = "shame" | "added" | "rating" | "name" | "release";
-const SORTS: Sort[] = ["shame", "added", "rating", "name", "release"];
+const SORTS = Object.values(LibrarySort);
 
 // Untouched backlog first, then stale "playing", finished games last
-const SHAME_RANK: Record<string, number> = {
-  backlog: 0,
-  want_to_play: 0,
-  on_hold: 1,
-  playing: 2,
-  online: 3,
-  dropped: 4,
-  finished: 5,
+const SHAME_RANK: Record<StatusEnum, number> = {
+  [StatusEnum.Backlog]: 0,
+  [StatusEnum.WantToPlay]: 0,
+  [StatusEnum.OnHold]: 1,
+  [StatusEnum.Playing]: 2,
+  [StatusEnum.Online]: 3,
+  [StatusEnum.Dropped]: 4,
+  [StatusEnum.Finished]: 5,
 };
 
-const compare: Record<Sort, (a: UserGameWithUserData, b: UserGameWithUserData) => number> = {
-  shame: (a, b) =>
+const compare: Record<LibrarySort, (a: UserGameWithUserData, b: UserGameWithUserData) => number> = {
+  [LibrarySort.Shame]: (a, b) =>
     SHAME_RANK[a.userGameData.status] - SHAME_RANK[b.userGameData.status] ||
     idleDays(b) - idleDays(a),
-  added: (a, b) => (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
-  rating: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
-  name: (a, b) => a.name.localeCompare(b.name),
-  release: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
+  [LibrarySort.Added]: (a, b) =>
+    (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
+  [LibrarySort.Rating]: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
+  [LibrarySort.Name]: (a, b) => a.name.localeCompare(b.name),
+  [LibrarySort.Release]: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
 };
 
 interface LibraryListProps {
@@ -59,17 +58,19 @@ interface LibraryListProps {
 /** Status tabs with counts, search-in-list, sort and the ranked rows */
 export function LibraryList({ entries, editable }: LibraryListProps) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<LibraryStatus | "all">("all");
+  const [status, setStatus] = useState<LibraryStatus | AllOption>(AllOption.All);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<Sort>("shame");
-  const [view, setView] = useState<"list" | "grid">(() => {
+  const [sort, setSort] = useState(LibrarySort.Shame);
+  const [view, setView] = useState<LibraryView>(() => {
     try {
-      return localStorage.getItem("library-view") === "grid" ? "grid" : "list";
+      return localStorage.getItem(StorageKey.LibraryView) === LibraryView.Grid
+        ? LibraryView.Grid
+        : LibraryView.List;
     } catch {
-      return "list";
+      return LibraryView.List;
     }
   });
-  const [year, setYear] = useState<string>(ALL_YEARS);
+  const [year, setYear] = useState<string>(AllOption.All);
   const years = useMemo(() => {
     const set = new Set<number>();
     for (const e of entries) {
@@ -78,10 +79,10 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
     }
     return [...set].sort((a, b) => b - a);
   }, [entries]);
-  const switchView = (v: "list" | "grid") => {
+  const switchView = (v: LibraryView) => {
     setView(v);
     try {
-      localStorage.setItem("library-view", v);
+      localStorage.setItem(StorageKey.LibraryView, v);
     } catch {
       // storage may be unavailable
     }
@@ -97,7 +98,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return entries
-      .filter((e) => status === "all" || e.userGameData.status === status)
+      .filter((e) => status === AllOption.All || e.userGameData.status === status)
       .filter(
         (e) =>
           !q ||
@@ -113,8 +114,8 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         <StatusTab
           label={t("profile.library.all")}
           count={entries.length}
-          active={status === "all"}
-          onClick={() => setStatus("all")}
+          active={status === AllOption.All}
+          onClick={() => setStatus(AllOption.All)}
         />
         {STATUSES.map((s) => (
           <StatusTab
@@ -143,7 +144,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_YEARS}>{t("profile.library.allYears")}</SelectItem>
+            <SelectItem value={AllOption.All}>{t("profile.library.allYears")}</SelectItem>
             {years.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
@@ -153,20 +154,20 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         </Select>
         <div className="flex rounded-full bg-white/5 p-0.5">
           <Button
-            variant={view === "list" ? "secondary" : "ghost"}
+            variant={view === LibraryView.List ? "secondary" : "ghost"}
             size="icon-sm"
             aria-label={t("profile.library.listView")}
-            aria-pressed={view === "list"}
-            onClick={() => switchView("list")}
+            aria-pressed={view === LibraryView.List}
+            onClick={() => switchView(LibraryView.List)}
           >
             <ListIcon />
           </Button>
           <Button
-            variant={view === "grid" ? "secondary" : "ghost"}
+            variant={view === LibraryView.Grid ? "secondary" : "ghost"}
             size="icon-sm"
             aria-label={t("profile.library.gridView")}
-            aria-pressed={view === "grid"}
-            onClick={() => switchView("grid")}
+            aria-pressed={view === LibraryView.Grid}
+            onClick={() => switchView(LibraryView.Grid)}
           >
             <LayoutGridIcon />
           </Button>
@@ -178,7 +179,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as Sort)}>
+            <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as LibrarySort)}>
               {SORTS.map((value) => (
                 <DropdownMenuRadioItem key={value} value={value}>
                   {t(`profile.library.sort.${value}`)}
@@ -193,7 +194,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         <div className="panel p-10 text-center text-sm text-dimmed">
           {entries.length === 0 ? t("profile.library.emptyList") : t("profile.library.noMatch")}
         </div>
-      ) : view === "grid" ? (
+      ) : view === LibraryView.Grid ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {visible.map((entry) => (
             <GameCard key={entry.id} game={entry} rating={entry.userGameData.rating} />

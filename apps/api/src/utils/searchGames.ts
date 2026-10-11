@@ -3,6 +3,7 @@ import { and, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db/postgres";
 import { game } from "@playdamnit/db/schema";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
+import { SearchSource } from "@/utils/enums";
 
 export const MAX_QUERY_LENGTH = 100;
 export const MAX_SEARCH_LIMIT = 50;
@@ -20,7 +21,7 @@ interface SearchResult {
   results: ReturnType<typeof transformGameResponse>[];
   meta: {
     total: number;
-    source: "none" | "database";
+    source: SearchSource;
     query_time_ms?: number;
   };
 }
@@ -91,7 +92,7 @@ export async function searchGames(
   // Lower-cased once here; exact-name matching compares against lower() of the columns
   const query = searchQuery?.trim().slice(0, MAX_QUERY_LENGTH).toLowerCase() ?? "";
   if (query.length === 0) {
-    return { results: [], meta: { total: 0, source: "none" } };
+    return { results: [], meta: { total: 0, source: SearchSource.None } };
   }
 
   const limit = Math.min(Math.max(1, Math.trunc(opts.limit ?? MAX_SEARCH_LIMIT)), MAX_SEARCH_LIMIT);
@@ -106,6 +107,10 @@ export async function searchGames(
 
   return {
     results: games.map(transformGameResponse),
-    meta: { total: games.length, source: "database", query_time_ms: Date.now() - startTime },
+    meta: {
+      total: games.length,
+      source: SearchSource.Database,
+      query_time_ms: Date.now() - startTime,
+    },
   };
 }

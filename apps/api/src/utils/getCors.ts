@@ -2,8 +2,9 @@ import { cors } from "@elysia/cors";
 
 import { createLogger } from "./enhancedLogger";
 import { getConfig } from "@/config";
+import { HttpHeader, HttpMethod, LogNamespace } from "@/utils/enums";
 
-const logger = createLogger("cors");
+const logger = createLogger(LogNamespace.Cors);
 const { isDev, trustedOrigins } = getConfig();
 
 export const getCors = () => {
@@ -20,12 +21,12 @@ export const getCors = () => {
 
   return cors({
     origin: (request) => {
-      const origin = request.headers.get("origin");
+      const origin = request.headers.get(HttpHeader.Origin);
       if (!origin) return false;
       return trustedOrigins.includes(origin);
     },
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [HttpHeader.ContentTypeCanonical, HttpHeader.Authorization],
+    methods: Object.values(HttpMethod),
   });
 };

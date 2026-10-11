@@ -20,6 +20,8 @@ import { Switch } from "@/components/ui/switch";
 import { getConfig } from "@/config";
 import { useMyLibrary } from "@/hooks/library";
 import type { ChatUIMessage } from "@/lib/chat";
+import { ChatRole } from "@playdamnit/api-client";
+import { ChatPartType, ChatStatus, ToolState } from "@/lib/enums";
 
 interface AssistantDialogProps {
   open: boolean;
@@ -46,7 +48,7 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
     [],
   );
   const { messages, sendMessage, status, error } = useChat<ChatUIMessage>({ transport });
-  const busy = status === "submitted" || status === "streaming";
+  const busy = status === ChatStatus.Submitted || status === ChatStatus.Streaming;
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
@@ -80,23 +82,28 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
+              className={cn(
+                "flex",
+                message.role === ChatRole.User ? "justify-end" : "justify-start",
+              )}
             >
               <div
                 className={cn(
                   "max-w-[85%] space-y-3 rounded-2xl px-4 py-2.5 text-sm",
-                  message.role === "user" ? "bg-primary text-primary-foreground" : "bg-white/5",
+                  message.role === ChatRole.User
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-white/5",
                 )}
               >
                 {message.parts.map((part, i) => {
-                  if (part.type === "text")
+                  if (part.type === ChatPartType.Text)
                     return (
                       <p key={i} className="whitespace-pre-wrap">
                         {part.text}
                       </p>
                     );
-                  if (part.type === "tool-search_games") {
-                    if (part.state !== "output-available") {
+                  if (part.type === ChatPartType.SearchGames) {
+                    if (part.state !== ToolState.OutputAvailable) {
                       return (
                         <div key={i} className="flex items-center gap-2 text-dimmed">
                           <Loader2Icon className="size-3.5 animate-spin" />{" "}

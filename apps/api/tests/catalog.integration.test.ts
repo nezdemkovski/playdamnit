@@ -6,6 +6,8 @@ import { PgBoss } from "pg-boss";
 import { Client } from "pg";
 import { createAgentUIStreamResponse } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
+import { UserGameStatus } from "@playdamnit/db/enums";
+import { SearchSource } from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -98,7 +100,7 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     expect((await mod.searchGames("Zzyzx")).results).toEqual([]);
     await insertGame(900001, "Zzyzx Quest");
     const found = await mod.searchGames("Zzyzx");
-    expect(found.meta.source).toBe("database");
+    expect(found.meta.source).toBe(SearchSource.Database);
     expect(found.results.map((g) => g.name)).toEqual(["Zzyzx Quest"]);
   }, 15_000);
 
@@ -191,8 +193,11 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
     );
 
     const rows = [
-      ...Array.from({ length: 30 }, (_, i) => ({ gameId: 800000 + i, status: "backlog" })),
-      { gameId: 960000, status: "playing" },
+      ...Array.from({ length: 30 }, (_, i) => ({
+        gameId: 800000 + i,
+        status: UserGameStatus.Backlog,
+      })),
+      { gameId: 960000, status: UserGameStatus.Playing },
     ];
     const result = await mod.UserGameService.importUserGames("u1", rows, false);
 
@@ -229,7 +234,11 @@ describe.skipIf(!TEST_URL)("catalog requests (integration)", () => {
                 type: "tool-call",
                 toolCallId: "call-1",
                 toolName: "search_games",
-                input: JSON.stringify({ query: "Zzyzx", rating: 8, status: "finished" }),
+                input: JSON.stringify({
+                  query: "Zzyzx",
+                  rating: 8,
+                  status: UserGameStatus.Finished,
+                }),
               });
               controller.enqueue({
                 type: "finish",

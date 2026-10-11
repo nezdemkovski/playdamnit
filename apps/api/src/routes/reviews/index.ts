@@ -1,10 +1,11 @@
 import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
-import { REVIEW_SORTS, ReviewService } from "@/modules/review/service";
-import { REACTION_EMOJIS } from "@playdamnit/db/schema";
+import { ReviewService } from "@/modules/review/service";
+import { ReactionEmoji } from "@playdamnit/db/enums";
+import { ReviewSort, StringFormat } from "@/utils/enums";
 
-const reviewParams = t.Object({ id: t.String({ format: "uuid" }) });
+const reviewParams = t.Object({ id: t.String({ format: StringFormat.Uuid }) });
 
 export const reviewRoutes = new Elysia()
   .use(betterAuth)
@@ -14,7 +15,7 @@ export const reviewRoutes = new Elysia()
     {
       viewer: true,
       query: t.Object({
-        sort: t.Optional(t.Union(REVIEW_SORTS.map((s) => t.Literal(s)))),
+        sort: t.Optional(t.Enum(ReviewSort)),
         limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
         offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
         following: t.Optional(t.String()),
@@ -35,7 +36,7 @@ export const reviewRoutes = new Elysia()
     {
       auth: true,
       params: reviewParams,
-      body: t.Object({ emoji: t.Union(REACTION_EMOJIS.map((e) => t.Literal(e))) }),
+      body: t.Object({ emoji: t.Enum(ReactionEmoji) }),
     },
     ({ params, user, body }) => ReviewService.react(user.id, params.id, body.emoji),
   )

@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     "./schema": "./src/schema.ts",
+    "./enums": "./src/enums.ts",
     "./relations": "./src/relations.ts",
     "./jobs": "./src/jobs.ts",
     "./migrate": "./src/migrate.ts"

@@ -1,4 +1,7 @@
 import {
+  StatusEnum,
+  GetApiUsersSort,
+  GetApiGamesSort,
   useGetApiGames,
   useGetApiMeFeed,
   useGetApiReviews,
@@ -29,6 +32,8 @@ import { Verdict } from "@/components/home/verdict";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { relativeDate } from "@/lib/format";
+import { DateFormat, IgdbSize } from "@/lib/enums";
+import { ChartTab } from "@/lib/enums";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -40,11 +45,11 @@ function Home() {
   const { t } = useTranslation();
   const { user } = useSession();
   const { byGameId, entries, isLoading: libraryLoading } = useMyLibrary();
-  const popular = useGetApiGames({ sort: "popular", limit: RAIL });
-  const recent = useGetApiGames({ sort: "recent", limit: RAIL });
+  const popular = useGetApiGames({ sort: GetApiGamesSort.Popular, limit: RAIL });
+  const recent = useGetApiGames({ sort: GetApiGamesSort.Recent, limit: RAIL });
   const now = Math.floor(Date.now() / 1000);
   const week = useGetApiGames({
-    sort: "date",
+    sort: GetApiGamesSort.Date,
     releasedFrom: now - 86_400,
     releasedTo: now + 7 * 86_400,
     limit: RAIL,
@@ -52,7 +57,9 @@ function Home() {
   const freshReviews = useGetApiReviews({ limit: 6 });
   const feed = useGetApiMeFeed({ limit: 12 }, { query: { enabled: !!user } });
 
-  const playing = entries.filter((e) => e.userGameData.status === "playing").slice(0, RAIL);
+  const playing = entries
+    .filter((e) => e.userGameData.status === StatusEnum.Playing)
+    .slice(0, RAIL);
   const latest = entries.slice(0, RAIL);
 
   return (
@@ -99,7 +106,7 @@ function Home() {
           action={
             <Link
               to="/community"
-              search={{ q: "", sort: "games", page: 1 }}
+              search={{ q: "", sort: GetApiUsersSort.Games, page: 1 }}
               className="text-sm text-dimmed hover:text-white"
             >
               {t("home.sections.community")}
@@ -151,7 +158,7 @@ function Home() {
                   <GameCover
                     url={item.game.cover?.url}
                     name={item.game.name}
-                    size="cover_small"
+                    size={IgdbSize.CoverSmall}
                     className="rounded"
                   />
                 </Link>
@@ -168,7 +175,7 @@ function Home() {
           action={
             <Link
               to="/calendar"
-              search={{ month: format(new Date(), "yyyy-MM"), hot: false, mine: false }}
+              search={{ month: format(new Date(), DateFormat.IsoMonth), hot: false, mine: false }}
               className="text-sm text-dimmed hover:text-white"
             >
               {t("home.sections.openCalendar")}
@@ -180,7 +187,9 @@ function Home() {
               <div key={g.id}>
                 <GameCard game={g} rating={byGameId.get(g.id)?.userGameData.rating} />
                 <div className="mt-1.5 text-xs text-dimmed">
-                  {g.firstReleaseDate ? format(new Date(g.firstReleaseDate * 1000), "MMM d") : ""}
+                  {g.firstReleaseDate
+                    ? format(new Date(g.firstReleaseDate * 1000), DateFormat.MonthDay)
+                    : ""}
                 </div>
               </div>
             ))}
@@ -195,7 +204,7 @@ function Home() {
           <Link
             to="/charts"
             search={{
-              tab: "popular",
+              tab: ChartTab.Popular,
               genreId: undefined,
               platformId: undefined,
               year: undefined,

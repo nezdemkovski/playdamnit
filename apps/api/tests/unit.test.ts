@@ -5,6 +5,8 @@ import { UserGameService } from "@/modules/userGame/service";
 import { escapeLike } from "@/utils/searchGames";
 import { createRateLimiter } from "@/utils/rateLimit";
 import { TooManyRequestsError } from "@/utils/errors";
+import { UserGameStatus } from "@playdamnit/db/enums";
+import { HttpMethod } from "@/utils/enums";
 
 describe("csv", () => {
   test("round-trips quotes, commas, newlines and CRLF", () => {
@@ -32,7 +34,11 @@ describe("csv", () => {
 
 describe("normalizeImportRow", () => {
   const row = (overrides: Record<string, unknown>) =>
-    UserGameService.normalizeImportRow({ gameId: 10, status: "playing", ...overrides });
+    UserGameService.normalizeImportRow({
+      gameId: 10,
+      status: UserGameStatus.Playing,
+      ...overrides,
+    });
 
   test("accepts a minimal row", () => {
     expect(row({})).toMatchObject({ ok: true, gameId: 10 });
@@ -51,7 +57,9 @@ describe("normalizeImportRow", () => {
     expect(row({ status: "nope" })).toMatchObject({ ok: false });
     expect(row({ rating: 11 })).toMatchObject({ ok: false });
     expect(row({ endedAt: "2020-01-01" })).toMatchObject({ ok: false });
-    expect(row({ status: "finished", endedAt: "2999-01-01" })).toMatchObject({ ok: false });
+    expect(row({ status: UserGameStatus.Finished, endedAt: "2999-01-01" })).toMatchObject({
+      ok: false,
+    });
   });
 });
 
@@ -85,7 +93,7 @@ describe("request schemas", () => {
 
     const res = await app.handle(
       new Request("http://localhost/", {
-        method: "PATCH",
+        method: HttpMethod.Patch,
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ rating: 5 }),
       }),

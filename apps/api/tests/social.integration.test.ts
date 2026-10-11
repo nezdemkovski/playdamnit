@@ -3,6 +3,8 @@
 //   TEST_POSTGRES_URL=postgres://user:pass@localhost:5432/playdamnit_test bun test
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
+import { NotificationType, ReactionEmoji, UserGameStatus } from "@playdamnit/db/enums";
+import { ConnectionKind, GameSort, ReviewSort, UserSort } from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -53,7 +55,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ({ UserGameService } = await import("@/modules/userGame/service"));
 
     await UserGameService.addUserGame("alice", GAME, {
-      status: "finished",
+      status: UserGameStatus.Finished,
       rating: 9,
       review: "A **great** game.",
       platformId: 6,
@@ -61,9 +63,13 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       mastered: true,
       spoilers: true,
     });
-    await UserGameService.addUserGame("bob", GAME, { status: "playing", rating: 6, platformId: 6 });
+    await UserGameService.addUserGame("bob", GAME, {
+      status: UserGameStatus.Playing,
+      rating: 6,
+      platformId: 6,
+    });
     await UserGameService.addUserGame("carol", GAME, {
-      status: "want_to_play",
+      status: UserGameStatus.WantToPlay,
       rating: 0,
       platformId: 6,
     });
@@ -107,21 +113,21 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(review.myReaction).toBeNull();
 
     await ReviewService.react("bob", review.id, "🔥");
-    await ReviewService.react("bob", review.id, "👏"); // a second emoji replaces the first
-    await ReviewService.react("alice", review.id, "👏"); // reacting to yourself makes no notification
-    await ReviewService.react("carol", review.id, "❤️");
+    await ReviewService.react("bob", review.id, ReactionEmoji.Clap); // a second emoji replaces the first
+    await ReviewService.react("alice", review.id, ReactionEmoji.Clap); // reacting to yourself makes no notification
+    await ReviewService.react("carol", review.id, ReactionEmoji.Heart);
     await expect(ReviewService.react("carol", review.id, "🦄")).rejects.toThrow(/Unknown reaction/);
     const after = await ReviewService.list({
       gameId: GAME,
       viewerId: "bob",
-      sort: "top",
+      sort: ReviewSort.Top,
       limit: 10,
       offset: 0,
     });
     expect(after.results[0].likes).toBe(3);
     expect(after.results[0].reactions).toEqual([
-      { emoji: "👏", count: 2 },
-      { emoji: "❤️", count: 1 },
+      { emoji: ReactionEmoji.Clap, count: 2 },
+      { emoji: ReactionEmoji.Heart, count: 1 },
     ]);
     expect(after.results[0].myReaction).toBe("👏");
 
@@ -158,7 +164,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(profile.isFollowing).toBe(true);
     expect(profile.followsYou).toBe(false);
 
-    const followers = await UserService.connections("alice", "followers", {
+    const followers = await UserService.connections("alice", ConnectionKind.Followers, {
       limit: 10,
       offset: 0,
       viewerId: "bob",
@@ -167,7 +173,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
 
     const members = await UserService.search({
       q: "ali",
-      sort: "followers",
+      sort: UserSort.Followers,
       limit: 10,
       offset: 0,
       viewerId: "bob",
@@ -188,7 +194,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     const notifications = await UserService.notifications("alice", { limit: 10 });
     expect(
       notifications.results
-        .filter((n) => n.type === "follow")
+        .filter((n) => n.type === NotificationType.Follow)
         .map((n) => n.actor.username)
         .sort(),
     ).toEqual(["bob", "carol"]);
@@ -264,7 +270,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
 
     // bob finished the other game without logging a playthrough: it shows up as an entry
     await UserGameService.addUserGame("bob", OTHER_GAME, {
-      status: "dropped",
+      status: UserGameStatus.Dropped,
       rating: 3,
       platformId: 6,
       endedAt: "2024-12-31",
@@ -310,11 +316,11 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
   });
 
   test("the catalog browse honours filters and the member-based sorts", async () => {
-    const wanted = await GameService.findGames({ sort: "wanted", limit: 10 });
+    const wanted = await GameService.findGames({ sort: GameSort.Wanted, limit: 10 });
     expect(wanted.results[0].id).toBe(GAME);
-    const played = await GameService.findGames({ sort: "played", limit: 10 });
+    const played = await GameService.findGames({ sort: GameSort.Played, limit: 10 });
     expect(played.results.map((g) => g.id)).toEqual([GAME, OTHER_GAME]);
-    expect((await GameService.findGames({ year: 2020, sort: "date" })).meta.total).toBe(2);
+    expect((await GameService.findGames({ year: 2020, sort: GameSort.Date })).meta.total).toBe(2);
     expect((await GameService.findGames({ year: 2021 })).meta.total).toBe(0);
     expect(
       (await GameService.findGames({ ids: [OTHER_GAME, GAME] })).results.map((g) => g.id),

@@ -3,8 +3,9 @@ import { PgBoss } from "pg-boss";
 import { ALL_QUEUES } from "@playdamnit/db/jobs";
 import { pool } from "@/db/postgres";
 import { createLogger } from "@/utils/enhancedLogger";
+import { LogNamespace } from "@/utils/enums";
 
-const logger = createLogger("pg-boss");
+const logger = createLogger(LogNamespace.PgBoss);
 
 let bossPromise: Promise<PgBoss> | null = null;
 

@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Footer } from "./footer";
 import { SearchDialog } from "./search-dialog";
 import { Sidebar } from "./sidebar";
+import { Hotkey } from "@/lib/enums";
 
 // The assistant pulls in the AI SDK; load it only when opened
 const AssistantDialog = lazy(() =>
@@ -16,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === Hotkey.Search) {
         event.preventDefault();
         setSearchOpen((v) => !v);
       }

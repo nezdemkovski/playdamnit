@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { formatRating, ratingColor } from "@/lib/format";
 import { statusMeta, type LibraryStatus } from "@/lib/statuses";
+import { PillSize } from "@/lib/enums";
 
 /** A personal 0–10 rating in the colour band of its value; renders nothing for 0/null */
 export function RatingValue({
@@ -21,11 +22,11 @@ export function RatingValue({
 export function StatusPill({
   status,
   className,
-  size = "sm",
+  size = PillSize.Sm,
 }: {
   status: LibraryStatus;
   className?: string;
-  size?: "sm" | "md";
+  size?: PillSize;
 }) {
   const meta = statusMeta(status);
   return (
@@ -34,7 +35,7 @@ export function StatusPill({
       className={cn(
         "gap-1 bg-transparent",
         meta.chip,
-        size === "md" ? "px-2.5 py-1 text-[11px]" : "px-2 py-0.5",
+        size === PillSize.Md ? "px-2.5 py-1 text-[11px]" : "px-2 py-0.5",
         className,
       )}
     >

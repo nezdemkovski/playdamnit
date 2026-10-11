@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { GameCover } from "@/components/game/game-cover";
 import { releaseYear } from "@/lib/format";
+import { IgdbSize } from "@/lib/enums";
 
 const useDebounced = <T,>(value: T, ms: number) => {
   const [debounced, setDebounced] = useState(value);
@@ -107,7 +108,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                     <GameCover
                       url={game.cover?.url}
                       name={game.name}
-                      size="cover_small"
+                      size={IgdbSize.CoverSmall}
                       className="w-9 shrink-0 rounded-md"
                     />
                     <div className="min-w-0 flex-1">

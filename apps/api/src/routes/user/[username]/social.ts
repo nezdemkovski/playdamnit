@@ -7,6 +7,7 @@ import { ReviewService } from "@/modules/review/service";
 import { UserService } from "@/modules/user/service";
 import { canSeeList, requireUser } from "@/utils/social";
 import { ForbiddenError } from "@/utils/errors";
+import { CacheControl, ConnectionKind, HttpHeader } from "@/utils/enums";
 
 const params = t.Object({ username: t.String() });
 const page = t.Object({
@@ -27,7 +28,7 @@ export const userSocialRoutes = new Elysia()
     "/user/:username/followers",
     { viewer: true, params, query: page },
     ({ params, query, viewer }) =>
-      UserService.connections(params.username, "followers", {
+      UserService.connections(params.username, ConnectionKind.Followers, {
         limit: query.limit ?? 40,
         offset: query.offset ?? 0,
         viewerId: viewer?.id ?? null,
@@ -37,7 +38,7 @@ export const userSocialRoutes = new Elysia()
     "/user/:username/following",
     { viewer: true, params, query: page },
     ({ params, query, viewer }) =>
-      UserService.connections(params.username, "following", {
+      UserService.connections(params.username, ConnectionKind.Following, {
         limit: query.limit ?? 40,
         offset: query.offset ?? 0,
         viewerId: viewer?.id ?? null,
@@ -101,7 +102,7 @@ export const userSocialRoutes = new Elysia()
   )
   .get("/user/:username/avatar", { params }, async ({ params, set }) => {
     const avatar = await UserService.avatar(params.username);
-    set.headers["content-type"] = avatar.contentType;
-    set.headers["cache-control"] = "public, max-age=31536000, immutable";
-    return new Response(avatar.data, { headers: { "content-type": avatar.contentType } });
+    set.headers[HttpHeader.ContentType] = avatar.contentType;
+    set.headers[HttpHeader.CacheControl] = CacheControl.Immutable;
+    return new Response(avatar.data, { headers: { [HttpHeader.ContentType]: avatar.contentType } });
   });

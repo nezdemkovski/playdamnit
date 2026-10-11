@@ -1,5 +1,8 @@
+import { GameFirstReleaseDatePrecision } from "@playdamnit/api-client";
+
 import i18n, { t } from "@/i18n";
 import { format, formatDistanceToNowStrict } from "@/i18n/date";
+import { DateFormat } from "@/lib/enums";
 
 /** IGDB's game_type ids 0–14 have names in the `gameType` locale block; others fall back to IGDB's own */
 export const gameTypeName = (id: number | null | undefined, fallback?: string) => {
@@ -16,27 +19,27 @@ export const releaseYear = (ts: number | null | undefined): string | null =>
 /** Full release date honouring IGDB's precision (year, month, day, quarter, tbd) */
 export const releaseDate = (
   ts: number | null | undefined,
-  precision?: string | null,
+  precision?: GameFirstReleaseDatePrecision | null,
 ): string | null => {
-  if (!ts) return precision === "tbd" ? t("dates.tbd") : null;
+  if (!ts) return precision === GameFirstReleaseDatePrecision.Tbd ? t("dates.tbd") : null;
   const date = new Date(ts * 1000);
   switch (precision) {
-    case "year":
+    case GameFirstReleaseDatePrecision.Year:
       return String(date.getUTCFullYear());
-    case "month":
-      return format(date, "MMMM yyyy");
-    case "quarter":
+    case GameFirstReleaseDatePrecision.Month:
+      return format(date, DateFormat.MonthYear);
+    case GameFirstReleaseDatePrecision.Quarter:
       return t("dates.quarter", {
         quarter: Math.floor(date.getUTCMonth() / 3) + 1,
         year: date.getUTCFullYear(),
       });
     default:
-      return format(date, "MMMM d, yyyy");
+      return format(date, DateFormat.MonthDayYear);
   }
 };
 
 export const shortDate = (iso: string | null | undefined): string | null =>
-  iso ? format(new Date(iso), "MMM d, yyyy") : null;
+  iso ? format(new Date(iso), DateFormat.MonthDayYearShort) : null;
 
 export const relativeDate = (iso: string | null | undefined): string | null =>
   iso ? formatDistanceToNowStrict(new Date(iso), { addSuffix: true }) : null;

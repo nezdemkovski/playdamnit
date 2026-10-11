@@ -1,4 +1,5 @@
 import { getImageUrl, IgdbImageSize } from "@/utils/image";
+import { CompanyRole } from "@playdamnit/db/enums";
 
 // Relations loaded for list views (search, catalog, library). Heavy relations are only loaded
 // for the detail view.
@@ -182,13 +183,13 @@ export const transformGameDetail = <T extends GameCard & GameDetailRelations>(
     ...card
   } = game;
 
-  const companiesWith = (role: "developer" | "publisher") =>
+  const companiesWith = (role: CompanyRole) =>
     (companyRoles ?? []).filter((r) => r[role]).map((r) => r.company);
 
   return {
     ...transformGameResponse(card),
-    developers: companiesWith("developer"),
-    publishers: companiesWith("publisher"),
+    developers: companiesWith(CompanyRole.Developer),
+    publishers: companiesWith(CompanyRole.Publisher),
     videos: (videos ?? []).map((video) => ({
       id: video.id,
       name: video.name,

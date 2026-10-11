@@ -10,9 +10,8 @@ import {
   gameToGenre,
   gameToPlatform,
   userGames,
-  USER_GAME_STATUSES,
-  type UserGameStatus,
 } from "@playdamnit/db/schema";
+import { UserGameStatus } from "@playdamnit/db/enums";
 import {
   GAME_CARD_COLUMNS,
   GAME_CARD_WITH,
@@ -23,23 +22,12 @@ import {
   transformGameResponse,
 } from "@/utils/gameTransformers";
 import { NotFoundError } from "@/utils/errors";
+import { GameSort } from "@/utils/enums";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
 const SIMILAR_GAMES_LIMIT = 12;
 // "Best" needs enough IGDB votes to mean anything
 const MIN_RATINGS_FOR_BEST = 50;
-
-export const GAME_SORTS = [
-  "id",
-  "popular",
-  "rating",
-  "recent",
-  "upcoming",
-  "wanted",
-  "played",
-  "date",
-] as const;
-export type GameSort = (typeof GAME_SORTS)[number];
 
 export interface GameFilters {
   limit?: number;
@@ -83,7 +71,7 @@ const libraryCount = (t: GameRef, statuses?: readonly UserGameStatus[]) =>
 /** Every filter as SQL against the given table reference (RQB aliases the table) */
 const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
   const filters: SQL[] = [];
-  const sort = opts.sort ?? "id";
+  const sort = opts.sort ?? GameSort.Id;
   if (opts.platformId) {
     filters.push(
       sql`exists (select 1 from ${gameToPlatform} where ${gameToPlatform.gameId} = ${t.id} and ${gameToPlatform.platformId} = ${opts.platformId})`,
@@ -100,17 +88,17 @@ const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
   if (to !== undefined) filters.push(sql`${t.firstReleaseDate} <= ${to}`);
   if (opts.types?.length) filters.push(sql`${t.gameType} in ${opts.types}`);
   if (opts.ids?.length) filters.push(sql`${t.id} in ${opts.ids}`);
-  if (sort === "recent") {
+  if (sort === GameSort.Recent) {
     filters.push(sql`${t.firstReleaseDate} <= extract(epoch from now())::bigint`, hasCover(t));
   }
-  if (sort === "upcoming") {
+  if (sort === GameSort.Upcoming) {
     filters.push(sql`${t.firstReleaseDate} > extract(epoch from now())::bigint`, hasCover(t));
   }
-  if (sort === "rating") {
+  if (sort === GameSort.Rating) {
     filters.push(sql`${t.totalRatingCount} >= ${MIN_RATINGS_FOR_BEST}`);
   }
   // The release calendar: dated games with a cover, in date order within the range given
-  if (sort === "date") {
+  if (sort === GameSort.Date) {
     filters.push(sql`${t.firstReleaseDate} is not null`, hasCover(t));
   }
   return filters;
@@ -119,18 +107,21 @@ const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
 const orderFor = (sort: GameSort) => (t: GameRef) => {
   const popularity = sql`${t.totalRatingCount} desc nulls last`;
   switch (sort) {
-    case "popular":
+    case GameSort.Popular:
       return [sql`${t.isPopular} desc`, popularity, sql`${t.id}`];
-    case "rating":
+    case GameSort.Rating:
       return [sql`${t.totalRating} desc nulls last`, popularity];
-    case "recent":
+    case GameSort.Recent:
       return [sql`${t.firstReleaseDate} desc`, popularity];
-    case "upcoming":
-    case "date":
+    case GameSort.Upcoming:
+    case GameSort.Date:
       return [sql`${t.firstReleaseDate} asc`, popularity];
-    case "wanted":
-      return [sql`${libraryCount(t, ["want_to_play", "backlog"])} desc`, popularity];
-    case "played":
+    case GameSort.Wanted:
+      return [
+        sql`${libraryCount(t, [UserGameStatus.WantToPlay, UserGameStatus.Backlog])} desc`,
+        popularity,
+      ];
+    case GameSort.Played:
       return [sql`${libraryCount(t)} desc`, popularity];
     default:
       return [sql`${t.id} asc`];
@@ -179,7 +170,7 @@ const communityStats = async (gameId: number) => {
       .groupBy(sql`1`),
   ]);
 
-  const statuses = Object.fromEntries(USER_GAME_STATUSES.map((s) => [s, 0])) as Record<
+  const statuses = Object.fromEntries(Object.values(UserGameStatus).map((s) => [s, 0])) as Record<
     UserGameStatus,
     number
   >;
@@ -272,7 +263,7 @@ export abstract class GameService {
   static async findGames(opts: GameFilters) {
     const limit = Math.min(opts.limit ?? MAX_GAMES_PAGE_SIZE, MAX_GAMES_PAGE_SIZE);
     const offset = opts.offset ?? 0;
-    const sort = opts.sort ?? "id";
+    const sort = opts.sort ?? GameSort.Id;
 
     const [games, [{ total }]] = await Promise.all([
       db.query.game.findMany({

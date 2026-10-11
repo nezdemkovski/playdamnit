@@ -10,6 +10,8 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useNotifications } from "@/hooks/social";
 import { relativeDate } from "@/lib/format";
+import { IgdbSize } from "@/lib/enums";
+import { NotificationType, PutApiReviewsByIdReactionBodyEmoji } from "@playdamnit/api-client";
 
 export const Route = createFileRoute("/notifications")({
   component: NotificationsPage,
@@ -59,14 +61,17 @@ function NotificationsPage() {
                 <Link to="/$username" params={{ username }} className="font-bold hover:underline">
                   {n.actor.name || username}
                 </Link>{" "}
-                {n.type === "follow" ? (
+                {n.type === NotificationType.Follow ? (
                   <span className="text-white/80">{t("notifications.followed")}</span>
                 ) : (
                   <span className="text-white/80">
                     {n.game ? (
                       <Trans
                         i18nKey="notifications.reacted"
-                        values={{ emoji: n.emoji ?? "❤️", name: n.game.name }}
+                        values={{
+                          emoji: n.emoji ?? PutApiReviewsByIdReactionBodyEmoji.Heart,
+                          name: n.game.name,
+                        }}
                         components={{
                           game: (
                             <Link
@@ -78,25 +83,29 @@ function NotificationsPage() {
                         }}
                       />
                     ) : (
-                      t("notifications.reactedUnknown", { emoji: n.emoji ?? "❤️" })
+                      t("notifications.reactedUnknown", {
+                        emoji: n.emoji ?? PutApiReviewsByIdReactionBodyEmoji.Heart,
+                      })
                     )}
                   </span>
                 )}
                 <div className="text-xs text-dimmed">{relativeDate(n.createdAt)}</div>
               </div>
-              {n.type === "follow" ? (
+              {n.type === NotificationType.Follow ? (
                 <UserPlusIcon className="size-5 text-status-want_to_play" />
               ) : n.game ? (
                 <Link to="/games/$id" params={{ id: String(n.game.id) }} className="w-9 shrink-0">
                   <GameCover
                     url={n.game.cover.url}
                     name={n.game.name}
-                    size="cover_small"
+                    size={IgdbSize.CoverSmall}
                     className="rounded-md"
                   />
                 </Link>
               ) : (
-                <span className="text-xl">{n.emoji ?? "❤️"}</span>
+                <span className="text-xl">
+                  {n.emoji ?? PutApiReviewsByIdReactionBodyEmoji.Heart}
+                </span>
               )}
             </div>
           );

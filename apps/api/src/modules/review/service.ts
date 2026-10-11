@@ -1,18 +1,12 @@
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import {
-  REACTION_EMOJIS,
-  reviewReaction,
-  userGames,
-  type ReactionEmoji,
-} from "@playdamnit/db/schema";
+import { reviewReaction, userGames } from "@playdamnit/db/schema";
+import { NotificationType, ReactionEmoji } from "@playdamnit/db/enums";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { notify, PUBLIC_USER_COLUMNS, visibleToViewer } from "@/utils/social";
-
-export const REVIEW_SORTS = ["latest", "top"] as const;
-export type ReviewSort = (typeof REVIEW_SORTS)[number];
+import { ReviewSort } from "@/utils/enums";
 
 interface ListOptions {
   gameId?: number;
@@ -42,7 +36,7 @@ const reactionSummary = (userGameId: unknown) =>
  */
 export abstract class ReviewService {
   static async list(opts: ListOptions) {
-    const sort = opts.sort ?? "latest";
+    const sort = opts.sort ?? ReviewSort.Latest;
     const viewerId = opts.viewerId;
 
     const rows = await db.query.userGames.findMany({
@@ -59,7 +53,7 @@ export abstract class ReviewService {
           )!,
       },
       orderBy: (t) =>
-        sort === "top"
+        sort === ReviewSort.Top
           ? [sql`${reactionCount(t.id)} desc`, sql`${t.updatedAt} desc`]
           : [sql`${t.updatedAt} desc`],
       limit: opts.limit,
@@ -122,7 +116,7 @@ export abstract class ReviewService {
 
   /** Set (or change) the viewer's reaction; the author is told about it */
   static async react(userId: string, userGameId: string, emoji: string) {
-    if (!(REACTION_EMOJIS as readonly string[]).includes(emoji)) {
+    if (!Object.values<string>(ReactionEmoji).includes(emoji)) {
       throw new BadRequestError("Unknown reaction");
     }
     const entry = await db.query.userGames.findFirst({
@@ -141,7 +135,7 @@ export abstract class ReviewService {
     await notify({
       userId: entry.userId,
       actorId: userId,
-      type: "review_reaction",
+      type: NotificationType.ReviewReaction,
       gameId: entry.gameId,
       emoji,
     });

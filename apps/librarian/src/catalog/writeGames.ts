@@ -29,8 +29,9 @@ import {
 import type { IGDBGameResponse } from "../utils/igdb/types";
 import { createLogger } from "../utils/enhancedLogger";
 import { deriveGame, type DerivedGame } from "./derive";
+import { LogNamespace } from "../utils/enums";
 
-const logger = createLogger("catalog-writer");
+const logger = createLogger(LogNamespace.CatalogWriter);
 
 // Rows per INSERT; keeps every statement well under Postgres' 65535 parameters
 const INSERT_CHUNK = 1000;

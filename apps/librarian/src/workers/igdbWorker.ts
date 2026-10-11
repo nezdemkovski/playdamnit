@@ -11,8 +11,9 @@ import {
 import { fetchIGDBByIds } from "../utils/igdb/utils";
 import { writeGamesBatch } from "../catalog/writeGames";
 import { createLogger } from "../utils/enhancedLogger";
+import { LogNamespace } from "../utils/enums";
 
-const logger = createLogger("igdb-worker");
+const logger = createLogger(LogNamespace.IgdbWorker);
 
 // Workers poll for new jobs; a user (import, add by id) may be waiting on this queue
 const INTERACTIVE_POLLING = { pollingIntervalSeconds: 0.5 };

@@ -8,6 +8,7 @@ import { registerLookupsWorker } from "./workers/lookupsWorker";
 import { registerCatalogSyncWorker } from "./workers/catalogSyncWorker";
 import { registerDrainWorker } from "./workers/drainWorker";
 import { ensureWebhooks } from "./utils/igdb/webhooks";
+import { LogSource } from "./utils/enums";
 
 const validateEnvironment = () => {
   const missingVars: string[] = [];
@@ -92,6 +93,6 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 start().catch((error) => {
-  logger.exception(error, { source: "librarian-start" });
+  logger.exception(error, { source: LogSource.LibrarianStart });
   process.exit(1);
 });

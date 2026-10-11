@@ -3,10 +3,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { t } from "@/i18n";
+import { Char, QueryKey } from "@/lib/enums";
 import { authClient } from "@/lib/authClient";
 
-const SESSION_KEY = ["session"] as const;
-const PASSKEYS_KEY = ["passkeys"] as const;
+const SESSION_KEY = [QueryKey.Session] as const;
+const PASSKEYS_KEY = [QueryKey.Passkeys] as const;
 
 const errorMessage = (error: unknown, fallback: string) =>
   (error as { message?: string })?.message || fallback;
@@ -45,7 +46,7 @@ export const useSignIn = () => {
       identifier: string;
       password: string;
     }) =>
-      identifier.includes("@")
+      identifier.includes(Char.At)
         ? unwrap(await authClient.signIn.email({ email: identifier, password: secret }))
         : unwrap(await authClient.signIn.username({ username: identifier, password: secret })),
     onSuccess: invalidate,

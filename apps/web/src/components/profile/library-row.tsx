@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import { cn } from "cn";
@@ -28,15 +28,15 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
   const status = data.status;
   const idle = idleDays(entry);
   const barWidth =
-    status === "finished"
+    status === StatusEnum.Finished
       ? 100
-      : status === "dropped"
+      : status === StatusEnum.Dropped
         ? 4
         : Math.min(100, Math.round((idle / IDLE_FULL) * 100));
   const barColor =
-    status === "finished"
+    status === StatusEnum.Finished
       ? "bg-done"
-      : status === "playing" || status === "on_hold"
+      : status === StatusEnum.Playing || status === StatusEnum.OnHold
         ? "bg-warning"
         : "bg-signal";
   const meta = [

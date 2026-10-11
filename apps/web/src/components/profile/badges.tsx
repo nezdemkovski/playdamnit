@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
 import {
   AwardIcon,
   BookOpenIcon,
@@ -13,9 +13,10 @@ import {
 import { cn } from "cn";
 
 import { t } from "@/i18n";
+import { BadgeId } from "@/lib/enums";
 
 interface Badge {
-  id: string;
+  id: BadgeId;
   label: string;
   description: string;
   icon: LucideIcon;
@@ -24,26 +25,14 @@ interface Badge {
 
 /** Badges computed from the library (no server state) */
 export const computeBadges = (entries: UserGameWithUserData[], reviews: number): Badge[] => {
-  const finished = entries.filter((e) => e.userGameData.status === "finished").length;
+  const finished = entries.filter((e) => e.userGameData.status === StatusEnum.Finished).length;
   const rated = entries.filter((e) => e.userGameData.rating).length;
   const mastered = entries.filter((e) => e.userGameData.mastered).length;
   const year = new Date().getFullYear();
   const thisYear = entries.filter(
     (e) => e.userGameData.endedAt && new Date(e.userGameData.endedAt).getFullYear() === year,
   ).length;
-  const make = (
-    id:
-      | "first"
-      | "collector"
-      | "hoarder"
-      | "finisher"
-      | "closer"
-      | "critic"
-      | "writer"
-      | "completionist",
-    icon: LucideIcon,
-    earned: boolean,
-  ): Badge => ({
+  const make = (id: Exclude<BadgeId, BadgeId.Year>, icon: LucideIcon, earned: boolean): Badge => ({
     id,
     label: t(`badges.${id}.label`),
     description: t(`badges.${id}.description`),
@@ -51,16 +40,16 @@ export const computeBadges = (entries: UserGameWithUserData[], reviews: number):
     earned,
   });
   return [
-    make("first", Gamepad2Icon, entries.length >= 1),
-    make("collector", BookOpenIcon, entries.length >= 50),
-    make("hoarder", SparklesIcon, entries.length >= 200),
-    make("finisher", FlagIcon, finished >= 10),
-    make("closer", AwardIcon, finished >= 50),
-    make("critic", StarIcon, rated >= 25),
-    make("writer", PenLineIcon, reviews >= 10),
-    make("completionist", TrophyIcon, mastered >= 5),
+    make(BadgeId.First, Gamepad2Icon, entries.length >= 1),
+    make(BadgeId.Collector, BookOpenIcon, entries.length >= 50),
+    make(BadgeId.Hoarder, SparklesIcon, entries.length >= 200),
+    make(BadgeId.Finisher, FlagIcon, finished >= 10),
+    make(BadgeId.Closer, AwardIcon, finished >= 50),
+    make(BadgeId.Critic, StarIcon, rated >= 25),
+    make(BadgeId.Writer, PenLineIcon, reviews >= 10),
+    make(BadgeId.Completionist, TrophyIcon, mastered >= 5),
     {
-      id: "year",
+      id: BadgeId.Year,
       label: t("badges.year.label", { year }),
       description: t("badges.year.description", { year }),
       icon: FlagIcon,

@@ -1,4 +1,4 @@
-import type { StatusEnum } from "@playdamnit/api-client";
+import { StatusEnum } from "@playdamnit/api-client";
 import {
   BookmarkIcon,
   CircleXIcon,
@@ -30,7 +30,7 @@ export interface StatusMeta {
 
 export const STATUSES: StatusMeta[] = [
   {
-    value: "finished",
+    value: StatusEnum.Finished,
     get label() {
       return t("status.finished");
     },
@@ -42,7 +42,7 @@ export const STATUSES: StatusMeta[] = [
     ended: true,
   },
   {
-    value: "playing",
+    value: StatusEnum.Playing,
     get label() {
       return t("status.playing");
     },
@@ -54,7 +54,7 @@ export const STATUSES: StatusMeta[] = [
     ended: false,
   },
   {
-    value: "dropped",
+    value: StatusEnum.Dropped,
     get label() {
       return t("status.dropped");
     },
@@ -66,7 +66,7 @@ export const STATUSES: StatusMeta[] = [
     ended: true,
   },
   {
-    value: "want_to_play",
+    value: StatusEnum.WantToPlay,
     get label() {
       return t("status.want_to_play");
     },
@@ -78,7 +78,7 @@ export const STATUSES: StatusMeta[] = [
     ended: false,
   },
   {
-    value: "on_hold",
+    value: StatusEnum.OnHold,
     get label() {
       return t("status.on_hold");
     },
@@ -90,7 +90,7 @@ export const STATUSES: StatusMeta[] = [
     ended: false,
   },
   {
-    value: "backlog",
+    value: StatusEnum.Backlog,
     get label() {
       return t("status.backlog");
     },
@@ -102,7 +102,7 @@ export const STATUSES: StatusMeta[] = [
     ended: false,
   },
   {
-    value: "online",
+    value: StatusEnum.Online,
     get label() {
       return t("status.online");
     },

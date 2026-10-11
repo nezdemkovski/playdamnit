@@ -5,15 +5,17 @@ import {
 } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 
-import i18n from "./index";
+import { DateFormat } from "@/lib/enums";
+
+import i18n, { Language } from "./index";
 
 /** date-fns locale per app language; add the matching import when a language is added */
-const LOCALES: Record<string, Locale> = { en: enUS };
+const LOCALES: Record<string, Locale> = { [Language.English]: enUS };
 
 export const dateLocale = (): Locale => LOCALES[i18n.language] ?? enUS;
 
 /** `format` from date-fns in the active language */
-export const format = (date: Date | number, pattern: string) =>
+export const format = (date: Date | number, pattern: DateFormat) =>
   formatWithLocale(date, pattern, { locale: dateLocale() });
 
 /** `formatDistanceToNowStrict` from date-fns in the active language */

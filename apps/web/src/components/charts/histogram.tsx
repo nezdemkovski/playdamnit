@@ -6,6 +6,7 @@ import { tooltip } from "@tanstack/charts/tooltip";
 import { useMemo } from "react";
 
 import { t } from "@/i18n";
+import { HistogramNoun } from "@/lib/enums";
 
 interface HistogramProps {
   /** Counts per 1..10 rating bucket */
@@ -15,7 +16,7 @@ interface HistogramProps {
   height?: number;
   ariaLabel: string;
   /** Which tooltip wording to use */
-  noun?: "games" | "ratings";
+  noun?: HistogramNoun;
 }
 
 const GREY = "rgba(241,241,240,.22)";
@@ -27,7 +28,7 @@ export function Histogram({
   highlight,
   height = 44,
   ariaLabel,
-  noun = "games",
+  noun = HistogramNoun.Games,
 }: HistogramProps) {
   const definition = useMemo(() => {
     const rows = buckets.map((count, i) => ({ bucket: i + 1, count, label: `${i + 1}` }));

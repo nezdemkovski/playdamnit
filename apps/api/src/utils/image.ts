@@ -1,4 +1,4 @@
-import { ImageSourceEnum } from "@playdamnit/db/schema";
+import { ImageSource } from "@playdamnit/db/enums";
 
 export enum IgdbImageSize {
   COVER_SMALL = "cover_small", // 90x128
@@ -22,6 +22,6 @@ export const getImageUrl = (
   hash: string,
   size: IgdbImageSize = IgdbImageSize.COVER_BIG,
 ): string => {
-  if (!hash || source !== ImageSourceEnum.IGDB) return "";
+  if (!hash || source !== ImageSource.Igdb) return "";
   return getIgdbImageUrl(hash, size);
 };
