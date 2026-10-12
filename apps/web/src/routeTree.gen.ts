@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as ChartsRouteImport } from './routes/charts'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -46,6 +47,11 @@ const AuthRoute = AuthRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChartsRoute = ChartsRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/$username': typeof UsernameRouteWithChildren
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/changelog': typeof ChangelogRoute
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/changelog': typeof ChangelogRoute
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/$username': typeof UsernameRouteWithChildren
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/changelog': typeof ChangelogRoute
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/$username'
     | '/auth'
     | '/calendar'
+    | '/changelog'
     | '/charts'
     | '/community'
     | '/notifications'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/calendar'
+    | '/changelog'
     | '/charts'
     | '/community'
     | '/notifications'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/$username'
     | '/auth'
     | '/calendar'
+    | '/changelog'
     | '/charts'
     | '/community'
     | '/notifications'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   UsernameRoute: typeof UsernameRouteWithChildren
   AuthRoute: typeof AuthRoute
   CalendarRoute: typeof CalendarRoute
+  ChangelogRoute: typeof ChangelogRoute
   ChartsRoute: typeof ChartsRoute
   CommunityRoute: typeof CommunityRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/charts': {
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsernameRoute: UsernameRouteWithChildren,
   AuthRoute: AuthRoute,
   CalendarRoute: CalendarRoute,
+  ChangelogRoute: ChangelogRoute,
   ChartsRoute: ChartsRoute,
   CommunityRoute: CommunityRoute,
   NotificationsRoute: NotificationsRoute,

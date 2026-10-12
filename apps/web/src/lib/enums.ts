@@ -227,3 +227,10 @@ export enum SteamConnectResult {
   Private = "private",
   Failed = "failed",
 }
+
+/** Kinds of change in the changelog, in display order */
+export enum ChangeKind {
+  New = "new",
+  Changed = "changed",
+  Fixed = "fixed",
+}

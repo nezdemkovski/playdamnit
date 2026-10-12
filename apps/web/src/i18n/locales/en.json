@@ -32,6 +32,7 @@
   },
   "footer": {
     "copyright": "© {{year}} PlayDamnIt",
+    "changelog": "Changelog",
     "credit": "Game data by <igdb>IGDB</igdb>"
   },
   "status": {
@@ -735,5 +736,13 @@
     "syncNow": "Sync now",
     "open": "Open on Steam",
     "friends": "Steam friends"
+  },
+  "changelog": {
+    "title": "Changelog",
+    "kinds": {
+      "new": "New",
+      "changed": "Changed",
+      "fixed": "Fixed"
+    }
   }
 }
