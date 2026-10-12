@@ -25,14 +25,19 @@ export function SteamFriends({ enabled }: { enabled: boolean }) {
               <UserAvatar user={friend} className="size-12" />
             </Link>
             <div className="min-w-0 flex-1">
-              <Link
-                to="/$username"
-                params={{ username: friend.username ?? "" }}
-                className="font-bold hover:underline"
-              >
-                {friend.name || friend.username}
-              </Link>
-              <span className="ml-2 text-xs text-dimmed">@{friend.username}</span>
+              {/* Long names and handles cut to one line */}
+              <div className="flex min-w-0 items-baseline gap-2">
+                <Link
+                  to="/$username"
+                  params={{ username: friend.username ?? "" }}
+                  className="min-w-0 truncate font-bold hover:underline"
+                >
+                  {friend.name || friend.username}
+                </Link>
+                <span className="min-w-0 shrink-[3] truncate text-xs text-dimmed">
+                  @{friend.username}
+                </span>
+              </div>
               {friend.steamName && (
                 <div className="flex items-center gap-1.5 text-xs text-dimmed">
                   <SteamLogo className="size-3" /> {friend.steamName}

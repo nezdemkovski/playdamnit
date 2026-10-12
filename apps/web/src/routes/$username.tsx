@@ -130,10 +130,15 @@ function ProfileLayout() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h1 className="min-w-0 truncate text-3xl sm:text-4xl">
+                    <h1
+                      className="min-w-0 truncate text-3xl sm:text-4xl"
+                      title={user.name || user.username}
+                    >
                       {user.name || user.username}
                     </h1>
-                    <span className="num text-sm text-dimmed">@{user.username}</span>
+                    <span className="num min-w-0 max-w-full truncate text-sm text-dimmed">
+                      @{user.username}
+                    </span>
                     {user.followsYou && (
                       <span className="eyebrow text-done">{t("profile.followsYou")}</span>
                     )}

@@ -44,10 +44,12 @@ export function SteamBadge({
           <SteamLogo className={steam.pending ? "size-2.5 animate-spin" : "size-2.5"} />
           {t("steam.badge")}
         </span>
-        {/* Steam names run to 32 characters */}
-        <span className="mt-1 block max-w-40 truncate text-[13px] font-bold text-white">
-          {name || t("steam.badge")}
-        </span>
+        {/* Steam names run to 32 characters; before the first sync there is none yet */}
+        {name && (
+          <span className="mt-1 block max-w-40 truncate text-[13px] font-bold text-white">
+            {name}
+          </span>
+        )}
       </span>
     </>
   );

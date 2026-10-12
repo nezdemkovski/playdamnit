@@ -66,11 +66,17 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
               <UserAvatar user={review.user} className="size-10" />
             </Link>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline gap-x-2">
-                <Link to="/$username" params={{ username }} className="font-bold hover:underline">
+              <div className="flex min-w-0 items-baseline gap-x-2">
+                <Link
+                  to="/$username"
+                  params={{ username }}
+                  className="min-w-0 truncate font-bold hover:underline"
+                >
                   {review.user.name || username}
                 </Link>
-                <span className="text-xs text-dimmed">@{username}</span>
+                <span className="hidden min-w-0 shrink-[3] truncate text-xs text-dimmed sm:block">
+                  @{username}
+                </span>
               </div>
               {withGame && review.game && (
                 <Link

@@ -64,14 +64,19 @@ function ProfileFriends() {
               <UserAvatar user={member} className="size-10" />
             </Link>
             <div className="min-w-0 flex-1">
-              <Link
-                to="/$username"
-                params={{ username: member.username ?? "" }}
-                className="font-bold hover:underline"
-              >
-                {member.name || member.username}
-              </Link>
-              <span className="ml-2 text-xs text-dimmed">@{member.username}</span>
+              {/* Long names and handles cut to one line */}
+              <div className="flex min-w-0 items-baseline gap-2">
+                <Link
+                  to="/$username"
+                  params={{ username: member.username ?? "" }}
+                  className="min-w-0 truncate font-bold hover:underline"
+                >
+                  {member.name || member.username}
+                </Link>
+                <span className="min-w-0 shrink-[3] truncate text-xs text-dimmed">
+                  @{member.username}
+                </span>
+              </div>
             </div>
             <FollowButton
               username={member.username ?? ""}
