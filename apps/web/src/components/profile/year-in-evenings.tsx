@@ -12,7 +12,7 @@ import {
 } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { t } from "@/i18n";
 import { format } from "@/i18n/date";
@@ -150,6 +150,12 @@ export function YearInEvenings({
   const activity = useGetApiUserByUsernameSteamActivity(username);
   const { days, weeks, months } = useYear(entries, activity.data?.days ?? EMPTY);
 
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, []);
+
   const heat = useMemo(
     () =>
       defineChart(
@@ -181,29 +187,34 @@ export function YearInEvenings({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="eyebrow relative h-4 normal-case tracking-normal">
-        {months.map((m) => (
-          <span
-            key={m.key}
-            className="absolute top-0"
-            // The band scale leaves 18% of a step between columns; spread over the width
-            style={{ left: `${(m.week / (weeks - 0.18)) * 100}%` }}
-          >
-            {m.label}
-          </span>
-        ))}
-      </div>
-      <div className="mt-1 text-foreground">
-        <Chart
-          definition={heat}
-          aspectRatio={53 / 7}
-          initialWidth={900}
-          ariaLabel={t("profile.evenings.heatAria")}
-          renderTooltipBody={({ points }) => {
-            const day = points[0]?.datum as DayRow | undefined;
-            return day ? <DayTip day={day} /> : null;
-          }}
-        />
+      {/* On a phone the year keeps readable cells and scrolls sideways, opened on the latest weeks */}
+      <div ref={scroller} className="no-scrollbar overflow-x-auto">
+        <div className="min-w-[640px]">
+          <div className="eyebrow relative h-4 normal-case tracking-normal">
+            {months.map((m) => (
+              <span
+                key={m.key}
+                className="absolute top-0"
+                // The band scale leaves 18% of a step between columns; spread over the width
+                style={{ left: `${(m.week / (weeks - 0.18)) * 100}%` }}
+              >
+                {m.label}
+              </span>
+            ))}
+          </div>
+          <div className="mt-1 text-foreground">
+            <Chart
+              definition={heat}
+              aspectRatio={53 / 7}
+              initialWidth={900}
+              ariaLabel={t("profile.evenings.heatAria")}
+              renderTooltipBody={({ points }) => {
+                const day = points[0]?.datum as DayRow | undefined;
+                return day ? <DayTip day={day} /> : null;
+              }}
+            />
+          </div>
+        </div>
       </div>
       <div className="eyebrow mt-1.5 flex items-center justify-end gap-1 normal-case tracking-normal">
         <span className="mr-1">{t("profile.evenings.less")}</span>

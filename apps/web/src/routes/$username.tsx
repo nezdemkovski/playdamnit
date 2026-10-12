@@ -134,6 +134,19 @@ function ProfileLayout() {
                   <span className="eyebrow text-done">{t("profile.followsYou")}</span>
                 )}
                 {!user.listPublic && <span className="eyebrow">{t("profile.privateList")}</span>}
+                {/* Next to the name, so the stats row and the badges below never move */}
+                {user.steamLinked && (
+                  <div className="w-full self-center sm:ml-auto sm:w-auto">
+                    <SteamBadge
+                      username={username}
+                      isOwn={user.isOwn}
+                      name={user.steamName}
+                      url={user.steamProfileUrl}
+                      avatar={user.steamAvatarUrl}
+                      syncedAt={user.steamSyncedAt}
+                    />
+                  </div>
+                )}
               </div>
               <div className="eyebrow mt-1">
                 {t("profile.since", {
@@ -189,16 +202,6 @@ function ProfileLayout() {
             </Link>
             {library.data && library.data.results.length > 0 && (
               <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
-            )}
-            {user.steamLinked && (
-              <SteamBadge
-                username={username}
-                isOwn={user.isOwn}
-                name={user.steamName}
-                url={user.steamProfileUrl}
-                avatar={user.steamAvatarUrl}
-                syncedAt={user.steamSyncedAt}
-              />
             )}
             {badges && (
               <div className="sm:ml-auto">
