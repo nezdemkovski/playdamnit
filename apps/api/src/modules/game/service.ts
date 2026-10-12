@@ -269,7 +269,11 @@ export abstract class GameService {
    * IGDB popularity or rating, release date (recent/upcoming) or this site's members
    * (wanted/played). Deleted games are excluded.
    */
-  static async findGames(opts: GameFilters) {
+  /**
+   * A page of the catalog with its total. `withTotal: false` skips counting the matches (a rail
+   * that never pages); the total is then the page's own length.
+   */
+  static async findGames(opts: GameFilters, { withTotal = true }: { withTotal?: boolean } = {}) {
     const limit = Math.min(opts.limit ?? MAX_GAMES_PAGE_SIZE, MAX_GAMES_PAGE_SIZE);
     const offset = opts.offset ?? 0;
     const sort = opts.sort ?? GameSort.Id;
@@ -278,6 +282,12 @@ export abstract class GameService {
       return GameService.findByMembers(opts, sort, limit, offset);
     }
 
+    const counted = withTotal
+      ? db
+          .select({ total: count() })
+          .from(game)
+          .where(and(isNull(game.deletedAt), ...buildFilters(opts, game)))
+      : null;
     const [games, [{ total }]] = await Promise.all([
       db.query.game.findMany({
         limit,
@@ -290,15 +300,12 @@ export abstract class GameService {
         columns: GAME_CARD_COLUMNS,
         with: GAME_CARD_WITH,
       }),
-      db
-        .select({ total: count() })
-        .from(game)
-        .where(and(isNull(game.deletedAt), ...buildFilters(opts, game))),
+      counted ?? Promise.resolve([{ total: -1 }]),
     ]);
 
     return {
       results: games.map(transformGameResponse),
-      meta: { total, limit, offset },
+      meta: { total: counted ? total : games.length, limit, offset },
     };
   }
 

@@ -1,4 +1,5 @@
 import {
+  getGetApiHomeQueryKey,
   getGetApiGamesByIdListsQueryKey,
   getGetApiGamesByIdQueryKey,
   getGetApiGamesByIdReviewsQueryKey,
@@ -107,6 +108,7 @@ export const useReviewReaction = () => {
   const refresh = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdReviewsQueryKey(gameId) });
     queryClient.invalidateQueries({ queryKey: getGetApiReviewsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
     queryClient.invalidateQueries({
       predicate: (q) => String(q.queryKey[0]).endsWith(QueryKeySuffix.Reviews),
     });

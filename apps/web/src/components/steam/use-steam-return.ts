@@ -1,4 +1,5 @@
 import {
+  getGetApiHomeQueryKey,
   getGetApiMeRecommendationsQueryKey,
   getGetApiUserByUsernameGamesQueryKey,
   getGetApiUserByUsernameQueryKey,
@@ -29,5 +30,6 @@ export function useSteamReturn(username: string | undefined) {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
   }, [username, queryClient, t]);
 }

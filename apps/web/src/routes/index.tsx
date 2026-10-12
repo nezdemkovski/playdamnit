@@ -1,11 +1,8 @@
 import {
   StatusEnum,
   GetApiUsersSort,
-  GetApiGamesSort,
-  useGetApiGames,
-  useGetApiMeFeed,
-  useGetApiMeRecommendations,
-  useGetApiReviews,
+  getGetApiHomeQueryKey,
+  useGetApiHome,
   type Game,
 } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -48,18 +45,14 @@ function Home() {
   const { t } = useTranslation();
   const { user } = useSession();
   const { byGameId, entries, isLoading: libraryLoading } = useMyLibrary();
-  const popular = useGetApiGames({ sort: GetApiGamesSort.Popular, limit: RAIL });
-  const recent = useGetApiGames({ sort: GetApiGamesSort.Recent, limit: RAIL });
-  const now = Math.floor(Date.now() / 1000);
-  const week = useGetApiGames({
-    sort: GetApiGamesSort.Date,
-    releasedFrom: now - 86_400,
-    releasedTo: now + 7 * 86_400,
-    limit: RAIL,
+  // One request for every rail; the answer depends on who is signed in
+  const home = useGetApiHome({
+    query: { queryKey: [...getGetApiHomeQueryKey(), user?.id ?? null] },
   });
-  const freshReviews = useGetApiReviews({ limit: 6 });
-  const feed = useGetApiMeFeed({ limit: 12 }, { query: { enabled: !!user } });
-  const forYou = useGetApiMeRecommendations({ limit: RAIL }, { query: { enabled: !!user } });
+  const forYou = home.data?.forYou ?? [];
+  const feed = home.data?.feed ?? [];
+  const week = home.data?.thisWeek ?? [];
+  const freshReviews = home.data?.freshReviews ?? [];
 
   const playing = entries
     .filter((e) => e.userGameData.status === StatusEnum.Playing)
@@ -103,13 +96,13 @@ function Home() {
         </Section>
       )}
 
-      {forYou.data && forYou.data.results.length > 0 && (
+      {forYou.length > 0 && (
         <Section title={t("home.sections.forYou")} icon={CompassIcon}>
-          <Rail games={forYou.data.results} byGameId={byGameId} />
+          <Rail games={forYou} byGameId={byGameId} />
         </Section>
       )}
 
-      {feed.data && feed.data.results.length > 0 && (
+      {feed.length > 0 && (
         <Section
           title={t("home.sections.friends")}
           icon={ActivityIcon}
@@ -124,7 +117,7 @@ function Home() {
           }
         >
           <div className="panel divide-y divide-white/5">
-            {feed.data.results.map((item) => (
+            {feed.map((item) => (
               <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                 <Link to="/$username" params={{ username: item.user.username ?? "" }}>
                   <UserAvatar user={item.user} className="size-8" textClassName="text-xs" />
@@ -178,7 +171,7 @@ function Home() {
         </Section>
       )}
 
-      {week.data && week.data.results.length > 0 && (
+      {week.length > 0 && (
         <Section
           title={t("home.sections.thisWeek")}
           icon={CalendarIcon}
@@ -193,7 +186,7 @@ function Home() {
           }
         >
           <GameRail>
-            {week.data.results.map((g) => (
+            {week.map((g) => (
               <div key={g.id}>
                 <GameCard game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
                 <div className="mt-1.5 text-xs text-dimmed">
@@ -227,13 +220,13 @@ function Home() {
           </Link>
         }
       >
-        <Rail games={popular.data?.results} byGameId={byGameId} />
+        <Rail games={home.data?.trending} byGameId={byGameId} />
       </Section>
 
-      {freshReviews.data && freshReviews.data.results.length > 0 && (
+      {freshReviews.length > 0 && (
         <Section title={t("home.sections.freshReviews")} icon={MessageSquareTextIcon}>
           <div className="grid gap-3 md:grid-cols-2">
-            {freshReviews.data.results.map((review) => (
+            {freshReviews.map((review) => (
               <ReviewCard key={review.id} review={review} withGame />
             ))}
           </div>
@@ -241,7 +234,7 @@ function Home() {
       )}
 
       <Section title={t("home.sections.newReleases")} icon={CalendarIcon}>
-        <Rail games={recent.data?.results} byGameId={byGameId} />
+        <Rail games={home.data?.newReleases} byGameId={byGameId} />
       </Section>
 
       {latest.length > 0 && (

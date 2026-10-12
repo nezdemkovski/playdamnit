@@ -11,6 +11,7 @@ const TEST_URL = process.env.TEST_POSTGRES_URL;
 describe.skipIf(!TEST_URL)("social features (integration)", () => {
   let pg: Client;
   let GameService: typeof import("@/modules/game/service").GameService;
+  let HomeService: typeof import("@/modules/home/service").HomeService;
   let ReviewService: typeof import("@/modules/review/service").ReviewService;
   let ListService: typeof import("@/modules/list/service").ListService;
   let UserService: typeof import("@/modules/user/service").UserService;
@@ -49,6 +50,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       );
     }
     ({ GameService } = await import("@/modules/game/service"));
+    ({ HomeService } = await import("@/modules/home/service"));
     ({ ReviewService } = await import("@/modules/review/service"));
     ({ ListService } = await import("@/modules/list/service"));
     ({ UserService } = await import("@/modules/user/service"));
@@ -317,6 +319,16 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(
       (await ReviewService.list({ gameId: GAME, viewerId: null, limit: 10, offset: 0 })).results,
     ).toHaveLength(1);
+  });
+
+  test("the home page comes in one answer, with the personal parts only for a member", async () => {
+    const guest = await HomeService.load(null);
+    expect(guest.feed).toBeNull();
+    expect(guest.forYou).toBeNull();
+    expect(Array.isArray(guest.trending)).toBe(true);
+    const member = await HomeService.load("bob");
+    expect(Array.isArray(member.feed)).toBe(true);
+    expect(Array.isArray(member.forYou)).toBe(true);
   });
 
   test("the catalog browse honours filters and the member-based sorts", async () => {

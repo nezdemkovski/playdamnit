@@ -828,6 +828,46 @@ components:
         - at
         - isNew
 
+    HomeResponse:
+      type: object
+      properties:
+        trending:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+        newReleases:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+        thisWeek:
+          type: array
+          description: Released from yesterday to a week ahead
+          items:
+            $ref: "#/components/schemas/Game"
+        freshReviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        feed:
+          type: array
+          nullable: true
+          description: The friends feed; null for a guest
+          items:
+            $ref: "#/components/schemas/FeedItem"
+        forYou:
+          type: array
+          nullable: true
+          description: Picks for the viewer; null for a guest
+          items:
+            $ref: "#/components/schemas/Game"
+      required:
+        - trending
+        - newReleases
+        - thisWeek
+        - freshReviews
+        - feed
+        - forYou
+
     FeedResponse:
       type: object
       properties:
@@ -2481,6 +2521,21 @@ paths:
                     nullable: true
                 required:
                   - image
+
+  /api/home:
+    get:
+      operationId: getApiHome
+      tags:
+        - Games
+      summary: The home page in one answer
+      description: The catalog rails, the latest reviews and, for a signed-in viewer, the friends feed and the picks for them.
+      responses:
+        "200":
+          description: Home page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeResponse"
 
   /api/me/notifications:
     get:

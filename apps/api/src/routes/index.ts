@@ -10,6 +10,7 @@ import { userSocialRoutes } from "./user/[username]/social";
 import { getUsers } from "./users/GET";
 
 import { getCatalogLookups } from "./catalog/GET";
+import { getHome } from "./home/GET";
 import { getGames } from "./games/GET";
 import { getGameById } from "./games/[id]/GET";
 import { getGameReviews } from "./games/[id]/reviews/GET";
@@ -43,6 +44,7 @@ export const routes = new Elysia()
   .use(getUsers)
 
   .use(getCatalogLookups)
+  .use(getHome)
   .use(getGames)
   .use(getGamesSearch)
   .use(getGameReleaseDays)

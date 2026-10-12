@@ -1,4 +1,5 @@
 import {
+  getGetApiHomeQueryKey,
   getGetApiGamesByIdQueryKey,
   getGetApiMeRecommendationsQueryKey,
   getGetApiUserByUsernameGamesQueryKey,
@@ -59,6 +60,7 @@ export const useLibraryMutations = () => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdQueryKey(gameId) });
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
   };
 
   /**
@@ -93,6 +95,7 @@ export const useLibraryMutations = () => {
       old ? { ...old, community } : old,
     );
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
   };
 
   const add = usePostApiUserByUsernameGames({
@@ -132,6 +135,7 @@ export const useLibraryMutations = () => {
           queryKey: getGetApiUserByUsernameGamesQueryKey(username),
         });
         queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
         toast.success(
           t("toast.imported", {
             imported: result.imported,
