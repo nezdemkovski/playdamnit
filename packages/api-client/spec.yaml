@@ -1337,6 +1337,94 @@ components:
         - results
         - meta
 
+    LibrarySortEnum:
+      type: string
+      enum: [shame, added, grade, hours, name, release]
+      x-enumNames: [Shame, Added, Grade, Hours, Name, Release]
+
+    LibraryIndexItem:
+      type: object
+      description: A library entry without its review text, on a minimal card of its game
+      properties:
+        id:
+          type: number
+          description: The game's id
+        name:
+          type: string
+        firstReleaseDate:
+          type: number
+          nullable: true
+        cover:
+          type: string
+          nullable: true
+          description: The cover's URL at card size
+        userGameData:
+          $ref: "#/components/schemas/LibraryIndexEntry"
+      required:
+        - id
+        - name
+        - firstReleaseDate
+        - cover
+        - userGameData
+
+    LibraryIndexEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/StatusEnum"
+        rating:
+          type: number
+          nullable: true
+        hasReview:
+          type: boolean
+        platformId:
+          type: number
+          nullable: true
+        addedAt:
+          type: string
+          nullable: true
+        endedAt:
+          type: string
+          nullable: true
+        source:
+          type: string
+        mastered:
+          type: boolean
+        spoilers:
+          type: boolean
+        allowReactions:
+          type: boolean
+        steamMinutes:
+          type: number
+          nullable: true
+        steamLastPlayedAt:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+      required:
+        - id
+        - status
+        - rating
+        - hasReview
+        - platformId
+        - addedAt
+        - endedAt
+        - mastered
+        - updatedAt
+
+    LibraryIndexResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+      required:
+        - results
+
     UserGameWithUserData:
       allOf:
         - $ref: "#/components/schemas/Game"
@@ -2045,6 +2133,24 @@ paths:
           required: false
           schema:
             type: number
+        - name: status
+          in: query
+          required: false
+          description: Only entries with this status
+          schema:
+            $ref: "#/components/schemas/StatusEnum"
+        - name: q
+          in: query
+          required: false
+          description: Only games whose name or alternative names contain this
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: Order of the list (default added, newest first)
+          schema:
+            $ref: "#/components/schemas/LibrarySortEnum"
       operationId: getApiUserByUsernameGames
       tags:
         - User
@@ -2144,7 +2250,78 @@ paths:
             schema:
               $ref: "#/components/schemas/UserGameCreateRequest"
 
+  /api/user/{username}/games/index:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: getApiUserByUsernameGamesIndex
+      tags:
+        - User
+      summary: The whole library, light
+      description: >
+        Every entry without its review text, and its game as id, name, release date and
+        cover only: enough for lookups and everything a profile or the home page works out
+        from a library, at a fraction of the full list's size.
+      responses:
+        "200":
+          description: Library index
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryIndexResponse"
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
   /api/user/{username}/games/{id}:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      operationId: getApiUserByUsernameGamesById
+      tags:
+        - User
+      summary: One entry in full, review included
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserGameWithUserData"
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: Not in the library
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
     patch:
       parameters:
         - name: username

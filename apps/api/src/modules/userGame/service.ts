@@ -1,10 +1,17 @@
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql, type SQL } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
-import { platform, playthrough, userGames } from "@playdamnit/db/schema";
+import { game, platform, playthrough, userGames } from "@playdamnit/db/schema";
 import { PgErrorCode, UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
-import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
+import {
+  coverUrl,
+  GAME_CARD_COLUMNS,
+  GAME_CARD_WITH,
+  transformGameResponse,
+} from "@/utils/gameTransformers";
+import { LibrarySort } from "@/utils/enums";
+import { escapeLike } from "@/utils/searchGames";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
@@ -119,6 +126,39 @@ const libraryEntry = async (userId: string, gameId: number) => {
   return entry?.game ? toLibraryEntry({ ...entry, game: entry.game }) : null;
 };
 
+// Untouched backlog first, then stale "playing", finished games last (the web's shame order)
+const SHAME_RANK: Record<UserGameStatus, number> = {
+  [UserGameStatus.Backlog]: 0,
+  [UserGameStatus.WantToPlay]: 0,
+  [UserGameStatus.OnHold]: 1,
+  [UserGameStatus.Playing]: 2,
+  [UserGameStatus.Online]: 3,
+  [UserGameStatus.Dropped]: 4,
+  [UserGameStatus.Finished]: 5,
+};
+
+/** A library's order for each sort, with the entry id last so pages never overlap */
+const libraryOrder = (t: typeof userGames, sort: LibrarySort): SQL[] => {
+  const gameColumn = (column: SQL) =>
+    sql`(select ${column} from ${game} where ${game.id} = ${t.gameId})`;
+  const keys: Record<LibrarySort, SQL[]> = {
+    [LibrarySort.Shame]: [
+      sql`case ${t.status} ${sql.join(
+        Object.entries(SHAME_RANK).map(([status, rank]) => sql`when ${status} then ${rank}`),
+        sql` `,
+      )} end`,
+      // Idle longest first: Steam's last launch when there is one, else the last edit
+      sql`coalesce(${t.steamLastPlayedAt}, ${t.updatedAt}, ${t.addedAt}) asc`,
+    ],
+    [LibrarySort.Added]: [sql`${t.addedAt} desc`],
+    [LibrarySort.Grade]: [sql`${t.rating} desc nulls last`],
+    [LibrarySort.Hours]: [sql`${t.steamMinutes} desc nulls last`],
+    [LibrarySort.Name]: [sql`${gameColumn(sql`${game.name}`)} asc`],
+    [LibrarySort.Release]: [sql`${gameColumn(sql`${game.firstReleaseDate}`)} desc nulls last`],
+  };
+  return [...keys[sort], sql`${t.id}`];
+};
+
 /**
  * UserGame service - handles all business logic for user game library operations
  */
@@ -133,28 +173,48 @@ export abstract class UserGameService {
   }
 
   /**
-   * Get games for a user by username. Without a limit the whole library is returned.
+   * Get games for a user by username. Without a limit the whole library is returned. A status,
+   * a search over the game's names and a sort narrow and order it, so a client can page through
+   * a large library instead of loading all of it.
    */
   static async getUserGames(
     username: string,
-    opts: { limit?: number; offset?: number; viewerId?: string | null } = {},
+    opts: {
+      limit?: number;
+      offset?: number;
+      viewerId?: string | null;
+      status?: UserGameStatus;
+      q?: string;
+      sort?: LibrarySort;
+    } = {},
   ) {
     const userData = await requireUser(username);
     if (!canSeeList(userData, opts.viewerId ?? null)) {
       throw new ForbiddenError("This list is private");
     }
 
-    const where = eq(userGames.userId, userData.id);
+    const q = opts.q?.trim();
+    const filters = (t: typeof userGames) =>
+      [
+        eq(t.userId, userData.id),
+        opts.status ? eq(t.status, opts.status) : undefined,
+        q
+          ? sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and coalesce(${game.searchNames}, ${game.name}) ilike ${`%${escapeLike(q)}%`})`
+          : undefined,
+      ].filter((f) => f !== undefined);
 
     const [entries, [{ total }]] = await Promise.all([
       postgresDb.query.userGames.findMany({
-        where: { userId: userData.id },
-        orderBy: { addedAt: "desc" },
+        where: { RAW: (t) => and(...filters(t))! },
+        orderBy: (t) => libraryOrder(t, opts.sort ?? LibrarySort.Added),
         limit: opts.limit,
         offset: opts.offset,
         with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
       }),
-      postgresDb.select({ total: count() }).from(userGames).where(where),
+      postgresDb
+        .select({ total: count() })
+        .from(userGames)
+        .where(and(...filters(userGames))),
     ]);
 
     return {
@@ -164,6 +224,69 @@ export abstract class UserGameService {
       ),
       meta: { total, limit: opts.limit, offset: opts.offset ?? 0 },
     };
+  }
+
+  /**
+   * The whole library, light: each entry without its review text, and its game as the id, name,
+   * release date and cover only. Enough for "is this mine, how did I grade it" and everything a
+   * profile or the home page works out from a library (tiers, badges, the year, the verdict),
+   * at a fraction of the full list's size.
+   */
+  static async getLibraryIndex(username: string, viewerId: string | null) {
+    const userData = await requireUser(username);
+    if (!canSeeList(userData, viewerId)) {
+      throw new ForbiddenError("This list is private");
+    }
+    const entries = await postgresDb.query.userGames.findMany({
+      where: { userId: userData.id },
+      orderBy: { addedAt: "desc" },
+      columns: { review: false, userId: false, gameId: false },
+      extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },
+      with: {
+        game: { columns: { id: true, name: true, firstReleaseDate: true }, with: { cover: true } },
+      },
+    });
+    return {
+      results: entries.flatMap(({ game: g, hasReview, ...entry }) =>
+        g
+          ? [
+              {
+                id: g.id,
+                name: g.name,
+                firstReleaseDate: g.firstReleaseDate,
+                cover: coverUrl(g.cover),
+                userGameData: {
+                  id: entry.id,
+                  status: entry.status,
+                  rating: entry.rating !== null ? Number(entry.rating) : null,
+                  hasReview,
+                  platformId: entry.platformId,
+                  addedAt: entry.addedAt,
+                  endedAt: entry.endedAt,
+                  source: entry.source,
+                  mastered: entry.mastered,
+                  spoilers: entry.spoilers,
+                  allowReactions: entry.allowReactions,
+                  steamMinutes: entry.steamMinutes,
+                  steamLastPlayedAt: entry.steamLastPlayedAt,
+                  updatedAt: entry.updatedAt,
+                },
+              },
+            ]
+          : [],
+      ),
+    };
+  }
+
+  /** One entry in full, review included, as the library list serves it */
+  static async getEntry(username: string, gameId: number, viewerId: string | null) {
+    const userData = await requireUser(username);
+    if (!canSeeList(userData, viewerId)) {
+      throw new ForbiddenError("This list is private");
+    }
+    const entry = await libraryEntry(userData.id, gameId);
+    if (!entry) throw new NotFoundError("Game not found in user's library");
+    return entry;
   }
 
   /**

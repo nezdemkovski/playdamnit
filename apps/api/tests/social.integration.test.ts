@@ -4,7 +4,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
 import { NotificationType, ReactionEmoji, UserGameStatus } from "@playdamnit/db/enums";
-import { ConnectionKind, GameSort, ReviewSort, SteamConnectResult, UserSort } from "@/utils/enums";
+import {
+  ConnectionKind,
+  GameSort,
+  LibrarySort,
+  ReviewSort,
+  SteamConnectResult,
+  UserSort,
+} from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -319,6 +326,48 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(
       (await ReviewService.list({ gameId: GAME, viewerId: null, limit: 10, offset: 0 })).results,
     ).toHaveLength(1);
+  });
+
+  test("a library pages with a status, a search and a sort, and has a light index", async () => {
+    const all = await UserGameService.getUserGames("alice", { viewerId: "alice" });
+    const index = await UserGameService.getLibraryIndex("alice", "alice");
+    expect(index.results.map((e) => e.id)).toEqual(all.results.map((e) => e.id));
+    const first = index.results[0];
+    expect(Object.keys(first).sort()).toEqual([
+      "cover",
+      "firstReleaseDate",
+      "id",
+      "name",
+      "userGameData",
+    ]);
+    expect("review" in first.userGameData).toBe(false);
+
+    const page = await UserGameService.getUserGames("alice", {
+      viewerId: "alice",
+      limit: 1,
+      sort: LibrarySort.Name,
+    });
+    expect(page.results).toHaveLength(1);
+    expect(page.meta.total).toBe(all.results.length);
+
+    const finished = await UserGameService.getUserGames("alice", {
+      viewerId: "alice",
+      status: UserGameStatus.Finished,
+    });
+    expect(finished.results.every((e) => e.userGameData.status === UserGameStatus.Finished)).toBe(
+      true,
+    );
+
+    const term = first.name.slice(0, 6).toLowerCase();
+    const found = await UserGameService.getUserGames("alice", { viewerId: "alice", q: term });
+    expect(found.results.map((e) => e.id)).toEqual(
+      index.results.filter((e) => e.name.toLowerCase().includes(term)).map((e) => e.id),
+    );
+    expect(found.results.length).toBeGreaterThan(0);
+
+    const one = await UserGameService.getEntry("alice", all.results[0].id, "alice");
+    expect(one.userGameData.id).toBe(all.results[0].userGameData.id);
+    await expect(UserGameService.getEntry("alice", 1, "alice")).rejects.toThrow();
   });
 
   test("the home page comes in one answer, with the personal parts only for a member", async () => {

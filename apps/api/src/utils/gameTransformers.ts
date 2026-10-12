@@ -131,6 +131,10 @@ interface RelatedGame {
   cover?: Image | null;
 }
 
+/** A cover's URL at the card size, or null when the game has none */
+export const coverUrl = (image: Image | null | undefined) =>
+  image?.hash ? getImageUrl(image.source, image.hash, IgdbImageSize.COVER_BIG) : null;
+
 const imageOut = (image: Image | null | undefined, size: IgdbImageSize) => ({
   id: image?.id,
   url: image?.hash ? getImageUrl(image.source, image.hash, size) : null,

@@ -25,6 +25,17 @@ export enum UserSort {
   Newest = "newest",
 }
 
+/** How a library list is ordered; mirrors the web's and the app's sort menu */
+export enum LibrarySort {
+  /** Untouched backlog first, then stale "playing", finished games last */
+  Shame = "shame",
+  Added = "added",
+  Grade = "grade",
+  Hours = "hours",
+  Name = "name",
+  Release = "release",
+}
+
 export enum ReviewSort {
   Latest = "latest",
   Top = "top",
