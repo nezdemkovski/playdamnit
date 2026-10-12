@@ -320,6 +320,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(wanted.results[0].id).toBe(GAME);
     const played = await GameService.findGames({ sort: GameSort.Played, limit: 10 });
     expect(played.results.map((g) => g.id)).toEqual([GAME, OTHER_GAME]);
+    // A page past the members' games continues with the rest of the catalog, without repeats
+    const second = await GameService.findGames({ sort: GameSort.Wanted, limit: 1, offset: 1 });
+    expect(second.results).toHaveLength(1);
+    expect(second.results[0].id).not.toBe(GAME);
     expect((await GameService.findGames({ year: 2020, sort: GameSort.Date })).meta.total).toBe(2);
     expect((await GameService.findGames({ year: 2021 })).meta.total).toBe(0);
     expect(

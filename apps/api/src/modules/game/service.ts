@@ -1,4 +1,4 @@
-import { and, count, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
 import {
@@ -68,10 +68,15 @@ const yearBounds = (year: number) => ({
 const hasCover = (t: GameRef) =>
   sql`exists (select 1 from ${cover} where ${cover.gameId} = ${t.id})`;
 
-const libraryCount = (t: GameRef, statuses?: readonly UserGameStatus[]) =>
+// The statuses a member-based sort counts; every status for "played"
+const MEMBER_SORT_STATUSES: Partial<Record<GameSort, readonly UserGameStatus[]>> = {
+  [GameSort.Wanted]: [UserGameStatus.WantToPlay, UserGameStatus.Backlog],
+};
+
+const inMemberLists = (t: GameRef, statuses?: readonly UserGameStatus[]) =>
   statuses
-    ? sql<number>`(select count(*) from ${userGames} where ${userGames.gameId} = ${t.id} and ${userGames.status} in ${statuses})`
-    : sql<number>`(select count(*) from ${userGames} where ${userGames.gameId} = ${t.id})`;
+    ? sql`exists (select 1 from ${userGames} where ${userGames.gameId} = ${t.id} and ${userGames.status} in ${statuses})`
+    : sql`exists (select 1 from ${userGames} where ${userGames.gameId} = ${t.id})`;
 
 /** Every filter as SQL against the given table reference (RQB aliases the table) */
 const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
@@ -123,13 +128,10 @@ const orderFor = (sort: GameSort) => (t: GameRef) => {
     case GameSort.Upcoming:
     case GameSort.Date:
       return [sql`${t.firstReleaseDate} asc`, popularity];
+    // Wanted and Played rank by members first (findByMembers); what follows them goes by popularity
     case GameSort.Wanted:
-      return [
-        sql`${libraryCount(t, [UserGameStatus.WantToPlay, UserGameStatus.Backlog])} desc`,
-        popularity,
-      ];
     case GameSort.Played:
-      return [sql`${libraryCount(t)} desc`, popularity];
+      return [popularity, sql`${t.id}`];
     default:
       return [sql`${t.id} asc`];
   }
@@ -272,6 +274,10 @@ export abstract class GameService {
     const offset = opts.offset ?? 0;
     const sort = opts.sort ?? GameSort.Id;
 
+    if (sort === GameSort.Wanted || sort === GameSort.Played) {
+      return GameService.findByMembers(opts, sort, limit, offset);
+    }
+
     const [games, [{ total }]] = await Promise.all([
       db.query.game.findMany({
         limit,
@@ -292,6 +298,68 @@ export abstract class GameService {
 
     return {
       results: games.map(transformGameResponse),
+      meta: { total, limit, offset },
+    };
+  }
+
+  /**
+   * Wanted and Played: the games in members' lists, most members first, then the rest of the
+   * catalog by popularity, so the chart never runs dry. Counting per game over the members'
+   * entries is cheap; counting per row over the whole catalog (the old order by subquery) took
+   * seconds.
+   */
+  private static async findByMembers(
+    opts: GameFilters,
+    sort: GameSort,
+    limit: number,
+    offset: number,
+  ) {
+    const statuses = MEMBER_SORT_STATUSES[sort];
+    const members = count(userGames.id);
+    const ranked = await db
+      .select({ id: userGames.gameId })
+      .from(userGames)
+      .innerJoin(game, eq(game.id, userGames.gameId))
+      .where(
+        and(
+          isNull(game.deletedAt),
+          statuses ? inArray(userGames.status, [...statuses]) : undefined,
+          ...buildFilters(opts, game),
+        ),
+      )
+      .groupBy(userGames.gameId, game.totalRatingCount)
+      .orderBy(desc(members), sql`${game.totalRatingCount} desc nulls last`, userGames.gameId);
+
+    const ids = ranked.map((r) => r.id).slice(offset, offset + limit);
+    const rest = limit - ids.length;
+    // Past the members' games the page continues with the rest of the catalog
+    const restOfCatalog = async () => {
+      if (rest <= 0) return [];
+      const rows = await db.query.game.findMany({
+        limit: rest,
+        offset: Math.max(0, offset - ranked.length),
+        where: {
+          deletedAt: { isNull: true },
+          RAW: (t) =>
+            and(sql`not ${inMemberLists(t, statuses)}`, ...buildFilters(opts, t)) ?? sql`true`,
+        },
+        orderBy: orderFor(sort),
+        columns: GAME_CARD_COLUMNS,
+        with: GAME_CARD_WITH,
+      });
+      return rows.map(transformGameResponse);
+    };
+    const [cards, others, [{ total }]] = await Promise.all([
+      GameService.findCards(ids),
+      restOfCatalog(),
+      db
+        .select({ total: count() })
+        .from(game)
+        .where(and(isNull(game.deletedAt), ...buildFilters(opts, game))),
+    ]);
+
+    return {
+      results: [...cards, ...others],
       meta: { total, limit, offset },
     };
   }
