@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { GameCard, GameRail } from "@/components/game/game-card";
 import { PrivateNotice } from "@/components/profile/private-notice";
 import { TierBoard } from "@/components/profile/tier-board";
-import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
 import { SteamImportForm } from "@/components/steam/steam-panel";
@@ -71,12 +70,6 @@ function ProfileOverview() {
         >
           <TierBoard entries={entries} arranging={isOwn && arranging} />
         </Section>
-      )}
-
-      {entries.length > 0 && (
-        <div className="mt-8">
-          <YearInEvenings username={username} entries={entries} />
-        </div>
       )}
 
       {playing.length > 0 && (

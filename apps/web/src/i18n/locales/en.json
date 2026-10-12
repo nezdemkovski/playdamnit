@@ -526,8 +526,7 @@
       "typicalTip_other": "Middle of {{count}} grades"
     },
     "evenings": {
-      "title_one": "{{days}} days. {{count}} of them with a game.",
-      "title_other": "{{days}} days. {{count}} of them with a game.",
+      "title": "Past year",
       "less": "Less",
       "more": "More",
       "tip": {

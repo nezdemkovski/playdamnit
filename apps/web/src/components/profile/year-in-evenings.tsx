@@ -3,6 +3,7 @@ import { Chart } from "@tanstack/charts/react/tooltip";
 import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { tooltip } from "@tanstack/charts/tooltip";
+import { portal } from "@tanstack/charts/tooltip/portal";
 import {
   StatusEnum,
   useGetApiUserByUsernameSteamActivity,
@@ -10,6 +11,7 @@ import {
   type UserGameWithUserData,
 } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
+import { cn } from "cn";
 import { useMemo } from "react";
 
 import { t } from "@/i18n";
@@ -123,22 +125,24 @@ const useYear = (
     const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
     for (const day of days)
       day.level = day.level === 0 ? 0 : 1 + cut.filter((c) => day.level > c).length;
-    return { days, first, activeDays: active.length };
+    return { days };
   }, [entries, played]);
 
 /**
- * One cell per day for the last 52 weeks, GitHub-style: the more happened, the redder. The
+ * The profile header's year: one cell per day for the last 52 weeks, GitHub-style: the more happened, the redder. The
  * tooltip lists the day's actions with the games. TanStack Charts.
  */
 export function YearInEvenings({
   username,
   entries,
+  className,
 }: {
   username: string;
   entries: UserGameWithUserData[];
+  className?: string;
 }) {
   const activity = useGetApiUserByUsernameSteamActivity(username);
-  const { days, first, activeDays } = useYear(entries, activity.data?.days ?? EMPTY);
+  const { days } = useYear(entries, activity.data?.days ?? EMPTY);
 
   const heat = useMemo(
     () =>
@@ -163,42 +167,35 @@ export function YearInEvenings({
           color: { scale: scaleOrdinal<number, string>(LEVELS, LEVEL_COLORS) },
         },
         // Sized to its content: near the right edge the card would otherwise shrink to a column
-        { tooltip: { use: tooltip, className: "w-max" } },
+        // The portal lifts it out of the profile header, which clips overflow
+        { tooltip: { use: tooltip, className: "w-max", portal } },
       ),
     [days],
   );
 
   return (
-    <div className="border border-border">
-      <div className="p-5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-lg">
-            {t("profile.evenings.title", { days: DAYS, count: activeDays })}
-          </h3>
-          <span className="eyebrow">
-            {format(first, DateFormat.MonthYearShort)} →{" "}
-            {format(new Date(), DateFormat.MonthYearShort)}
-          </span>
-        </div>
-        <div className="mt-3 text-foreground">
-          <Chart
-            definition={heat}
-            aspectRatio={53 / 7}
-            initialWidth={640}
-            ariaLabel={t("profile.evenings.heatAria")}
-            renderTooltipBody={({ points }) => {
-              const day = points[0]?.datum as DayRow | undefined;
-              return day ? <DayTip day={day} /> : null;
-            }}
-          />
-        </div>
-        <div className="eyebrow mt-2 flex items-center justify-end gap-1 normal-case tracking-normal">
+    <div className={cn("min-w-0", className)}>
+      <div className="eyebrow flex items-center justify-between gap-3 normal-case tracking-normal">
+        <span>{t("profile.evenings.title")}</span>
+        <span className="flex items-center gap-1">
           <span className="mr-1">{t("profile.evenings.less")}</span>
           {LEVEL_COLORS.map((color) => (
-            <i key={color} className="inline-block size-2.5" style={{ background: color }} />
+            <i key={color} className="inline-block size-2" style={{ background: color }} />
           ))}
           <span className="ml-1">{t("profile.evenings.more")}</span>
-        </div>
+        </span>
+      </div>
+      <div className="mt-2 text-foreground">
+        <Chart
+          definition={heat}
+          aspectRatio={53 / 7}
+          initialWidth={900}
+          ariaLabel={t("profile.evenings.heatAria")}
+          renderTooltipBody={({ points }) => {
+            const day = points[0]?.datum as DayRow | undefined;
+            return day ? <DayTip day={day} /> : null;
+          }}
+        />
       </div>
     </div>
   );

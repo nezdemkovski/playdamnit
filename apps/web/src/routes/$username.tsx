@@ -19,6 +19,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { BadgeStrip, computeBadges } from "@/components/profile/badges";
 import { HallOfFame } from "@/components/profile/hall-of-fame";
 import { ProfileStatStrip } from "@/components/profile/profile-stats";
+import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { FollowButton } from "@/components/social/follow-button";
 import { SteamBadge } from "@/components/steam/steam-badge";
 import { SteamButton } from "@/components/steam/steam-button";
@@ -122,36 +123,48 @@ function ProfileLayout() {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h1 className="min-w-0 truncate text-3xl sm:text-4xl">{user.name || user.username}</h1>
-            <span className="num text-sm text-dimmed">@{user.username}</span>
-            {user.followsYou && (
-              <span className="eyebrow text-done">{t("profile.followsYou")}</span>
-            )}
-            {!user.listPublic && <span className="eyebrow">{t("profile.privateList")}</span>}
-          </div>
-          <div className="eyebrow mt-1">
-            {t("profile.since", {
-              date: format(new Date(user.createdAt), DateFormat.MonthYearShort),
-            })}
-          </div>
+          <div className="mt-4 grid gap-5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h1 className="min-w-0 truncate text-3xl sm:text-4xl">
+                  {user.name || user.username}
+                </h1>
+                <span className="num text-sm text-dimmed">@{user.username}</span>
+                {user.followsYou && (
+                  <span className="eyebrow text-done">{t("profile.followsYou")}</span>
+                )}
+                {!user.listPublic && <span className="eyebrow">{t("profile.privateList")}</span>}
+              </div>
+              <div className="eyebrow mt-1">
+                {t("profile.since", {
+                  date: format(new Date(user.createdAt), DateFormat.MonthYearShort),
+                })}
+              </div>
 
-          {(user.bio || user.links.length > 0) && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              {user.bio && <p className="max-w-2xl text-[15px] text-foreground/85">{user.bio}</p>}
-              {user.links.map((link) => (
-                <a
-                  key={link}
-                  href={link}
-                  target="_blank"
-                  rel="noreferrer nofollow"
-                  className="inline-flex items-center gap-1 text-sm text-dimmed hover:text-foreground"
-                >
-                  <LinkIcon className="size-3.5" /> {new URL(link).hostname.replace(/^www\./, "")}
-                </a>
-              ))}
+              {(user.bio || user.links.length > 0) && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {user.bio && (
+                    <p className="max-w-2xl text-[15px] text-foreground/85">{user.bio}</p>
+                  )}
+                  {user.links.map((link) => (
+                    <a
+                      key={link}
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer nofollow"
+                      className="inline-flex items-center gap-1 text-sm text-dimmed hover:text-foreground"
+                    >
+                      <LinkIcon className="size-3.5" />{" "}
+                      {new URL(link).hostname.replace(/^www\./, "")}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+            {library.data && library.data.results.length > 0 && (
+              <YearInEvenings username={username} entries={library.data.results} />
+            )}
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-4 text-sm">
             <Link
