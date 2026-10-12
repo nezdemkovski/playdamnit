@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession, useSignOut } from "@/hooks/auth";
-import { useNotifications } from "@/hooks/social";
+import { useUnreadNotifications } from "@/hooks/social";
 import { RoutePath } from "@/lib/enums";
 
 type To =
@@ -107,7 +107,7 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
   const { t } = useTranslation();
   const { user } = useSession();
   const signOut = useSignOut();
-  const { unread } = useNotifications(!!user);
+  const unread = useUnreadNotifications(!!user);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const username = user?.username ?? "";
   const profilePath = `/${username}`;

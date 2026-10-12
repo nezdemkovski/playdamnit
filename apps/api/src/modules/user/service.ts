@@ -260,6 +260,15 @@ export abstract class UserService {
     };
   }
 
+  /** Just the count for the bell, without loading the notifications themselves */
+  static async unreadNotifications(userId: string) {
+    const [{ unread }] = await postgresDb
+      .select({ unread: count() })
+      .from(notification)
+      .where(and(eq(notification.userId, userId), sql`${notification.readAt} is null`));
+    return { unread: Number(unread) };
+  }
+
   static async notifications(userId: string, opts: { limit: number }) {
     const [rows, [{ unread }]] = await Promise.all([
       postgresDb.query.notification.findMany({

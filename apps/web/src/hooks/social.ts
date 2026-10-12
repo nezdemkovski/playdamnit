@@ -4,6 +4,7 @@ import {
   getGetApiGamesByIdReviewsQueryKey,
   getGetApiListsByIdQueryKey,
   getGetApiMeNotificationsQueryKey,
+  getGetApiMeNotificationsUnreadQueryKey,
   getGetApiReviewsQueryKey,
   getGetApiUserByUsernameFollowersQueryKey,
   getGetApiUserByUsernameFollowingQueryKey,
@@ -22,6 +23,7 @@ import {
   useDeleteApiUserByUsernameFollow,
   useDeleteApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId,
   useGetApiMeNotifications,
+  useGetApiMeNotificationsUnread,
   usePatchApiListsById,
   usePatchApiMe,
   usePatchApiUserByUsernameGamesByIdPlaythroughsByPlaythroughId,
@@ -167,6 +169,7 @@ export const useProfileUpdate = () => {
   };
 };
 
+/** The notifications page: the latest notifications, refreshed while it is open */
 export const useNotifications = (enabled: boolean) => {
   const queryClient = useQueryClient();
   const query = useGetApiMeNotifications(undefined, {
@@ -174,11 +177,19 @@ export const useNotifications = (enabled: boolean) => {
   });
   const read = usePostApiMeNotificationsRead({
     mutation: {
-      onSuccess: () =>
-        queryClient.invalidateQueries({ queryKey: getGetApiMeNotificationsQueryKey() }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetApiMeNotificationsQueryKey() });
+        queryClient.setQueryData(getGetApiMeNotificationsUnreadQueryKey(), { unread: 0 });
+      },
     },
   });
   return { ...query, unread: query.data?.unread ?? 0, markRead: () => read.mutate() };
+};
+
+/** The bell's count, polled on its own instead of the whole list */
+export const useUnreadNotifications = (enabled: boolean) => {
+  const query = useGetApiMeNotificationsUnread({ query: { enabled, refetchInterval: 60_000 } });
+  return query.data?.unread ?? 0;
 };
 
 export const useListMutations = () => {

@@ -2505,6 +2505,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
 
+  /api/me/notifications/unread:
+    get:
+      operationId: getApiMeNotificationsUnread
+      tags:
+        - User
+      summary: The unread count for the bell, without the notifications
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unread:
+                    type: number
+                required:
+                  - unread
+
   /api/me/notifications/read:
     post:
       operationId: postApiMeNotificationsRead

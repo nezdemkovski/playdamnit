@@ -26,6 +26,9 @@ export const meRoutes = new Elysia()
     },
     ({ user, query }) => UserService.notifications(user.id, { limit: query.limit ?? 30 }),
   )
+  .get("/me/notifications/unread", { auth: true }, ({ user }) =>
+    UserService.unreadNotifications(user.id),
+  )
   .post("/me/notifications/read", { auth: true }, ({ user }) =>
     UserService.markNotificationsRead(user.id),
   )
