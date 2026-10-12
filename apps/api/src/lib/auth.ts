@@ -37,12 +37,20 @@ const passkeyOrigins = [
   ]),
 ];
 
+const SESSION_COOKIE_CACHE_SECONDS = 5 * 60;
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     // Drizzle v1 clients are built from relations, so the adapter needs the tables explicitly
     schema: { user, session, account, verification, passkey: passkeyTable, apikey },
   }),
+  // The session rides in a signed cookie for five minutes, so the API's own routes skip the
+  // database lookup per request; Better Auth's sensitive endpoints (password, email, account
+  // deletion) still check the database. A session revoked elsewhere stops working within that.
+  session: {
+    cookieCache: { enabled: true, maxAge: SESSION_COOKIE_CACHE_SECONDS },
+  },
   emailAndPassword: {
     enabled: true,
     resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
