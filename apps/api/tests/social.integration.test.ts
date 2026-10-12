@@ -388,4 +388,46 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ]);
     await pg.query(`update game set similar_game_ids = '{}' where id = $1`, [GAME]);
   });
+
+  test("connecting a proven Steam account moves it off anyone else and survives a private library", async () => {
+    const { SteamService } = await import("@/modules/steam/service");
+    const STEAM_ID = "76561199000000001";
+    await pg.query(`update "user" set steam_id = $1, steam_name = 'old' where id = 'bob'`, [
+      STEAM_ID,
+    ]);
+    const realFetch = globalThis.fetch;
+    // Steam stubbed: the summary is public, the game details private
+    globalThis.fetch = (async (input: string | URL) => {
+      const url = String(input);
+      if (url.includes("GetPlayerSummaries")) {
+        return Response.json({
+          response: {
+            players: [
+              {
+                personaname: "alice_on_steam",
+                profileurl: "https://s/a",
+                avatarmedium: "https://s/a.jpg",
+              },
+            ],
+          },
+        });
+      }
+      return Response.json({ response: {} });
+    }) as unknown as typeof fetch;
+    try {
+      expect(await SteamService.connect("alice", STEAM_ID)).toBe("private");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    const { rows } = await pg.query(
+      `select id, steam_id, steam_name from "user" where id in ('alice', 'bob') order by id`,
+    );
+    expect(rows).toEqual([
+      { id: "alice", steam_id: STEAM_ID, steam_name: "alice_on_steam" },
+      { id: "bob", steam_id: null, steam_name: null },
+    ]);
+    await pg.query(
+      `update "user" set steam_id = null, steam_name = null, steam_profile_url = null, steam_avatar_url = null where id = 'alice'`,
+    );
+  });
 });

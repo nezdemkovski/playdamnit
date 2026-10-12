@@ -68,6 +68,7 @@ export const isFlagSet = (value: unknown): boolean =>
 export enum MimeType {
   Csv = "text/csv",
   Json = "application/json",
+  FormUrlencoded = "application/x-www-form-urlencoded",
   Jpeg = "image/jpeg",
   Png = "image/png",
   Webp = "image/webp",
@@ -211,4 +212,24 @@ export enum RecommendableGameType {
 /** IGDB platform ids the API assigns on its own */
 export enum PlatformId {
   Pc = 6,
+}
+
+/** Steam's OpenID 2.0 provider ("Sign in through Steam") */
+export enum SteamOpenId {
+  Endpoint = "https://steamcommunity.com/openid/login",
+  Namespace = "http://specs.openid.net/auth/2.0",
+  IdentifierSelect = "http://specs.openid.net/auth/2.0/identifier_select",
+}
+
+export enum OpenIdMode {
+  CheckIdSetup = "checkid_setup",
+  IdRes = "id_res",
+  CheckAuthentication = "check_authentication",
+}
+
+/** How connecting Steam ended, handed back to the web app as `?steam=` */
+export enum SteamConnectResult {
+  Connected = "connected",
+  Private = "private",
+  Failed = "failed",
 }

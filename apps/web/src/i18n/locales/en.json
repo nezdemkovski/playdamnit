@@ -718,9 +718,7 @@
     "position": "{index} of {total}"
   },
   "steam": {
-    "title": "Import from Steam",
-    "placeholder": "Your Steam profile link",
-    "import": "Import",
+    "title": "Steam",
     "importing": "Importing…",
     "connect": "Connect Steam",
     "unlink": "Unlink",
@@ -728,6 +726,9 @@
     "added_other": "{{count}} games added from Steam.",
     "nothingNew": "Nothing new on Steam.",
     "failed": "Couldn't import from Steam.",
+    "connected": "Steam connected.",
+    "private": "Steam connected, but its game details are private.",
+    "connectFailed": "Couldn't connect Steam.",
     "onboarding": "Import your Steam library",
     "badge": "Steam",
     "syncedAgo": "Synced {{when}}",

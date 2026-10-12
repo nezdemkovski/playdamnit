@@ -1601,17 +1601,6 @@ components:
       required:
         - games
 
-    SteamImportRequest:
-      type: object
-      properties:
-        profile:
-          type: string
-          minLength: 2
-          maxLength: 200
-          description: >-
-            SteamID64, a steamcommunity.com profile URL or a custom URL name; leave it out to use
-            the linked Steam account
-
     GameImportResponse:
       type: object
       properties:
@@ -2518,10 +2507,11 @@ paths:
       operationId: postApiMeImportSteam
       tags:
         - Library
-      summary: Import a Steam library
+      summary: Sync the linked Steam library
       description: >-
-        Adds the matched Steam games to the list on PC: never-launched games as backlog, played
-        ones with playedStatus (on_hold by default). Games already in the list are left alone.
+        Adds the matched Steam games of the linked account to the list on PC: never-launched games
+        as backlog, played ones with playedStatus (on_hold by default). Games already in the list
+        are left alone. 400 when no Steam account is linked.
       security:
         - cookieAuth: []
       requestBody:
@@ -2529,12 +2519,10 @@ paths:
         content:
           application/json:
             schema:
-              allOf:
-                - $ref: "#/components/schemas/SteamImportRequest"
-                - type: object
-                  properties:
-                    playedStatus:
-                      $ref: "#/components/schemas/StatusEnum"
+              type: object
+              properties:
+                playedStatus:
+                  $ref: "#/components/schemas/StatusEnum"
       responses:
         "200":
           description: Import result
@@ -2542,6 +2530,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameImportResponse"
+
+  /api/me/steam/connect:
+    get:
+      operationId: getApiMeSteamConnect
+      tags:
+        - Users
+      summary: Connect Steam (sign in through Steam)
+      description: >-
+        A browser navigation, not a fetch: redirects to Steam's OpenID login, which comes back to
+        /api/me/steam/callback. That links the proven Steam account, imports it and redirects to
+        returnTo with ?steam=connected|private|failed.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: returnTo
+          in: query
+          required: true
+          description: Absolute URL of a page on this site to come back to
+          schema:
+            type: string
+      responses:
+        "302":
+          description: To Steam's login page
+        "400":
+          description: returnTo is not on this site
 
   /api/me/steam/friends:
     get:

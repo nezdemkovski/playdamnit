@@ -4,6 +4,8 @@ import { Footer } from "./footer";
 import { SearchDialog } from "./search-dialog";
 import { Sidebar } from "./sidebar";
 import { Hotkey } from "@/lib/enums";
+import { useSession } from "@/hooks/auth";
+import { useSteamReturn } from "@/components/steam/use-steam-return";
 
 // The assistant pulls in the AI SDK; load it only when opened
 const AssistantDialog = lazy(() =>
@@ -14,6 +16,8 @@ const AssistantDialog = lazy(() =>
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const { user } = useSession();
+  useSteamReturn(user?.username ?? undefined);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

@@ -9,7 +9,7 @@ import { PrivateNotice } from "@/components/profile/private-notice";
 import { TierBoard } from "@/components/profile/tier-board";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
-import { SteamImportForm } from "@/components/steam/steam-panel";
+import { SteamConnectButton } from "@/components/steam/steam-connect";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
@@ -153,8 +153,8 @@ function ProfileOverview() {
         (isOwn ? (
           <section className="panel p-6 sm:p-8">
             <h2 className="text-2xl">{t("steam.onboarding")}</h2>
-            <div className="mt-4 max-w-xl">
-              <SteamImportForm username={username} />
+            <div className="mt-4">
+              <SteamConnectButton variant="default" />
             </div>
           </section>
         ) : (

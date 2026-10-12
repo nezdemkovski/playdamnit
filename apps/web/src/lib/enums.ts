@@ -220,3 +220,10 @@ export enum MediaSlideType {
 export enum FlagValue {
   One = "1",
 }
+
+/** How connecting Steam ended, as the API reports it back in `?steam=` */
+export enum SteamConnectResult {
+  Connected = "connected",
+  Private = "private",
+  Failed = "failed",
+}

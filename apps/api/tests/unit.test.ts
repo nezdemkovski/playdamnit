@@ -6,7 +6,8 @@ import { escapeLike } from "@/utils/searchGames";
 import { createRateLimiter } from "@/utils/rateLimit";
 import { TooManyRequestsError } from "@/utils/errors";
 import { UserGameStatus } from "@playdamnit/db/enums";
-import { HttpMethod } from "@/utils/enums";
+import { HttpMethod, SteamOpenId } from "@/utils/enums";
+import { decodeState, encodeState, steamLoginUrl, verifySteamLogin } from "@/modules/steam/openid";
 
 describe("csv", () => {
   test("round-trips quotes, commas, newlines and CRLF", () => {
@@ -100,5 +101,85 @@ describe("request schemas", () => {
     );
 
     expect(await res.json()).toEqual({ rating: 5 });
+  });
+});
+
+describe("sign in through Steam", () => {
+  const CALLBACK = "http://localhost:3030/api/me/steam/callback";
+  const STEAM_ID = "76561199420922704";
+  const answer = (overrides: Record<string, string> = {}) => ({
+    "openid.ns": SteamOpenId.Namespace,
+    "openid.mode": "id_res",
+    "openid.op_endpoint": SteamOpenId.Endpoint,
+    "openid.claimed_id": `https://steamcommunity.com/openid/id/${STEAM_ID}`,
+    "openid.identity": `https://steamcommunity.com/openid/id/${STEAM_ID}`,
+    "openid.return_to": `${CALLBACK}?state=abc`,
+    "openid.response_nonce": "2026-10-12T02:00:00Zxyz",
+    "openid.assoc_handle": "1234567890",
+    "openid.signed": "signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle",
+    "openid.sig": "c2lnbmF0dXJl",
+    ...overrides,
+  });
+
+  test("the state round-trips and refuses tampering", () => {
+    const state = encodeState("alice", "http://localhost:3000/alice");
+    expect(decodeState(state)).toMatchObject({
+      userId: "alice",
+      returnTo: "http://localhost:3000/alice",
+    });
+    const [payload, sig] = state.split(".");
+    const forged = Buffer.from(
+      JSON.stringify({
+        userId: "mallory",
+        returnTo: "http://localhost:3000",
+        expires: Date.now() + 1e6,
+      }),
+    ).toString("base64url");
+    expect(decodeState(`${forged}.${sig}`)).toBeNull();
+    expect(decodeState(`${payload}.x${sig}`)).toBeNull();
+    expect(decodeState("garbage")).toBeNull();
+  });
+
+  test("the login URL asks Steam to pick the account and come back to the callback", () => {
+    const url = new URL(steamLoginUrl(`${CALLBACK}?state=abc`));
+    expect(url.origin + url.pathname).toBe(SteamOpenId.Endpoint);
+    expect(url.searchParams.get("openid.return_to")).toBe(`${CALLBACK}?state=abc`);
+    expect(url.searchParams.get("openid.realm")).toBe("http://localhost:3030");
+    expect(url.searchParams.get("openid.claimed_id")).toBe(SteamOpenId.IdentifierSelect);
+  });
+
+  test("an answer counts only when Steam confirms it and it is for this callback", async () => {
+    const realFetch = globalThis.fetch;
+    let checked: URLSearchParams | null = null;
+    globalThis.fetch = (async (_url: string, init: { body: URLSearchParams }) => {
+      checked = init.body;
+      return new Response("ns:http://specs.openid.net/auth/2.0\nis_valid:true\n");
+    }) as unknown as typeof fetch;
+    try {
+      expect(await verifySteamLogin(answer(), CALLBACK)).toBe(STEAM_ID);
+      expect(checked!.get("openid.mode")).toBe("check_authentication");
+      expect(checked!.get("openid.sig")).toBe("c2lnbmF0dXJl");
+      // Not for us, not from Steam, not a SteamID: refused before asking Steam
+      expect(
+        await verifySteamLogin(answer({ "openid.return_to": "https://evil.example/cb" }), CALLBACK),
+      ).toBeNull();
+      expect(
+        await verifySteamLogin(
+          answer({ "openid.op_endpoint": "https://evil.example/openid" }),
+          CALLBACK,
+        ),
+      ).toBeNull();
+      expect(
+        await verifySteamLogin(
+          answer({ "openid.claimed_id": "https://evil.example/openid/id/76561199420922704" }),
+          CALLBACK,
+        ),
+      ).toBeNull();
+      // Steam says no
+      globalThis.fetch = (async () => new Response("is_valid:false\n")) as unknown as typeof fetch;
+      expect(await verifySteamLogin(answer(), CALLBACK)).toBeNull();
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });

@@ -14,8 +14,8 @@ const apiMessage = (error: unknown) =>
   (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
   t("steam.failed");
 
-/** Import (or sync) the Steam library and unlink it, with one toast for the outcome */
-export const useSteam = (username: string, onImported?: () => void) => {
+/** Sync the linked Steam library and unlink it, with one toast for the outcome */
+export const useSteam = (username: string) => {
   const queryClient = useQueryClient();
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
@@ -28,7 +28,6 @@ export const useSteam = (username: string, onImported?: () => void) => {
         refresh();
         if (result.imported > 0) toast.success(t("steam.added", { count: result.imported }));
         else toast(t("steam.nothingNew"));
-        onImported?.();
       },
       onError: (error) => toast.error(apiMessage(error)),
     },
@@ -36,9 +35,8 @@ export const useSteam = (username: string, onImported?: () => void) => {
   const unlink = useDeleteApiMeSteam({ mutation: { onSuccess: refresh } });
   return {
     pending: run.isPending,
-    /** With a profile: import it and link it. Without: sync the linked account. */
-    importLibrary: (profile?: string) =>
-      run.mutate({ data: profile ? { profile: profile.trim() } : {} }),
+    /** Sync the linked account now */
+    importLibrary: () => run.mutate({ data: {} }),
     unlink: () => unlink.mutate(),
   };
 };

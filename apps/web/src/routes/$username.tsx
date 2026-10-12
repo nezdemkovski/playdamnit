@@ -22,7 +22,7 @@ import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { FollowButton } from "@/components/social/follow-button";
 import { SteamBadge } from "@/components/steam/steam-badge";
-import { SteamButton } from "@/components/steam/steam-button";
+import { SteamConnectButton } from "@/components/steam/steam-connect";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
@@ -110,7 +110,7 @@ function ProfileLayout() {
             <div className="flex shrink-0 gap-2">
               {user.isOwn ? (
                 <>
-                  <SteamButton username={username} steamId={user.steamId} />
+                  {!user.steamId && <SteamConnectButton size="sm" />}
                   <Button asChild variant="outline" size="sm">
                     <Link to="/$username/settings" params={{ username }}>
                       <SettingsIcon /> {t("profile.editProfile")}

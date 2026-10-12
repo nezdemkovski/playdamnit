@@ -13,7 +13,7 @@ import { getConfig } from "@/config";
 import { db as postgresDb } from "@/db/postgres";
 import { UserGameService } from "@/modules/userGame/service";
 import { BadRequestError, NotFoundError, ServiceUnavailableError } from "@/utils/errors";
-import { ExternalGameSourceId, PlatformId } from "@/utils/enums";
+import { ExternalGameSourceId, PlatformId, SteamConnectResult } from "@/utils/enums";
 
 const STEAM_API = "https://api.steampowered.com";
 const STEAM_TIMEOUT_MS = 15_000;
@@ -34,9 +34,12 @@ const friendsCache = new Map<string, { at: number; steamIds: string[] }>();
 const SYNC_AGAIN_AFTER = "5 hours";
 const SYNC_BATCH = 200;
 const SYNC_PAUSE_MS = 500;
-const STEAM_ID64 = /^7656119\d{10}$/;
-const PROFILE_URL = /steamcommunity\.com\/(profiles|id)\/([^/?#\s]+)/i;
-const VANITY = /^[A-Za-z0-9_-]{2,32}$/;
+
+export class PrivateLibraryError extends BadRequestError {
+  constructor() {
+    super("This Steam library is private. Make game details public in Steam.");
+  }
+}
 
 interface OwnedGame {
   appid: number;
@@ -65,33 +68,13 @@ const steamGet = async <T>(path: string, params: Record<string, string>): Promis
   return (await response.json()) as T;
 };
 
-/** A SteamID64 from what people paste: the id, a profile URL, or a custom URL name */
-export const resolveSteamId = async (input: string): Promise<string> => {
-  const raw = input.trim();
-  if (STEAM_ID64.test(raw)) return raw;
-  const url = PROFILE_URL.exec(raw);
-  if (url?.[1].toLowerCase() === "profiles" && STEAM_ID64.test(url[2])) return url[2];
-  const vanity = url?.[2] ?? raw;
-  if (!VANITY.test(vanity)) throw new BadRequestError("That isn't a Steam profile link.");
-  const result = await steamGet<{ response: { success: number; steamid?: string } }>(
-    "/ISteamUser/ResolveVanityURL/v1/",
-    { vanityurl: vanity },
-  );
-  if (result.response.success !== 1 || !result.response.steamid) {
-    throw new NotFoundError("No such Steam profile.");
-  }
-  return result.response.steamid;
-};
-
 const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
   const result = await steamGet<{ response: { game_count?: number; games?: OwnedGame[] } }>(
     "/IPlayerService/GetOwnedGames/v1/",
     { steamid: steamId, include_appinfo: "1", include_played_free_games: "1" },
   );
   // A private profile (or private game details) answers with an empty object
-  if (!result.response.games) {
-    throw new BadRequestError("This Steam library is private. Make game details public in Steam.");
-  }
+  if (!result.response.games) throw new PrivateLibraryError();
   return result.response.games;
 };
 
@@ -217,9 +200,8 @@ const recordPlaytime = async (userId: string, matches: SteamMatch[], recentSince
   });
 };
 
-/** The profile given, or the Steam account already linked to the user */
-const steamIdFor = async (userId: string, profile?: string) => {
-  if (profile?.trim()) return resolveSteamId(profile);
+/** The Steam account linked to the user */
+const linkedSteamId = async (userId: string) => {
   const row = await postgresDb.query.user.findFirst({
     where: { id: userId },
     columns: { steamId: true },
@@ -234,8 +216,8 @@ export abstract class SteamService {
    * played ones to the status the user picked. Games already in the list are left alone, so
    * running it again only brings in what's new.
    */
-  static async import(userId: string, playedStatus: UserGameStatus, profile?: string) {
-    const steamId = await steamIdFor(userId, profile);
+  static async import(userId: string, playedStatus: UserGameStatus) {
+    const steamId = await linkedSteamId(userId);
     const matches = await matchToCatalog(await ownedGames(steamId));
     const recentSince = Date.now() / 1000 - RECENT_SECONDS;
     const rows = matches.map((m) => ({
@@ -256,12 +238,11 @@ export abstract class SteamService {
       maxGames: MAX_STEAM_IMPORT,
     });
     await recordPlaytime(userId, matches, recentSince);
-    // An import links the account, so the next sync needs no profile; the name may have changed
+    // The name and avatar may have changed since the last sync
     const summary = await playerSummary(steamId).catch(() => null);
     await postgresDb
       .update(user)
       .set({
-        steamId,
         steamSyncedAt: new Date(),
         ...(summary && {
           steamName: summary.name,
@@ -359,6 +340,41 @@ export abstract class SteamService {
     return {
       users: rows.map(({ following, ...u }) => ({ ...u, isFollowing: !!following })),
     };
+  }
+
+  /**
+   * Links the Steam account the user just proved they own (Sign in through Steam) and imports
+   * it. One Steam account belongs to one member: linking it here unlinks it anywhere else. A
+   * private library still links; the background sync picks it up once it's public.
+   */
+  static async connect(userId: string, steamId: string): Promise<SteamConnectResult> {
+    const summary = await playerSummary(steamId).catch(() => null);
+    await postgresDb.transaction(async (tx) => {
+      await tx
+        .update(user)
+        .set({ steamId: null, steamName: null, steamProfileUrl: null, steamAvatarUrl: null })
+        .where(and(eq(user.steamId, steamId), sql`${user.id} <> ${userId}`));
+      await tx
+        .update(user)
+        .set({
+          steamId,
+          steamSyncedAt: null,
+          steamName: summary?.name ?? null,
+          steamProfileUrl: summary?.url ?? null,
+          steamAvatarUrl: summary?.avatar ?? null,
+        })
+        .where(eq(user.id, userId));
+    });
+    friendsCache.delete(userId);
+    try {
+      await SteamService.import(userId, UserGameStatus.OnHold);
+      return SteamConnectResult.Connected;
+    } catch (error) {
+      if (error instanceof PrivateLibraryError) return SteamConnectResult.Private;
+      // Linked but nothing to import (no catalog matches) is still connected
+      if (error instanceof BadRequestError) return SteamConnectResult.Connected;
+      throw error;
+    }
   }
 
   static async unlink(userId: string) {

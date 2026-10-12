@@ -1,45 +1,11 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SteamConnectButton } from "./steam-connect";
 import { SteamLogo } from "./steam-logo";
 import { useSteam } from "./use-steam";
 
-/** A Steam profile field and an Import button; importing also links the account */
-export function SteamImportForm({
-  username,
-  onImported,
-}: {
-  username: string;
-  onImported?: () => void;
-}) {
-  const { t } = useTranslation();
-  const [profile, setProfile] = useState("");
-  const steam = useSteam(username, onImported);
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (profile.trim()) steam.importLibrary(profile);
-      }}
-      className="flex flex-wrap gap-2"
-    >
-      <Input
-        value={profile}
-        onChange={(e) => setProfile(e.target.value)}
-        placeholder={t("steam.placeholder")}
-        aria-label={t("steam.placeholder")}
-        className="min-w-0 flex-1 basis-56"
-      />
-      <Button type="submit" disabled={steam.pending || !profile.trim()}>
-        {steam.pending ? t("steam.importing") : t("steam.import")}
-      </Button>
-    </form>
-  );
-}
-
-/** Settings: the import form, or the linked account with Sync and Unlink */
+/** Settings: Connect Steam, or the linked account with Sync and Unlink */
 export function SteamSettings({
   username,
   steamId,
@@ -51,7 +17,7 @@ export function SteamSettings({
 }) {
   const { t } = useTranslation();
   const steam = useSteam(username);
-  if (!steamId) return <SteamImportForm username={username} />;
+  if (!steamId) return <SteamConnectButton />;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="mr-auto flex items-center gap-2 text-sm font-semibold">
