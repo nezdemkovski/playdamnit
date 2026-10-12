@@ -736,16 +736,5 @@
     "syncNow": "Sync now",
     "open": "Open on Steam",
     "friends": "Steam friends"
-  },
-  "changelog": {
-    "title": "Changelog",
-    "entries": {
-      "initialRelease": "Initial release"
-    },
-    "kinds": {
-      "new": "New",
-      "changed": "Changed",
-      "fixed": "Fixed"
-    }
   }
 }

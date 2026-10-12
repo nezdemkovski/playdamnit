@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
 import { CHANGELOG } from "@/changelog";
+import { Namespace } from "@/i18n";
 import { format } from "@/i18n/date";
 import { ChangeKind, DateFormat } from "@/lib/enums";
 
@@ -18,10 +19,10 @@ const KIND_CLASS: Record<ChangeKind, string> = {
 };
 
 function Changelog() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(Namespace.Changelog);
   return (
     <>
-      <h1 className="text-2xl font-bold">{t("changelog.title")}</h1>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
       <div className="mt-6 max-w-3xl">
         {CHANGELOG.map((release) => (
           <section
@@ -44,7 +45,7 @@ function Changelog() {
                       KIND_CLASS[change.kind],
                     )}
                   >
-                    {t(`changelog.kinds.${change.kind}`)}
+                    {t(`kinds.${change.kind}`)}
                   </span>
                   <div>
                     <div className="font-semibold">{change.title}</div>
