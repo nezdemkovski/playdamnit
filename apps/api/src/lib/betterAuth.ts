@@ -10,7 +10,9 @@ export const betterAuth = new Elysia({ name: "better-auth" }).macro({
         headers,
       });
 
-      if (!session) return status(401);
+      // The body the API contract describes, so clients can read it like any other error
+      if (!session)
+        return status(401, { error: "Unauthorized", message: "Authentication required" });
 
       return {
         user: session.user,

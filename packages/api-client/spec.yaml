@@ -17,8 +17,6 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Bad request
       required:
         - error
 
@@ -28,12 +26,8 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Unauthorized
         message:
           type: string
-          enum:
-            - Authentication required
       required:
         - error
         - message
@@ -44,8 +38,6 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Forbidden
         message:
           type: string
           description: Human readable error message
@@ -58,8 +50,6 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Not found
         message:
           type: string
           description: Human readable error message
@@ -72,8 +62,6 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Conflict
         message:
           type: string
           description: Human readable error message
@@ -86,8 +74,6 @@ components:
       properties:
         error:
           type: string
-          enum:
-            - Internal server error
         message:
           type: string
           description: Human readable error message
@@ -1228,6 +1214,7 @@ components:
           nullable: true
         platformId:
           type: number
+          nullable: true
         addedAt:
           type: string
           nullable: true
@@ -1300,7 +1287,7 @@ components:
               nullable: true
             platformId:
               type: number
-              default: 0
+              nullable: true
             source:
               type: string
             addedAt:
@@ -1673,6 +1660,7 @@ components:
           nullable: true
         platformId:
           type: number
+          nullable: true
         addedAt:
           type: string
           nullable: true
