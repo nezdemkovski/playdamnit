@@ -10,6 +10,8 @@ export const QUEUES = {
   SYNC_CATALOG: "sync-catalog",
   // Re-fetch the games IGDB webhooks marked in catalog_dirty
   DRAIN_DIRTY: "drain-dirty",
+  // Bring new games from linked Steam libraries in (run by the API, which owns the import)
+  STEAM_SYNC: "steam-sync",
 } as const;
 
 export const ALL_QUEUES = Object.values(QUEUES);

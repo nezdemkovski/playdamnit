@@ -15,6 +15,7 @@ import { auth } from "./lib/auth";
 import { getCors } from "@/utils/getCors";
 import { getConfig } from "@/config";
 import { getBoss, stopBoss } from "@/utils/pgBoss";
+import { registerSteamSync } from "@/workers/steamSync";
 import { initNotifyListener, closeNotifyListener } from "@/utils/pgNotify";
 import { AppError, TooManyRequestsError } from "@/utils/errors";
 import { db, closeDb } from "@/db/postgres";
@@ -74,8 +75,9 @@ const betterAuthView = (context: Context) => {
 
 const setupApp = async () => {
   // Initialize pg-boss (job queue) and LISTEN/NOTIFY
-  await getBoss();
+  const boss = await getBoss();
   logger.system("pg-boss started");
+  await registerSteamSync(boss);
 
   await initNotifyListener();
 

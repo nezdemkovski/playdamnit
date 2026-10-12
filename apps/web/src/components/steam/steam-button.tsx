@@ -5,26 +5,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SteamImportForm } from "./steam-panel";
-import { useSteam } from "./use-steam";
 
-/** The owner's Steam button: syncs right away when linked, asks for the profile otherwise */
+/** "Connect Steam" for an owner without a linked library; once linked, the badge takes over */
 export function SteamButton({ username, steamId }: { username: string; steamId?: string | null }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const steam = useSteam(username);
 
-  if (steamId) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => steam.importLibrary()}
-        disabled={steam.pending}
-      >
-        <RefreshCwIcon className={steam.pending ? "animate-spin" : undefined} /> {t("steam.sync")}
-      </Button>
-    );
-  }
+  if (steamId) return null;
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>

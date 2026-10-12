@@ -1363,6 +1363,9 @@ components:
           type: boolean
         isOwn:
           type: boolean
+        steamLinked:
+          type: boolean
+          description: Whether a Steam account is connected (its library syncs on its own)
         steamId:
           type: string
           nullable: true

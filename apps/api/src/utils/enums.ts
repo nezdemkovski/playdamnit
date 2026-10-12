@@ -139,6 +139,13 @@ export enum LogNamespace {
   Cors = "cors",
   PgBoss = "pg-boss",
   PgNotify = "pg-notify",
+  SteamSync = "steam-sync",
+}
+
+/** pg-boss cron schedules of the jobs the API runs itself */
+export enum Schedule {
+  // Every six hours, off the hour so it doesn't pile onto the librarian's crons
+  SteamSync = "20 */6 * * *",
 }
 
 export enum LogTimestampFormat {

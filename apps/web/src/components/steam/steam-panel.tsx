@@ -53,7 +53,7 @@ export function SteamSettings({
     <div className="flex flex-wrap items-center gap-2">
       <span className="mr-auto text-sm">{t("steam.connected")}</span>
       <Button variant="secondary" onClick={() => steam.importLibrary()} disabled={steam.pending}>
-        {steam.pending ? t("steam.importing") : t("steam.sync")}
+        {steam.pending ? t("steam.importing") : t("steam.syncNow")}
       </Button>
       <Button variant="ghost" className="text-dimmed hover:text-destructive" onClick={steam.unlink}>
         {t("steam.unlink")}

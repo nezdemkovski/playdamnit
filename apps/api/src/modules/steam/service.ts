@@ -12,6 +12,10 @@ const STEAM_API = "https://api.steampowered.com";
 const STEAM_TIMEOUT_MS = 15_000;
 // Steam libraries run into the thousands; a cap keeps one import to one transaction
 export const MAX_STEAM_IMPORT = 5000;
+// The background sync: accounts not synced for this long, this many per run, a pause between
+const SYNC_AGAIN_AFTER = "5 hours";
+const SYNC_BATCH = 200;
+const SYNC_PAUSE_MS = 500;
 const STEAM_ID64 = /^7656119\d{10}$/;
 const PROFILE_URL = /steamcommunity\.com\/(profiles|id)\/([^/?#\s]+)/i;
 const VANITY = /^[A-Za-z0-9_-]{2,32}$/;
@@ -142,6 +146,33 @@ export abstract class SteamService {
       .set({ steamId, steamSyncedAt: new Date() })
       .where(eq(user.id, userId));
     return result;
+  }
+
+  /**
+   * The background sync: every linked account not synced for a while gets its new games,
+   * oldest first. Failures (a library gone private, Steam down) are logged and skipped; the
+   * account comes up again next run.
+   */
+  static async syncLinked(log: (message: string) => void) {
+    const due = await postgresDb
+      .select({ id: user.id })
+      .from(user)
+      .where(
+        sql`${user.steamId} is not null and (${user.steamSyncedAt} is null or ${user.steamSyncedAt} < now() - ${SYNC_AGAIN_AFTER}::interval)`,
+      )
+      .orderBy(sql`${user.steamSyncedAt} asc nulls first`)
+      .limit(SYNC_BATCH);
+    let added = 0;
+    for (const { id } of due) {
+      try {
+        const result = await SteamService.import(id, UserGameStatus.OnHold);
+        added += result.imported;
+      } catch (error) {
+        log(`Steam sync skipped for ${id}: ${(error as Error).message}`);
+      }
+      await Bun.sleep(SYNC_PAUSE_MS);
+    }
+    log(`Steam sync: ${due.length} accounts, ${added} games added`);
   }
 
   static async unlink(userId: string) {

@@ -20,6 +20,7 @@ import { BadgeStrip, computeBadges } from "@/components/profile/badges";
 import { HallOfFame } from "@/components/profile/hall-of-fame";
 import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { FollowButton } from "@/components/social/follow-button";
+import { SteamBadge } from "@/components/steam/steam-badge";
 import { SteamButton } from "@/components/steam/steam-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -175,6 +176,13 @@ function ProfileLayout() {
             </Link>
             {library.data && library.data.results.length > 0 && (
               <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
+            )}
+            {user.steamLinked && (
+              <SteamBadge
+                username={username}
+                isOwn={user.isOwn}
+                steamSyncedAt={user.steamSyncedAt}
+              />
             )}
             {badges && (
               <div className="sm:ml-auto">
