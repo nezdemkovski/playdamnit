@@ -39,12 +39,13 @@ export function SteamBadge({
           <SteamLogo className="size-4 text-steam-blue" />
         </span>
       )}
-      <span className="leading-none">
+      <span className="min-w-0 leading-none">
         <span className="flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-widest text-steam-blue">
           <SteamLogo className={steam.pending ? "size-2.5 animate-spin" : "size-2.5"} />
           {t("steam.badge")}
         </span>
-        <span className="mt-1 block text-[13px] font-bold text-white">
+        {/* Steam names run to 32 characters */}
+        <span className="mt-1 block max-w-40 truncate text-[13px] font-bold text-white">
           {name || t("steam.badge")}
         </span>
       </span>
@@ -52,17 +53,25 @@ export function SteamBadge({
   );
   if (!isOwn) {
     return url ? (
-      <a href={url} target="_blank" rel="noreferrer nofollow" className={CHIP}>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer nofollow"
+        className={CHIP}
+        title={name ?? undefined}
+      >
         {label}
       </a>
     ) : (
-      <span className={CHIP}>{label}</span>
+      <span className={CHIP} title={name ?? undefined}>
+        {label}
+      </span>
     );
   }
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className={CHIP}>
+        <button type="button" className={CHIP} title={name ?? undefined}>
           {label}
         </button>
       </PopoverTrigger>
