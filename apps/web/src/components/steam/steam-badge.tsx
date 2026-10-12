@@ -8,8 +8,9 @@ import { useSteam } from "./use-steam";
 const ITEM =
   "flex w-full items-center px-3 py-2 text-left outline-none hover:bg-card focus-visible:bg-card disabled:opacity-50";
 
+// Steam's navy plate with its blue, like a profile card on Steam itself
 const CHIP =
-  "inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-xs font-semibold text-dimmed hover:border-foreground/40 hover:text-foreground";
+  "inline-flex items-center gap-2 bg-gradient-to-r from-steam-ink to-steam-navy pr-3 text-left ring-1 ring-steam-blue/25 transition-shadow hover:ring-steam-blue/70";
 
 /** The connected Steam account in the profile header: a link for visitors, sync for the owner */
 export function SteamBadge({
@@ -17,20 +18,36 @@ export function SteamBadge({
   isOwn,
   name,
   url,
+  avatar,
   syncedAt,
 }: {
   username: string;
   isOwn: boolean;
   name?: string | null;
   url?: string | null;
+  avatar?: string | null;
   syncedAt?: string | null;
 }) {
   const { t } = useTranslation();
   const steam = useSteam(username);
   const label = (
     <>
-      <SteamLogo className={steam.pending ? "size-3.5 animate-spin" : "size-3.5"} />
-      {name || t("steam.badge")}
+      {avatar ? (
+        <img src={avatar} alt="" className="size-8 shrink-0" />
+      ) : (
+        <span className="grid size-8 shrink-0 place-items-center bg-steam-ink">
+          <SteamLogo className="size-4 text-steam-blue" />
+        </span>
+      )}
+      <span className="leading-none">
+        <span className="flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-widest text-steam-blue">
+          <SteamLogo className={steam.pending ? "size-2.5 animate-spin" : "size-2.5"} />
+          {t("steam.badge")}
+        </span>
+        <span className="mt-1 block text-[13px] font-bold text-white">
+          {name || t("steam.badge")}
+        </span>
+      </span>
     </>
   );
   if (!isOwn) {

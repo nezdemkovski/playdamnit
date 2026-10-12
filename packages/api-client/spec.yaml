@@ -1384,6 +1384,10 @@ components:
           type: string
           nullable: true
           description: The connected Steam profile's page
+        steamAvatarUrl:
+          type: string
+          nullable: true
+          description: The connected Steam profile's avatar (64 px)
         steamId:
           type: string
           nullable: true

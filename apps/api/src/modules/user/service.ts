@@ -92,6 +92,7 @@ export abstract class UserService {
       steamLinked: !!data.steamId,
       steamName: data.steamId ? data.steamName : null,
       steamProfileUrl: data.steamId ? data.steamProfileUrl : null,
+      steamAvatarUrl: data.steamId ? data.steamAvatarUrl : null,
       steamId: data.id === viewerId ? data.steamId : null,
       steamSyncedAt: data.id === viewerId ? data.steamSyncedAt : null,
     };

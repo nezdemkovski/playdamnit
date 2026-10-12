@@ -63,6 +63,12 @@
   --warning: #ffb020;
   --line-soft: rgb(241 241 240 / 0.06);
 
+  /* Steam's own colours, only for the connected-account badge */
+  --steam-ink: #171a21;
+  --steam-navy: #2a475e;
+  --steam-blue: #66c0f4;
+  --steam-text: #c7d5e0;
+
   /* Library statuses */
   --status-finished: #d7ff3b;
   --status-playing: #f1f1f0;
@@ -120,6 +126,10 @@
   --color-done: var(--done);
   --color-warning: var(--warning);
   --color-line-soft: var(--line-soft);
+  --color-steam-ink: var(--steam-ink);
+  --color-steam-navy: var(--steam-navy);
+  --color-steam-blue: var(--steam-blue);
+  --color-steam-text: var(--steam-text);
   --color-status-finished: var(--status-finished);
   --color-status-playing: var(--status-playing);
   --color-status-dropped: var(--status-dropped);

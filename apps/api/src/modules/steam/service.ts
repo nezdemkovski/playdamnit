@@ -98,10 +98,14 @@ const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
 /** The profile's display name and URL (public even when the game details are private) */
 const playerSummary = async (steamId: string) => {
   const result = await steamGet<{
-    response: { players: { personaname?: string; profileurl?: string }[] };
+    response: { players: { personaname?: string; profileurl?: string; avatarmedium?: string }[] };
   }>("/ISteamUser/GetPlayerSummaries/v2/", { steamids: steamId });
   const player = result.response.players[0];
-  return { name: player?.personaname ?? null, url: player?.profileurl ?? null };
+  return {
+    name: player?.personaname ?? null,
+    url: player?.profileurl ?? null,
+    avatar: player?.avatarmedium ?? null,
+  };
 };
 
 /**
@@ -259,7 +263,11 @@ export abstract class SteamService {
       .set({
         steamId,
         steamSyncedAt: new Date(),
-        ...(summary && { steamName: summary.name, steamProfileUrl: summary.url }),
+        ...(summary && {
+          steamName: summary.name,
+          steamProfileUrl: summary.url,
+          steamAvatarUrl: summary.avatar,
+        }),
       })
       .where(eq(user.id, userId));
     return result;
@@ -356,7 +364,13 @@ export abstract class SteamService {
   static async unlink(userId: string) {
     await postgresDb
       .update(user)
-      .set({ steamId: null, steamName: null, steamProfileUrl: null, steamSyncedAt: null })
+      .set({
+        steamId: null,
+        steamName: null,
+        steamProfileUrl: null,
+        steamAvatarUrl: null,
+        steamSyncedAt: null,
+      })
       .where(eq(user.id, userId));
     return { message: "Steam account unlinked" };
   }

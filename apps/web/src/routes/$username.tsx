@@ -196,6 +196,7 @@ function ProfileLayout() {
                 isOwn={user.isOwn}
                 name={user.steamName}
                 url={user.steamProfileUrl}
+                avatar={user.steamAvatarUrl}
                 syncedAt={user.steamSyncedAt}
               />
             )}

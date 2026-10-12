@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "steam_avatar_url" text;
