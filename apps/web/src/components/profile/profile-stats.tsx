@@ -34,16 +34,11 @@ export function ProfileStatStrip({
   const typicalGrade = graded.length ? gradeOf(graded[Math.floor((graded.length - 1) / 2)]) : null;
 
   const finished = (
-    <span className="flex items-center gap-2">
-      <span>
-        <b>{s.finished}</b>
-        <span className="text-dimmed">
-          {" "}
-          / {s.total} {t("profile.stats.finished")}
-        </span>
-      </span>
-      <span className="h-1 w-14 bg-card">
-        <i className="block h-full bg-signal" style={{ width: `${Math.max(2, s.completion)}%` }} />
+    <span>
+      <b>{s.finished}</b>
+      <span className="text-dimmed">
+        {" "}
+        / {s.total} {t("profile.stats.finished")}
       </span>
     </span>
   );

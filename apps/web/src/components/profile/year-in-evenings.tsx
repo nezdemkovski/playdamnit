@@ -125,7 +125,13 @@ const useYear = (
     const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
     for (const day of days)
       day.level = day.level === 0 ? 0 : 1 + cut.filter((c) => day.level > c).length;
-    return { days, first };
+    // Month names over the column where each month starts, GitHub-style; one squeezed into
+    // the first two columns would collide with the next
+    const weeks = days[days.length - 1].week + 1;
+    const months = days
+      .filter((d) => d.date.getDate() === 1 && d.week >= 2)
+      .map((d) => ({ key: d.key, week: d.week, label: format(d.date, DateFormat.MonthShort) }));
+    return { days, weeks, months };
   }, [entries, played]);
 
 /**
@@ -142,7 +148,7 @@ export function YearInEvenings({
   className?: string;
 }) {
   const activity = useGetApiUserByUsernameSteamActivity(username);
-  const { days, first } = useYear(entries, activity.data?.days ?? EMPTY);
+  const { days, weeks, months } = useYear(entries, activity.data?.days ?? EMPTY);
 
   const heat = useMemo(
     () =>
@@ -175,22 +181,19 @@ export function YearInEvenings({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="eyebrow flex items-center justify-between gap-3 normal-case tracking-normal">
-        <span>
-          {t("profile.evenings.title", {
-            from: format(first, DateFormat.MonthYearShort),
-            to: format(new Date(), DateFormat.MonthYearShort),
-          })}
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="mr-1">{t("profile.evenings.less")}</span>
-          {LEVEL_COLORS.map((color) => (
-            <i key={color} className="inline-block size-2" style={{ background: color }} />
-          ))}
-          <span className="ml-1">{t("profile.evenings.more")}</span>
-        </span>
+      <div className="eyebrow relative h-4 normal-case tracking-normal">
+        {months.map((m) => (
+          <span
+            key={m.key}
+            className="absolute top-0"
+            // The band scale leaves 18% of a step between columns; spread over the width
+            style={{ left: `${(m.week / (weeks - 0.18)) * 100}%` }}
+          >
+            {m.label}
+          </span>
+        ))}
       </div>
-      <div className="mt-2 text-foreground">
+      <div className="mt-1 text-foreground">
         <Chart
           definition={heat}
           aspectRatio={53 / 7}
@@ -201,6 +204,13 @@ export function YearInEvenings({
             return day ? <DayTip day={day} /> : null;
           }}
         />
+      </div>
+      <div className="eyebrow mt-1.5 flex items-center justify-end gap-1 normal-case tracking-normal">
+        <span className="mr-1">{t("profile.evenings.less")}</span>
+        {LEVEL_COLORS.map((color) => (
+          <i key={color} className="inline-block size-2" style={{ background: color }} />
+        ))}
+        <span className="ml-1">{t("profile.evenings.more")}</span>
       </div>
     </div>
   );
