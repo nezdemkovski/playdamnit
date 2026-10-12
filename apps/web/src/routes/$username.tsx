@@ -125,18 +125,30 @@ function ProfileLayout() {
 
           <div className="mt-4 grid gap-5">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h1 className="min-w-0 truncate text-3xl sm:text-4xl">
-                  {user.name || user.username}
-                </h1>
-                <span className="num text-sm text-dimmed">@{user.username}</span>
-                {user.followsYou && (
-                  <span className="eyebrow text-done">{t("profile.followsYou")}</span>
-                )}
-                {!user.listPublic && <span className="eyebrow">{t("profile.privateList")}</span>}
-                {/* Next to the name, so the stats row and the badges below never move */}
+              {/* Name and the Steam badge side by side on wide screens, stacked on phones; the
+                  stats row and the badges below never move */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <h1 className="min-w-0 truncate text-3xl sm:text-4xl">
+                      {user.name || user.username}
+                    </h1>
+                    <span className="num text-sm text-dimmed">@{user.username}</span>
+                    {user.followsYou && (
+                      <span className="eyebrow text-done">{t("profile.followsYou")}</span>
+                    )}
+                    {!user.listPublic && (
+                      <span className="eyebrow">{t("profile.privateList")}</span>
+                    )}
+                  </div>
+                  <div className="eyebrow mt-1">
+                    {t("profile.since", {
+                      date: format(new Date(user.createdAt), DateFormat.MonthYearShort),
+                    })}
+                  </div>
+                </div>
                 {user.steamLinked && (
-                  <div className="w-full self-center sm:ml-auto sm:w-auto">
+                  <div className="shrink-0 self-start sm:self-auto">
                     <SteamBadge
                       username={username}
                       isOwn={user.isOwn}
@@ -147,11 +159,6 @@ function ProfileLayout() {
                     />
                   </div>
                 )}
-              </div>
-              <div className="eyebrow mt-1">
-                {t("profile.since", {
-                  date: format(new Date(user.createdAt), DateFormat.MonthYearShort),
-                })}
               </div>
 
               {(user.bio || user.links.length > 0) && (
