@@ -14,8 +14,13 @@ export const daysSince = (iso: string | null | undefined): number =>
   iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / DAY)) : 0;
 
 /** Days an entry has sat untouched (status change or add) */
+// Steam's last launch is the truth when there is one; otherwise the last edit here
 export const idleDays = (entry: UserGameWithUserData): number =>
-  daysSince(entry.userGameData.updatedAt ?? entry.userGameData.addedAt);
+  daysSince(
+    entry.userGameData.steamLastPlayedAt ??
+      entry.userGameData.updatedAt ??
+      entry.userGameData.addedAt,
+  );
 
 export interface LibrarySummary {
   total: number;

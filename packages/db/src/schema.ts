@@ -207,6 +207,9 @@ export const userGames = pgTable(
     mastered: boolean("mastered").notNull().default(false),
     spoilers: boolean("spoilers").notNull().default(false),
     allowReactions: boolean("allow_reactions").notNull().default(true),
+    // Playtime on the linked Steam account at the last sync, and when it was last launched
+    steamMinutes: integer("steam_minutes"),
+    steamLastPlayedAt: timestamp("steam_last_played_at"),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -216,6 +219,25 @@ export const userGames = pgTable(
     unique("user_games_user_id_game_id_unique").on(table.userId, table.gameId),
     index("idx_user_games_game_id").on(table.gameId),
     index("idx_user_games_updated_at").on(table.updatedAt),
+  ],
+);
+
+// Steam playtime gained between syncs, per game and UTC day: the profile's activity map
+export const steamPlaytime = pgTable(
+  "steam_playtime",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => game.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    minutes: integer("minutes").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.gameId, table.day] }),
+    index("idx_steam_playtime_user_day").on(table.userId, table.day),
   ],
 );
 

@@ -26,4 +26,5 @@ export const steamImportRoutes = new Elysia()
       return SteamService.import(user.id, body.playedStatus ?? UserGameStatus.OnHold, body.profile);
     },
   )
+  .get("/me/steam/friends", { auth: true }, ({ user }) => SteamService.friends(user.id))
   .delete("/me/steam", { auth: true }, ({ user }) => SteamService.unlink(user.id));

@@ -3,7 +3,11 @@ import { Chart } from "@tanstack/charts/react";
 import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { tooltip } from "@tanstack/charts/tooltip";
-import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
+import {
+  StatusEnum,
+  useGetApiUserByUsernameSteamActivity,
+  type UserGameWithUserData,
+} from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
 import { useMemo } from "react";
@@ -11,21 +15,25 @@ import { useMemo } from "react";
 import { t } from "@/i18n";
 import { format } from "@/i18n/date";
 import { ActivityCell, DateFormat, Weekday } from "@/lib/enums";
+import { formatPlaytime } from "@/lib/format";
 
 const DAYS = 364;
+const EMPTY: { date: string; minutes: number }[] = [];
 const WEEKDAYS = Object.values(Weekday);
 
 const CELL_RANK: Record<ActivityCell, number> = {
   [ActivityCell.None]: 0,
   [ActivityCell.Touched]: 1,
   [ActivityCell.Added]: 2,
-  [ActivityCell.Finished]: 3,
+  [ActivityCell.Played]: 3,
+  [ActivityCell.Finished]: 4,
 };
 // Paint per bucket, in domain order; cells use the tokens through literal values the SVG understands
 const CELL_COLORS = {
   [ActivityCell.None]: "#17181b",
   [ActivityCell.Touched]: "rgba(241,241,240,.35)",
   [ActivityCell.Added]: "rgba(255,43,43,.55)",
+  [ActivityCell.Played]: "#f1f1f0",
   [ActivityCell.Finished]: "#d7ff3b",
 };
 
@@ -40,7 +48,7 @@ interface DayRow {
 const dayKey = (iso: string | null | undefined) =>
   iso ? format(new Date(iso), DateFormat.IsoDay) : null;
 
-const useYear = (entries: UserGameWithUserData[]) =>
+const useYear = (entries: UserGameWithUserData[], played: { date: string; minutes: number }[]) =>
   useMemo(() => {
     const today = new Date();
     const first = subDays(today, DAYS - 1);
@@ -57,6 +65,8 @@ const useYear = (entries: UserGameWithUserData[]) =>
       bump(dayKey(d.updatedAt), ActivityCell.Touched);
       if (d.status === StatusEnum.Finished) bump(dayKey(d.endedAt), ActivityCell.Finished);
     }
+    const minutesByDay = new Map(played.map((p) => [p.date, p.minutes]));
+    for (const p of played) bump(p.date, ActivityCell.Played);
     const days: DayRow[] = [];
     for (let i = 0; i < DAYS; i++) {
       const date = subDays(today, DAYS - 1 - i);
@@ -69,19 +79,29 @@ const useYear = (entries: UserGameWithUserData[]) =>
         cell: cellValue,
         label: t("profile.evenings.dayLabel", {
           date: format(date, DateFormat.MonthDay),
-          state: t(`profile.evenings.cell.${cellValue}`),
+          state:
+            cellValue === ActivityCell.Played
+              ? (formatPlaytime(minutesByDay.get(key)) ?? t("profile.evenings.cell.played"))
+              : t(`profile.evenings.cell.${cellValue}`),
         }),
       });
     }
     return { days, first };
-  }, [entries]);
+  }, [entries, played]);
 
 /**
  * One cell per day for the last 52 weeks across the full width: added in red, finished in
  * green, otherwise touched in grey. TanStack Charts.
  */
-export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] }) {
-  const { days, first } = useYear(entries);
+export function YearInEvenings({
+  username,
+  entries,
+}: {
+  username: string;
+  entries: UserGameWithUserData[];
+}) {
+  const activity = useGetApiUserByUsernameSteamActivity(username);
+  const { days, first } = useYear(entries, activity.data?.days ?? EMPTY);
   const greenDays = days.filter((d) => d.cell === ActivityCell.Finished).length;
 
   const heat = useMemo(
@@ -142,6 +162,9 @@ export function YearInEvenings({ entries }: { entries: UserGameWithUserData[] })
           </Legend>
           <Legend color={CELL_COLORS[ActivityCell.Added]}>
             {t("profile.evenings.cell.added")}
+          </Legend>
+          <Legend color={CELL_COLORS[ActivityCell.Played]}>
+            {t("profile.evenings.cell.played")}
           </Legend>
           <Legend color={CELL_COLORS[ActivityCell.Finished]}>
             {t("profile.evenings.cell.finished")}

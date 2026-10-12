@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { SteamFriends } from "@/components/steam/steam-friends";
+import { useSession } from "@/hooks/auth";
 
 const PAGE = 30;
 
@@ -33,6 +35,7 @@ export const Route = createFileRoute("/community")({
 function CommunityPage() {
   const { t } = useTranslation();
   const search = Route.useSearch();
+  const { user } = useSession();
   const navigate = useNavigate({ from: "/community" });
   const [input, setInput] = useState(search.q);
   useEffect(() => setInput(search.q), [search.q]);
@@ -84,6 +87,8 @@ function CommunityPage() {
           className="h-11 rounded-full pl-11"
         />
       </form>
+
+      <SteamFriends enabled={!!user} />
 
       <div className="mt-6 space-y-2">
         {query.isPending

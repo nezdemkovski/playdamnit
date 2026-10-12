@@ -44,6 +44,15 @@ export const shortDate = (iso: string | null | undefined): string | null =>
 export const relativeDate = (iso: string | null | undefined): string | null =>
   iso ? formatDistanceToNowStrict(new Date(iso), { addSuffix: true }) : null;
 
+/** Steam playtime in minutes as "45 h" (one decimal under ten hours), nothing for zero */
+export const formatPlaytime = (minutes: number | null | undefined): string | null => {
+  if (!minutes) return null;
+  const hours = minutes / 60;
+  return t("units.playtime", {
+    value: hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10,
+  });
+};
+
 /** IGDB stores time-to-beat in seconds */
 export const formatHours = (seconds: number | null | undefined): string | null => {
   if (!seconds) return null;

@@ -70,7 +70,7 @@ function ProfileOverview() {
 
       {entries.length > 0 && (
         <div className="mt-8">
-          <YearInEvenings entries={entries} />
+          <YearInEvenings username={username} entries={entries} />
         </div>
       )}
 

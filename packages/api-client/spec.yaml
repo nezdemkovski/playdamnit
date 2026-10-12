@@ -1199,6 +1199,14 @@ components:
           type: boolean
         allowReactions:
           type: boolean
+        steamMinutes:
+          type: number
+          nullable: true
+          description: Playtime on the linked Steam account at the last sync
+        steamLastPlayedAt:
+          type: string
+          nullable: true
+          description: When Steam last saw the game launched
         updatedAt:
           type: string
       required:
@@ -2530,6 +2538,83 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameImportResponse"
+
+  /api/me/steam/friends:
+    get:
+      operationId: getApiMeSteamFriends
+      tags:
+        - Users
+      summary: Steam friends who are here
+      description: The viewer's Steam friends who linked their Steam account here. A private friends list gives nobody.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Friends
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/PublicUser"
+                        - type: object
+                          properties:
+                            steamName:
+                              type: string
+                              nullable: true
+                            isFollowing:
+                              type: boolean
+                          required:
+                            - steamName
+                            - isFollowing
+                required:
+                  - users
+
+  /api/user/{username}/steam-activity:
+    get:
+      operationId: getApiUserByUsernameSteamActivity
+      tags:
+        - Library
+      summary: Steam playtime per day
+      description: Minutes played per UTC day over the last year, from Steam syncs. Private lists are owner-only.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Days with playtime
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  days:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        minutes:
+                          type: number
+                      required:
+                        - date
+                        - minutes
+                required:
+                  - days
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
 
   /api/me/steam:
     delete:

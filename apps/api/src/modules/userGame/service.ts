@@ -140,6 +140,8 @@ export abstract class UserGameService {
             mastered: entry.mastered,
             spoilers: entry.spoilers,
             allowReactions: entry.allowReactions,
+            steamMinutes: entry.steamMinutes,
+            steamLastPlayedAt: entry.steamLastPlayedAt,
             updatedAt: entry.updatedAt,
           },
         })),

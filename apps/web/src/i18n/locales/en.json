@@ -61,7 +61,8 @@
     "14": "Update"
   },
   "units": {
-    "hours": "{{value}}h"
+    "hours": "{{value}}h",
+    "playtime": "{{value}} h"
   },
   "dates": {
     "tbd": "TBD",
@@ -527,7 +528,8 @@
         "none": "nothing",
         "touched": "touched",
         "added": "added",
-        "finished": "finished"
+        "finished": "finished",
+        "played": "played"
       },
       "dayLabel": "{{date}} · {{state}}",
       "heatAria": "Days with activity over the last year"
@@ -722,6 +724,7 @@
     "badge": "Steam",
     "syncedAgo": "Synced {{when}}",
     "syncNow": "Sync now",
-    "open": "Open on Steam"
+    "open": "Open on Steam",
+    "friends": "Steam friends"
   }
 }

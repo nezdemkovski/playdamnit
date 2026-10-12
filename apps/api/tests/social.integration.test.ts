@@ -328,6 +328,19 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect((await GameService.findGames({ platformId: 6 })).meta.total).toBe(0);
   });
 
+  test("Steam playtime adds up per day for the activity map, within the last year", async () => {
+    const { SteamService } = await import("@/modules/steam/service");
+    await pg.query(
+      `insert into steam_playtime (user_id, game_id, day, minutes) values
+         ('alice', $1, current_date - 1, 90), ('alice', $2, current_date - 1, 30),
+         ('alice', $1, current_date - 3, 45), ('alice', $1, current_date - 400, 600)`,
+      [GAME, OTHER_GAME],
+    );
+    const { days } = await SteamService.activity("alice");
+    expect(days.map((d) => d.minutes)).toEqual([45, 120]);
+    expect((await SteamService.activity("bob")).days).toEqual([]);
+  });
+
   test("the release calendar counts per UTC day and can keep only popular games", async () => {
     // Both seeded games release at 1600000000 = 2020-09-13 12:26:40 UTC
     const range = { releasedFrom: 1598918400, releasedTo: 1601510399 }; // September 2020

@@ -1,5 +1,12 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { externalGame, game, user } from "@playdamnit/db/schema";
+import {
+  externalGame,
+  game,
+  steamPlaytime,
+  user,
+  userFollows,
+  userGames,
+} from "@playdamnit/db/schema";
 import { UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 
 import { getConfig } from "@/config";
@@ -12,6 +19,17 @@ const STEAM_API = "https://api.steampowered.com";
 const STEAM_TIMEOUT_MS = 15_000;
 // Steam libraries run into the thousands; a cap keeps one import to one transaction
 export const MAX_STEAM_IMPORT = 5000;
+// Launched this recently counts as playing
+const RECENT_SECONDS = 14 * 86_400;
+// Statuses a recent launch lifts to "playing"; finished, dropped and playing are left alone
+const PROMOTABLE: readonly UserGameStatus[] = [
+  UserGameStatus.Backlog,
+  UserGameStatus.WantToPlay,
+  UserGameStatus.OnHold,
+];
+// A friends list is read from Steam at most this often per user
+const FRIENDS_TTL_MS = 30 * 60_000;
+const friendsCache = new Map<string, { at: number; steamIds: string[] }>();
 // The background sync: accounts not synced for this long, this many per run, a pause between
 const SYNC_AGAIN_AFTER = "5 hours";
 const SYNC_BATCH = 200;
@@ -24,11 +42,15 @@ interface OwnedGame {
   appid: number;
   name?: string;
   playtime_forever: number;
+  /** Unix seconds; 0 when never launched (or before Steam tracked it) */
+  rtime_last_played?: number;
 }
 
 interface SteamMatch {
   gameId: number;
   minutes: number;
+  /** Unix seconds of the last launch, 0 when unknown */
+  lastPlayed: number;
 }
 
 const steamGet = async <T>(path: string, params: Record<string, string>): Promise<T> => {
@@ -87,7 +109,7 @@ const playerSummary = async (steamId: string) => {
  * several catalog entries (editions, ports); the base game with the most ratings wins.
  */
 const matchToCatalog = async (owned: OwnedGame[]) => {
-  const minutesByApp = new Map(owned.map((g) => [String(g.appid), g.playtime_forever]));
+  const byApp = new Map(owned.map((g) => [String(g.appid), g]));
   const rows = await postgresDb
     .selectDistinctOn([externalGame.uid], { uid: externalGame.uid, gameId: game.id })
     .from(externalGame)
@@ -95,7 +117,7 @@ const matchToCatalog = async (owned: OwnedGame[]) => {
     .where(
       and(
         eq(externalGame.sourceId, ExternalGameSourceId.Steam),
-        inArray(externalGame.uid, [...minutesByApp.keys()]),
+        inArray(externalGame.uid, [...byApp.keys()]),
         isNull(game.deletedAt),
       ),
     )
@@ -108,13 +130,79 @@ const matchToCatalog = async (owned: OwnedGame[]) => {
   // Two apps can resolve to the same catalog game; keep the one played longest
   const byGame = new Map<number, SteamMatch>();
   for (const row of rows) {
-    const minutes = minutesByApp.get(row.uid ?? "") ?? 0;
+    const app = byApp.get(row.uid ?? "");
+    const minutes = app?.playtime_forever ?? 0;
+    const lastPlayed = app?.rtime_last_played ?? 0;
     const prev = byGame.get(row.gameId);
     if (!prev || minutes > prev.minutes) {
-      byGame.set(row.gameId, { gameId: row.gameId, minutes });
+      byGame.set(row.gameId, {
+        gameId: row.gameId,
+        minutes,
+        lastPlayed: Math.max(lastPlayed, prev?.lastPlayed ?? 0),
+      });
     }
   }
   return [...byGame.values()];
+};
+
+/**
+ * Keeps each library entry's Steam playtime current: stores the minutes and last launch,
+ * logs the minutes gained since the last sync on the day of the last launch (the activity
+ * map; a first sync logs nothing, its total isn't one day's play), and lifts an entry to
+ * "playing" when the game was launched recently. Unchanged entries aren't written.
+ */
+const recordPlaytime = async (userId: string, matches: SteamMatch[], recentSince: number) => {
+  if (matches.length === 0) return;
+  const entries = await postgresDb
+    .select({
+      id: userGames.id,
+      gameId: userGames.gameId,
+      status: userGames.status,
+      steamMinutes: userGames.steamMinutes,
+    })
+    .from(userGames)
+    .where(
+      and(
+        eq(userGames.userId, userId),
+        inArray(
+          userGames.gameId,
+          matches.map((m) => m.gameId),
+        ),
+      ),
+    );
+  const byGame = new Map(entries.map((e) => [e.gameId, e]));
+  await postgresDb.transaction(async (tx) => {
+    for (const m of matches) {
+      const entry = byGame.get(m.gameId);
+      if (!entry) continue;
+      const promote = m.lastPlayed > recentSince && PROMOTABLE.includes(entry.status);
+      if (entry.steamMinutes === m.minutes && !promote) continue;
+      const lastPlayed = m.lastPlayed ? new Date(m.lastPlayed * 1000) : null;
+      const gained = entry.steamMinutes === null ? 0 : m.minutes - entry.steamMinutes;
+      if (gained > 0) {
+        await tx
+          .insert(steamPlaytime)
+          .values({
+            userId,
+            gameId: m.gameId,
+            day: (lastPlayed ?? new Date()).toISOString().slice(0, 10),
+            minutes: gained,
+          })
+          .onConflictDoUpdate({
+            target: [steamPlaytime.userId, steamPlaytime.gameId, steamPlaytime.day],
+            set: { minutes: sql`${steamPlaytime.minutes} + excluded.minutes` },
+          });
+      }
+      await tx
+        .update(userGames)
+        .set({
+          steamMinutes: m.minutes,
+          steamLastPlayedAt: lastPlayed,
+          ...(promote && { status: UserGameStatus.Playing }),
+        })
+        .where(eq(userGames.id, entry.id));
+    }
+  });
 };
 
 /** The profile given, or the Steam account already linked to the user */
@@ -137,9 +225,15 @@ export abstract class SteamService {
   static async import(userId: string, playedStatus: UserGameStatus, profile?: string) {
     const steamId = await steamIdFor(userId, profile);
     const matches = await matchToCatalog(await ownedGames(steamId));
+    const recentSince = Date.now() / 1000 - RECENT_SECONDS;
     const rows = matches.map((m) => ({
       gameId: m.gameId,
-      status: m.minutes > 0 ? playedStatus : UserGameStatus.Backlog,
+      status:
+        m.minutes === 0
+          ? UserGameStatus.Backlog
+          : m.lastPlayed > recentSince
+            ? UserGameStatus.Playing
+            : playedStatus,
       platformId: PlatformId.Pc,
     }));
     if (rows.length === 0) {
@@ -149,6 +243,7 @@ export abstract class SteamService {
       source: UserGameSource.Steam,
       maxGames: MAX_STEAM_IMPORT,
     });
+    await recordPlaytime(userId, matches, recentSince);
     // An import links the account, so the next sync needs no profile; the name may have changed
     const summary = await playerSummary(steamId).catch(() => null);
     await postgresDb
@@ -187,6 +282,54 @@ export abstract class SteamService {
       await Bun.sleep(SYNC_PAUSE_MS);
     }
     log(`Steam sync: ${due.length} accounts, ${added} games added`);
+  }
+
+  /** Minutes played per UTC day over the last year, from Steam syncs (the activity map) */
+  static async activity(ownerId: string) {
+    const rows = await postgresDb
+      .select({ day: steamPlaytime.day, minutes: sql<number>`sum(${steamPlaytime.minutes})::int` })
+      .from(steamPlaytime)
+      .where(and(eq(steamPlaytime.userId, ownerId), sql`${steamPlaytime.day} > current_date - 365`))
+      .groupBy(steamPlaytime.day)
+      .orderBy(steamPlaytime.day);
+    return { days: rows.map((r) => ({ date: String(r.day), minutes: Number(r.minutes) })) };
+  }
+
+  /**
+   * The user's Steam friends who are here too (linked their Steam), with whether the user
+   * follows them. A private friends list gives nobody.
+   */
+  static async friends(userId: string) {
+    const me = await postgresDb.query.user.findFirst({
+      where: { id: userId },
+      columns: { steamId: true },
+    });
+    if (!me?.steamId) return { users: [] };
+    let cached = friendsCache.get(userId);
+    if (!cached || Date.now() - cached.at > FRIENDS_TTL_MS) {
+      const list = await steamGet<{ friendslist?: { friends: { steamid: string }[] } }>(
+        "/ISteamUser/GetFriendList/v1/",
+        { steamid: me.steamId, relationship: "friend" },
+      ).catch(() => null);
+      cached = { at: Date.now(), steamIds: list?.friendslist?.friends.map((f) => f.steamid) ?? [] };
+      friendsCache.set(userId, cached);
+    }
+    if (cached.steamIds.length === 0) return { users: [] };
+    const rows = await postgresDb
+      .select({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        image: user.image,
+        steamName: user.steamName,
+        // "user".id spelled out: inside the subquery a bare "id" would be user_follows.id
+        following: sql<boolean>`exists (select 1 from ${userFollows} where ${userFollows.followerId} = ${userId} and ${userFollows.followingId} = "user"."id")`,
+      })
+      .from(user)
+      .where(and(inArray(user.steamId, cached.steamIds), sql`${user.id} <> ${userId}`));
+    return {
+      users: rows.map(({ following, ...u }) => ({ ...u, isFollowing: !!following })),
+    };
   }
 
   static async unlink(userId: string) {

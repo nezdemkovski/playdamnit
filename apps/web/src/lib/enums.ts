@@ -62,6 +62,7 @@ export enum ActivityCell {
   None = "none",
   Touched = "touched",
   Added = "added",
+  Played = "played",
   Finished = "finished",
 }
 

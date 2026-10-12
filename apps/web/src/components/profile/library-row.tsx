@@ -10,7 +10,7 @@ import { LogGameDialog } from "@/components/game/log-game-dialog";
 import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
 import { PillSize } from "@/lib/enums";
-import { gameTypeName, releaseYear } from "@/lib/format";
+import { formatPlaytime, gameTypeName, releaseYear } from "@/lib/format";
 import { gradeOf } from "@/lib/grade";
 import { idleDays, idleLine } from "@/lib/voice";
 
@@ -43,6 +43,7 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
         ? "bg-warning"
         : "bg-signal";
   const meta = [
+    formatPlaytime(data.steamMinutes),
     entry.genres[0]?.name,
     releaseYear(entry.firstReleaseDate),
     gameTypeName(entry.gameType, entry.types[0]?.type),
