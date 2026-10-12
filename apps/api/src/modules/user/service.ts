@@ -14,7 +14,14 @@ import { NotificationType } from "@playdamnit/db/enums";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
 import { ConnectionKind, JournalKind, MimeType, UrlProtocol, UserSort } from "@/utils/enums";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
-import { canSeeList, isFollowing, notify, PUBLIC_USER_COLUMNS, requireUser } from "@/utils/social";
+import {
+  canSeeList,
+  isFollowing,
+  followedAmong,
+  notify,
+  PUBLIC_USER_COLUMNS,
+  requireUser,
+} from "@/utils/social";
 
 const MAX_BIO = 300;
 const MAX_LINKS = 5;
@@ -231,31 +238,38 @@ export abstract class UserService {
     opts: { limit: number; offset: number; viewerId: string | null },
   ) {
     const target = await requireUser(username);
-    const rows = await postgresDb.query.userFollows.findMany({
-      where:
-        kind === ConnectionKind.Followers ? { followingId: target.id } : { followerId: target.id },
-      orderBy: { createdAt: "desc" },
-      limit: opts.limit,
-      offset: opts.offset,
-      with: {
-        follower: { columns: PUBLIC_USER_COLUMNS },
-        following: { columns: PUBLIC_USER_COLUMNS },
-      },
-    });
-    const [{ total }] = await postgresDb
-      .select({ total: count() })
-      .from(userFollows)
-      .where(
-        kind === ConnectionKind.Followers
-          ? eq(userFollows.followingId, target.id)
-          : eq(userFollows.followerId, target.id),
-      );
+    const [rows, [{ total }]] = await Promise.all([
+      postgresDb.query.userFollows.findMany({
+        where:
+          kind === ConnectionKind.Followers
+            ? { followingId: target.id }
+            : { followerId: target.id },
+        orderBy: { createdAt: "desc" },
+        limit: opts.limit,
+        offset: opts.offset,
+        with: {
+          follower: { columns: PUBLIC_USER_COLUMNS },
+          following: { columns: PUBLIC_USER_COLUMNS },
+        },
+      }),
+      postgresDb
+        .select({ total: count() })
+        .from(userFollows)
+        .where(
+          kind === ConnectionKind.Followers
+            ? eq(userFollows.followingId, target.id)
+            : eq(userFollows.followerId, target.id),
+        ),
+    ]);
     const users = rows.map((row) =>
       kind === ConnectionKind.Followers ? row.follower : row.following,
     );
-    const following = await Promise.all(users.map((u) => isFollowing(opts.viewerId, u.id)));
+    const followed = await followedAmong(
+      opts.viewerId,
+      users.map((u) => u.id),
+    );
     return {
-      results: users.map((u, i) => ({ ...u, isFollowing: following[i] })),
+      results: users.map((u) => ({ ...u, isFollowing: followed.has(u.id) })),
       meta: { total, limit: opts.limit, offset: opts.offset },
     };
   }

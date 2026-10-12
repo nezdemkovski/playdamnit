@@ -43,6 +43,17 @@ export const isFollowing = async (followerId: string | null, followingId: string
   return !!row;
 };
 
+/** Which of these users the viewer follows, in one query instead of one per user */
+export const followedAmong = async (followerId: string | null, userIds: string[]) => {
+  const ids = userIds.filter((id) => id !== followerId);
+  if (!followerId || ids.length === 0) return new Set<string>();
+  const rows = await db.query.userFollows.findMany({
+    where: { followerId, followingId: { in: ids } },
+    columns: { followingId: true },
+  });
+  return new Set(rows.map((row) => row.followingId));
+};
+
 /** Record something that happened to a user; nothing is stored for actions on yourself */
 export const notify = async (input: {
   userId: string;
