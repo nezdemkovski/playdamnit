@@ -617,6 +617,28 @@
       "overwrite": "Overwrite games already in the list",
       "importing": "Importing…",
       "chooseFile": "Choose a file"
+    },
+    "steam": {
+      "title": "Import from Steam",
+      "text": "Paste your Steam profile link or custom URL name. Game details must be public in your Steam privacy settings.",
+      "placeholder": "steamcommunity.com/id/you",
+      "check": "Check the library",
+      "checking": "Asking Steam…",
+      "checkFailed": "Could not read that Steam library",
+      "summary": "<n>{{owned}}</n> games on Steam, <n>{{hours}}</n> hours played. <bad>{{never}}</bad> of the new ones were never launched. We're not mad.",
+      "toImport_one": "{{count}} game new to your list",
+      "toImport_other": "{{count}} games new to your list",
+      "already_one": "{{count}} already in your list, left alone",
+      "already_other": "{{count}} already in your list, left alone",
+      "unmatched_one": "{{count}} not in the catalog (tools, demos, soundtracks)",
+      "unmatched_other": "{{count}} not in the catalog (tools, demos, soundtracks)",
+      "mostPlayed": "Most played",
+      "hours_one": "{{count}} h",
+      "hours_other": "{{count}} h",
+      "playedAs_one": "The {{count}} played one goes to",
+      "playedAs_other": "The {{count}} played ones go to",
+      "import_one": "Import {{count}} game",
+      "import_other": "Import {{count}} games"
     }
   },
   "toast": {

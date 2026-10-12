@@ -1568,6 +1568,65 @@ components:
       required:
         - games
 
+    SteamImportRequest:
+      type: object
+      properties:
+        profile:
+          type: string
+          minLength: 2
+          maxLength: 200
+          description: SteamID64, a steamcommunity.com profile URL or a custom URL name
+      required:
+        - profile
+
+    SteamImportPreview:
+      type: object
+      properties:
+        steamId:
+          type: string
+        owned:
+          type: number
+        matched:
+          type: number
+        unmatched:
+          type: number
+        alreadyInLibrary:
+          type: number
+        toImport:
+          type: number
+        neverPlayed:
+          type: number
+        played:
+          type: number
+        hoursPlayed:
+          type: number
+        mostPlayed:
+          type: array
+          items:
+            type: object
+            properties:
+              gameId:
+                type: number
+              name:
+                type: string
+              hours:
+                type: number
+            required:
+              - gameId
+              - name
+              - hours
+      required:
+        - steamId
+        - owned
+        - matched
+        - unmatched
+        - alreadyInLibrary
+        - toImport
+        - neverPlayed
+        - played
+        - hoursPlayed
+        - mostPlayed
+
     GameImportResponse:
       type: object
       properties:
@@ -2468,6 +2527,73 @@ paths:
                     type: boolean
                 required:
                   - ok
+
+  /api/me/import/steam/preview:
+    post:
+      operationId: postApiMeImportSteamPreview
+      tags:
+        - Library
+      summary: Preview a Steam library import
+      description: >-
+        Reads the Steam profile's owned games (a SteamID64, a profile URL or a custom URL name)
+        and matches them to the catalog through IGDB's Steam links. Writes nothing.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SteamImportRequest"
+      responses:
+        "200":
+          description: What the import would do
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SteamImportPreview"
+        "400":
+          description: Not a Steam profile, or its game details are private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "404":
+          description: No Steam profile with that name or id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
+  /api/me/import/steam:
+    post:
+      operationId: postApiMeImportSteam
+      tags:
+        - Library
+      summary: Import a Steam library
+      description: >-
+        Adds the matched Steam games to the list on PC: never-launched games as backlog, played
+        ones with playedStatus (on_hold by default). Games already in the list are left alone.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/SteamImportRequest"
+                - type: object
+                  properties:
+                    playedStatus:
+                      $ref: "#/components/schemas/StatusEnum"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameImportResponse"
 
   /api/me/feed:
     get:

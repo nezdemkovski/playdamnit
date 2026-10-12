@@ -14,6 +14,8 @@ const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 const betterAuthUrl = process.env.BETTER_AUTH_URL || (isDev ? "http://localhost:3030" : undefined);
 // Shared with the librarian, which registers the webhooks with IGDB
 const igdbWebhookSecret = process.env.IGDB_WEBHOOK_SECRET;
+// Steam Web API key for the library import; without it the import is off
+const steamApiKey = process.env.STEAM_API_KEY;
 
 const config = {
   isDev,
@@ -25,6 +27,7 @@ const config = {
   betterAuthSecret,
   betterAuthUrl,
   igdbWebhookSecret,
+  steamApiKey,
 };
 
 export const getConfig = () => {

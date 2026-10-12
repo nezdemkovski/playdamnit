@@ -186,3 +186,13 @@ export enum SentrySeverity {
   Warning = "warning",
   Info = "info",
 }
+
+/** IGDB external_game_source ids the API reads */
+export enum ExternalGameSourceId {
+  Steam = 1,
+}
+
+/** IGDB platform ids the API assigns on its own */
+export enum PlatformId {
+  Pc = 6,
+}

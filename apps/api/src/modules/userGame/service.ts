@@ -400,13 +400,15 @@ export abstract class UserGameService {
     userId: string,
     rows: ImportGameInput[],
     overwriteExisting: boolean,
+    options: { source?: UserGameSource; maxGames?: number } = {},
   ) {
+    const maxGames = options.maxGames ?? MAX_IMPORT_GAMES;
     if (rows.length === 0) {
       throw new BadRequestError("No games provided for import");
     }
-    if (rows.length > MAX_IMPORT_GAMES) {
+    if (rows.length > maxGames) {
       throw new BadRequestError(
-        `Too many games to import. Maximum allowed: ${MAX_IMPORT_GAMES}, provided: ${rows.length}`,
+        `Too many games to import. Maximum allowed: ${maxGames}, provided: ${rows.length}`,
       );
     }
 
@@ -466,7 +468,7 @@ export abstract class UserGameService {
         review: value.review ?? null,
         platformId: value.platformId ?? null,
         endedAt: parseEndedAt(value.endedAt) ?? null,
-        source: UserGameSource.Manual,
+        source: options.source ?? UserGameSource.Manual,
       });
     }
 

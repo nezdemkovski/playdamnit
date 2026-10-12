@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getConfig } from "@/config";
 import { useLibraryMutations } from "@/hooks/library";
+import { SteamImport } from "./steam-import";
 import { GetApiUserByUsernameGamesExportFormat } from "@playdamnit/api-client";
 
 /** Export the list as JSON or CSV, import a file exported here (or a hand-made one) */
@@ -64,6 +65,7 @@ export function DataSettings({ username }: { username: string }) {
           {library.importPending ? t("settings.data.importing") : t("settings.data.chooseFile")}
         </Button>
       </section>
+      <SteamImport username={username} />
     </div>
   );
 }
