@@ -338,6 +338,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     );
     const { days } = await SteamService.activity("alice");
     expect(days.map((d) => d.minutes)).toEqual([45, 120]);
+    expect(days[1].games.map((g) => [g.id, g.minutes])).toEqual([
+      [GAME, 90],
+      [OTHER_GAME, 30],
+    ]);
     expect((await SteamService.activity("bob")).days).toEqual([]);
   });
 

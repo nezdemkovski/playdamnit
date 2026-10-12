@@ -2580,7 +2580,7 @@ paths:
       tags:
         - Library
       summary: Steam playtime per day
-      description: Minutes played per UTC day over the last year, from Steam syncs. Private lists are owner-only.
+      description: Minutes played per UTC day over the last year with the games played, from Steam syncs. Private lists are owner-only.
       parameters:
         - name: username
           in: path
@@ -2604,9 +2604,26 @@ paths:
                           type: string
                         minutes:
                           type: number
+                        games:
+                          type: array
+                          description: Games played that day, most minutes first
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              name:
+                                type: string
+                              minutes:
+                                type: number
+                            required:
+                              - id
+                              - name
+                              - minutes
                       required:
                         - date
                         - minutes
+                        - games
                 required:
                   - days
         "403":

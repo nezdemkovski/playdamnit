@@ -151,6 +151,12 @@ const matchToCatalog = async (owned: OwnedGame[]) => {
  * map; a first sync logs nothing, its total isn't one day's play), and lifts an entry to
  * "playing" when the game was launched recently. Unchanged entries aren't written.
  */
+interface GamePlaytime {
+  id: number;
+  name: string;
+  minutes: number;
+}
+
 const recordPlaytime = async (userId: string, matches: SteamMatch[], recentSince: number) => {
   if (matches.length === 0) return;
   const entries = await postgresDb
@@ -198,6 +204,8 @@ const recordPlaytime = async (userId: string, matches: SteamMatch[], recentSince
         .set({
           steamMinutes: m.minutes,
           steamLastPlayedAt: lastPlayed,
+          // A sync is not the user's edit; updatedAt stays on the last one (the activity map)
+          updatedAt: sql`${userGames.updatedAt}`,
           ...(promote && { status: UserGameStatus.Playing }),
         })
         .where(eq(userGames.id, entry.id));
@@ -287,12 +295,25 @@ export abstract class SteamService {
   /** Minutes played per UTC day over the last year, from Steam syncs (the activity map) */
   static async activity(ownerId: string) {
     const rows = await postgresDb
-      .select({ day: steamPlaytime.day, minutes: sql<number>`sum(${steamPlaytime.minutes})::int` })
+      .select({
+        day: steamPlaytime.day,
+        id: game.id,
+        name: game.name,
+        minutes: steamPlaytime.minutes,
+      })
       .from(steamPlaytime)
+      .innerJoin(game, eq(game.id, steamPlaytime.gameId))
       .where(and(eq(steamPlaytime.userId, ownerId), sql`${steamPlaytime.day} > current_date - 365`))
-      .groupBy(steamPlaytime.day)
-      .orderBy(steamPlaytime.day);
-    return { days: rows.map((r) => ({ date: String(r.day), minutes: Number(r.minutes) })) };
+      .orderBy(steamPlaytime.day, sql`${steamPlaytime.minutes} desc`);
+    const days = new Map<string, { date: string; minutes: number; games: GamePlaytime[] }>();
+    for (const r of rows) {
+      const date = String(r.day);
+      const day = days.get(date) ?? { date, minutes: 0, games: [] };
+      day.minutes += r.minutes;
+      day.games.push({ id: r.id, name: r.name, minutes: r.minutes });
+      days.set(date, day);
+    }
+    return { days: [...days.values()] };
   }
 
   /**

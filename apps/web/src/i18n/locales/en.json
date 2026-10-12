@@ -526,15 +526,23 @@
       "typicalTip_other": "Middle of {{count}} grades"
     },
     "evenings": {
-      "title": "{{days}} days. {{green}} of them green.",
-      "cell": {
-        "none": "nothing",
-        "touched": "touched",
-        "added": "added",
-        "finished": "finished",
-        "played": "played"
+      "title_one": "{{days}} days. {{count}} of them with a game.",
+      "title_other": "{{days}} days. {{count}} of them with a game.",
+      "less": "Less",
+      "more": "More",
+      "tip": {
+        "nothing": "Nothing.",
+        "played": "Played {{time}}",
+        "finished_one": "Finished",
+        "finished_other": "Finished {{count}}",
+        "dropped_one": "Dropped",
+        "dropped_other": "Dropped {{count}}",
+        "added_one": "Added",
+        "added_other": "Added {{count}}",
+        "updated_one": "Updated",
+        "updated_other": "Updated {{count}}",
+        "more": "+{{count}} more"
       },
-      "dayLabel": "{{date}} · {{state}}",
       "heatAria": "Days with activity over the last year"
     },
     "tiers": {

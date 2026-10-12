@@ -1,97 +1,134 @@
 import { cell, defineChart } from "@tanstack/charts";
-import { Chart } from "@tanstack/charts/react";
+import { Chart } from "@tanstack/charts/react/tooltip";
 import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { tooltip } from "@tanstack/charts/tooltip";
 import {
   StatusEnum,
   useGetApiUserByUsernameSteamActivity,
+  type GetApiUserByUsernameSteamActivity200DaysItem,
   type UserGameWithUserData,
 } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
-import { cn } from "cn";
 import { useMemo } from "react";
 
 import { t } from "@/i18n";
 import { format } from "@/i18n/date";
-import { ActivityCell, DateFormat, Weekday } from "@/lib/enums";
+import { DateFormat, DayAction, Weekday } from "@/lib/enums";
 import { formatPlaytime } from "@/lib/format";
 
 const DAYS = 364;
-const EMPTY: { date: string; minutes: number }[] = [];
+const EMPTY: GetApiUserByUsernameSteamActivity200DaysItem[] = [];
 const WEEKDAYS = Object.values(Weekday);
+const ACTIONS = Object.values(DayAction);
+// Games listed per action in the tooltip before "+N more"
+const NAMES_SHOWN = 4;
 
-const CELL_RANK: Record<ActivityCell, number> = {
-  [ActivityCell.None]: 0,
-  [ActivityCell.Touched]: 1,
-  [ActivityCell.Added]: 2,
-  [ActivityCell.Played]: 3,
-  [ActivityCell.Finished]: 4,
-};
-// Paint per bucket, in domain order; cells use the tokens through literal values the SVG understands
-const CELL_COLORS = {
-  [ActivityCell.None]: "#17181b",
-  [ActivityCell.Touched]: "rgba(241,241,240,.35)",
-  [ActivityCell.Added]: "rgba(255,43,43,.55)",
-  [ActivityCell.Played]: "#f1f1f0",
-  [ActivityCell.Finished]: "#d7ff3b",
-};
+// GitHub-style: one hue, four steps of intensity over the empty cell
+const LEVEL_COLORS = [
+  "#17181b",
+  "rgba(255,43,43,.3)",
+  "rgba(255,43,43,.5)",
+  "rgba(255,43,43,.75)",
+  "#ff2b2b",
+];
+const LEVELS = LEVEL_COLORS.map((_, i) => i);
+
+interface DayGame {
+  name: string;
+  /** Steam minutes, only for played games */
+  minutes?: number;
+}
 
 interface DayRow {
   key: string;
+  date: Date;
   week: number;
   weekday: string;
-  cell: ActivityCell;
-  label: string;
+  level: number;
+  minutes: number;
+  actions: Record<DayAction, DayGame[]>;
 }
 
 const dayKey = (iso: string | null | undefined) =>
   iso ? format(new Date(iso), DateFormat.IsoDay) : null;
 
-const useYear = (entries: UserGameWithUserData[], played: { date: string; minutes: number }[]) =>
+const emptyActions = () =>
+  Object.fromEntries(ACTIONS.map((a) => [a, [] as DayGame[]])) as Record<DayAction, DayGame[]>;
+
+/** Everything done on a day counts once; Steam play counts once per started hour per game */
+const scoreOf = (day: { actions: Record<DayAction, DayGame[]> }, played: number[]) =>
+  ACTIONS.filter((a) => a !== DayAction.Played).reduce((n, a) => n + day.actions[a].length, 0) +
+  played.reduce((n, minutes) => n + Math.max(1, Math.ceil(minutes / 60)), 0);
+
+const useYear = (
+  entries: UserGameWithUserData[],
+  played: GetApiUserByUsernameSteamActivity200DaysItem[],
+) =>
   useMemo(() => {
     const today = new Date();
     const first = subDays(today, DAYS - 1);
     const gridStart = startOfWeek(first, { weekStartsOn: 1 });
-    const byDay = new Map<string, ActivityCell>();
-    const bump = (key: string | null, cell: ActivityCell) => {
+    const byDay = new Map<string, Record<DayAction, DayGame[]>>();
+    const log = (key: string | null, action: DayAction, name: string, minutes?: number) => {
       if (!key) return;
-      const prev = byDay.get(key);
-      if (!prev || CELL_RANK[cell] > CELL_RANK[prev]) byDay.set(key, cell);
+      const actions = byDay.get(key) ?? emptyActions();
+      actions[action].push({ name, minutes });
+      byDay.set(key, actions);
     };
     for (const e of entries) {
       const d = e.userGameData;
-      bump(dayKey(d.addedAt), ActivityCell.Added);
-      bump(dayKey(d.updatedAt), ActivityCell.Touched);
-      if (d.status === StatusEnum.Finished) bump(dayKey(d.endedAt), ActivityCell.Finished);
+      const added = dayKey(d.addedAt);
+      const ended =
+        d.status === StatusEnum.Finished || d.status === StatusEnum.Dropped
+          ? dayKey(d.endedAt)
+          : null;
+      const updated = dayKey(d.updatedAt);
+      log(added, DayAction.Added, e.name);
+      if (ended)
+        log(
+          ended,
+          d.status === StatusEnum.Finished ? DayAction.Finished : DayAction.Dropped,
+          e.name,
+        );
+      // The last edit, unless it was the add or the finish itself
+      if (updated !== added && updated !== ended) log(updated, DayAction.Updated, e.name);
     }
-    const minutesByDay = new Map(played.map((p) => [p.date, p.minutes]));
-    for (const p of played) bump(p.date, ActivityCell.Played);
+    const playedByDay = new Map(played.map((p) => [p.date, p]));
+    for (const p of played)
+      for (const g of p.games) log(p.date, DayAction.Played, g.name, g.minutes);
+
     const days: DayRow[] = [];
+    const scores: number[] = [];
     for (let i = 0; i < DAYS; i++) {
       const date = subDays(today, DAYS - 1 - i);
       const key = format(date, DateFormat.IsoDay);
-      const cellValue = byDay.get(key) ?? ActivityCell.None;
+      const actions = byDay.get(key) ?? emptyActions();
+      const steam = playedByDay.get(key);
+      const score = scoreOf({ actions }, steam?.games.map((g) => g.minutes) ?? []);
+      scores.push(score);
       days.push({
         key,
+        date,
         week: Math.floor(differenceInCalendarDays(date, gridStart) / 7),
         weekday: WEEKDAYS[(date.getDay() + 6) % 7],
-        cell: cellValue,
-        label: t("profile.evenings.dayLabel", {
-          date: format(date, DateFormat.MonthDay),
-          state:
-            cellValue === ActivityCell.Played
-              ? (formatPlaytime(minutesByDay.get(key)) ?? t("profile.evenings.cell.played"))
-              : t(`profile.evenings.cell.${cellValue}`),
-        }),
+        level: score,
+        minutes: steam?.minutes ?? 0,
+        actions,
       });
     }
-    return { days, first };
+    // Levels by quartiles of the active days, like GitHub: a busy year and a quiet one both
+    // use the whole ramp
+    const active = scores.filter(Boolean).sort((a, b) => a - b);
+    const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
+    for (const day of days)
+      day.level = day.level === 0 ? 0 : 1 + cut.filter((c) => day.level > c).length;
+    return { days, first, activeDays: active.length };
   }, [entries, played]);
 
 /**
- * One cell per day for the last 52 weeks across the full width: added in red, finished in
- * green, otherwise touched in grey. TanStack Charts.
+ * One cell per day for the last 52 weeks, GitHub-style: the more happened, the redder. The
+ * tooltip lists the day's actions with the games. TanStack Charts.
  */
 export function YearInEvenings({
   username,
@@ -101,8 +138,7 @@ export function YearInEvenings({
   entries: UserGameWithUserData[];
 }) {
   const activity = useGetApiUserByUsernameSteamActivity(username);
-  const { days, first } = useYear(entries, activity.data?.days ?? EMPTY);
-  const greenDays = days.filter((d) => d.cell === ActivityCell.Finished).length;
+  const { days, first, activeDays } = useYear(entries, activity.data?.days ?? EMPTY);
 
   const heat = useMemo(
     () =>
@@ -112,7 +148,7 @@ export function YearInEvenings({
             cell(days, {
               x: "week",
               y: "weekday",
-              color: "cell",
+              color: "level",
               key: "key",
               inset: 1,
             }),
@@ -124,14 +160,10 @@ export function YearInEvenings({
               axis: false,
             },
           },
-          color: {
-            scale: scaleOrdinal<ActivityCell, string>(
-              Object.values(ActivityCell),
-              Object.values(ActivityCell).map((cell) => CELL_COLORS[cell]),
-            ),
-          },
+          color: { scale: scaleOrdinal<number, string>(LEVELS, LEVEL_COLORS) },
         },
-        { tooltip: { use: tooltip, format: (point) => point.datum.label } },
+        // Sized to its content: near the right edge the card would otherwise shrink to a column
+        { tooltip: { use: tooltip, className: "w-max" } },
       ),
     [days],
   );
@@ -141,7 +173,7 @@ export function YearInEvenings({
       <div className="p-5">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-lg">
-            {t("profile.evenings.title", { days: DAYS, green: greenDays })}
+            {t("profile.evenings.title", { days: DAYS, count: activeDays })}
           </h3>
           <span className="eyebrow">
             {format(first, DateFormat.MonthYearShort)} →{" "}
@@ -154,32 +186,58 @@ export function YearInEvenings({
             aspectRatio={53 / 7}
             initialWidth={640}
             ariaLabel={t("profile.evenings.heatAria")}
+            renderTooltipBody={({ points }) => {
+              const day = points[0]?.datum as DayRow | undefined;
+              return day ? <DayTip day={day} /> : null;
+            }}
           />
         </div>
-        <div className="eyebrow mt-2 flex flex-wrap gap-4 normal-case tracking-normal">
-          <Legend color={CELL_COLORS[ActivityCell.Touched]}>
-            {t("profile.evenings.cell.touched")}
-          </Legend>
-          <Legend color={CELL_COLORS[ActivityCell.Added]}>
-            {t("profile.evenings.cell.added")}
-          </Legend>
-          <Legend color={CELL_COLORS[ActivityCell.Played]}>
-            {t("profile.evenings.cell.played")}
-          </Legend>
-          <Legend color={CELL_COLORS[ActivityCell.Finished]}>
-            {t("profile.evenings.cell.finished")}
-          </Legend>
+        <div className="eyebrow mt-2 flex items-center justify-end gap-1 normal-case tracking-normal">
+          <span className="mr-1">{t("profile.evenings.less")}</span>
+          {LEVEL_COLORS.map((color) => (
+            <i key={color} className="inline-block size-2.5" style={{ background: color }} />
+          ))}
+          <span className="ml-1">{t("profile.evenings.more")}</span>
         </div>
       </div>
     </div>
   );
 }
 
-function Legend({ color, children }: { color: string; children: React.ReactNode }) {
+/** A custom body replaces the built-in card, so it brings its own background and border */
+function DayTip({ day }: { day: DayRow }) {
+  const rows = ACTIONS.filter((a) => day.actions[a].length > 0);
   return (
-    <span className="flex items-center gap-1.5">
-      <i className={cn("inline-block size-2.5")} style={{ background: color }} />
-      {children}
-    </span>
+    <div className="w-60 border border-white/30 bg-background px-2.5 py-1.5 font-sans text-xs font-normal">
+      <div className="num font-bold">{format(day.date, DateFormat.WeekdayMonthDay)}</div>
+      {rows.length === 0 ? (
+        <div className="mt-1 text-dimmed">{t("profile.evenings.tip.nothing")}</div>
+      ) : (
+        rows.map((action) => {
+          const games = day.actions[action];
+          const rest = games.length - NAMES_SHOWN;
+          return (
+            <div key={action} className="mt-1.5">
+              <div className="font-bold">
+                {action === DayAction.Played
+                  ? t("profile.evenings.tip.played", { time: formatPlaytime(day.minutes) })
+                  : t(`profile.evenings.tip.${action}`, { count: games.length })}
+              </div>
+              {games.slice(0, NAMES_SHOWN).map((g, i) => (
+                <div key={i} className="flex items-baseline gap-3 text-white/70">
+                  <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                  {g.minutes ? (
+                    <span className="num shrink-0 text-[11px]">{formatPlaytime(g.minutes)}</span>
+                  ) : null}
+                </div>
+              ))}
+              {rest > 0 && (
+                <div className="text-dimmed">{t("profile.evenings.tip.more", { count: rest })}</div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
   );
 }

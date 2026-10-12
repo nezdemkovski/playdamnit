@@ -59,12 +59,13 @@ export enum LibraryAction {
 }
 
 /** What a day cell of the activity map shows */
-export enum ActivityCell {
-  None = "none",
-  Touched = "touched",
-  Added = "added",
+/** What happened on a day of the activity map, in tooltip order */
+export enum DayAction {
   Played = "played",
   Finished = "finished",
+  Dropped = "dropped",
+  Added = "added",
+  Updated = "updated",
 }
 
 /** Which sentence the rating histogram tooltip uses */
