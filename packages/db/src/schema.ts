@@ -218,8 +218,18 @@ export const userGames = pgTable(
   },
   (table) => [
     unique("user_games_user_id_game_id_unique").on(table.userId, table.gameId),
-    index("idx_user_games_game_id").on(table.gameId),
+    // Per game and status: the Wanted/Played charts and community numbers count by these
+    index("idx_user_games_game_id_status").on(table.gameId, table.status),
     index("idx_user_games_updated_at").on(table.updatedAt),
+    // A member's latest entries: the friends feed and the profile
+    index("idx_user_games_user_id_updated_at").on(table.userId, table.updatedAt.desc()),
+    // Reviews are entries with text: the newest overall and per game
+    index("idx_user_games_reviews_updated_at")
+      .on(table.updatedAt.desc())
+      .where(sql`${table.review} is not null`),
+    index("idx_user_games_reviews_game_id_updated_at")
+      .on(table.gameId, table.updatedAt.desc())
+      .where(sql`${table.review} is not null`),
   ],
 );
 
@@ -363,7 +373,13 @@ export const notification = pgTable(
     readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("idx_notification_user_id_created_at").on(table.userId, table.createdAt)],
+  (table) => [
+    index("idx_notification_user_id_created_at").on(table.userId, table.createdAt),
+    // The unread count on the bell
+    index("idx_notification_unread_user_id")
+      .on(table.userId)
+      .where(sql`${table.readAt} is null`),
+  ],
 );
 
 const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
@@ -541,10 +557,29 @@ export const game = pgTable(
   (table) => [
     index("idx_game_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
     index("idx_game_search_names_trgm").using("gin", table.searchNames.op("gin_trgm_ops")),
-    index("idx_game_slug").on(table.slug),
+    // The popular filter (is_popular or hypes) combines these two
     index("idx_game_popular").on(table.isPopular),
     index("idx_game_hypes").on(table.hypes),
-    index("idx_game_rating").on(table.totalRating),
+    // One per catalog sort, in the sort's own order, over live games: a page reads the first rows
+    // of the index instead of sorting the catalog
+    index("idx_game_popular_order")
+      .on(
+        table.isPopular.desc().nullsFirst(),
+        table.totalRatingCount.desc().nullsLast(),
+        table.hypes.desc().nullsLast(),
+        table.id,
+      )
+      .where(sql`${table.deletedAt} is null`),
+    index("idx_game_release_order")
+      // desc nulls first as the recent sort asks; read backwards for the upcoming and date sorts
+      .on(table.firstReleaseDate.desc().nullsFirst(), table.totalRatingCount.desc().nullsLast())
+      .where(sql`${table.deletedAt} is null`),
+    index("idx_game_rating_order")
+      .on(table.totalRating.desc().nullsLast(), table.totalRatingCount.desc().nullsLast())
+      .where(sql`${table.deletedAt} is null and ${table.totalRatingCount} >= 50`),
+    index("idx_game_rating_count_order")
+      .on(table.totalRatingCount.desc().nullsLast(), table.id)
+      .where(sql`${table.deletedAt} is null`),
     index("idx_game_type").on(table.gameType),
     index("idx_game_parent_game_id").on(table.parentGameId),
     index("idx_game_version_parent_id").on(table.versionParentId),
