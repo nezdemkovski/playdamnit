@@ -1,6 +1,5 @@
 import {
   getGetApiHomeQueryKey,
-  getGetApiUserByUsernameGamesQueryKey,
   getGetApiMeRecommendationsQueryKey,
   getGetApiUserByUsernameQueryKey,
   useDeleteApiMeSteam,
@@ -9,6 +8,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { invalidateLibrary } from "@/hooks/library";
 import { t } from "@/i18n";
 
 const apiMessage = (error: unknown) =>
@@ -19,7 +19,7 @@ const apiMessage = (error: unknown) =>
 export const useSteam = (username: string) => {
   const queryClient = useQueryClient();
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
+    invalidateLibrary(queryClient, username);
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });

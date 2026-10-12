@@ -1,4 +1,4 @@
-import { useInfiniteQuery, type QueryKey } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, type QueryKey } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { QueryKeyPart } from "@/lib/enums";
@@ -18,11 +18,14 @@ export const usePaged = <T>({
   fetchPage,
   pageSize,
   enabled = true,
+  keepPrevious = false,
 }: {
   queryKey: QueryKey;
   fetchPage: (offset: number, limit: number, signal: AbortSignal) => Promise<Page<T>>;
   pageSize: number;
   enabled?: boolean;
+  /** Keep showing the last list while one with other filters loads */
+  keepPrevious?: boolean;
 }) => {
   const query = useInfiniteQuery({
     queryKey: [...queryKey, QueryKeyPart.Paged],
@@ -35,6 +38,7 @@ export const usePaged = <T>({
       return more ? loaded : undefined;
     },
     enabled,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
   });
   const items = useMemo(
     () => query.data?.pages.flatMap((page) => page.results) ?? [],

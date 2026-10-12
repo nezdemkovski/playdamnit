@@ -8,7 +8,7 @@ import {
   StatusEnum,
   useGetApiUserByUsernameSteamActivity,
   type GetApiUserByUsernameSteamActivity200DaysItem,
-  type UserGameWithUserData,
+  type LibraryIndexItem,
 } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
@@ -64,7 +64,7 @@ const scoreOf = (day: { actions: Record<DayAction, DayGame[]> }, played: number[
   played.reduce((n, minutes) => n + Math.max(1, Math.ceil(minutes / 60)), 0);
 
 const useYear = (
-  entries: UserGameWithUserData[],
+  entries: LibraryIndexItem[],
   played: GetApiUserByUsernameSteamActivity200DaysItem[],
 ) =>
   useMemo(() => {
@@ -144,7 +144,7 @@ export function YearInEvenings({
   className,
 }: {
   username: string;
-  entries: UserGameWithUserData[];
+  entries: LibraryIndexItem[];
   className?: string;
 }) {
   const activity = useGetApiUserByUsernameSteamActivity(username);

@@ -12,15 +12,6 @@ export enum LibraryView {
   Grid = "grid",
 }
 
-export enum LibrarySort {
-  Shame = "shame",
-  Added = "added",
-  Grade = "grade",
-  Hours = "hours",
-  Name = "name",
-  Release = "release",
-}
-
 export enum ChartTab {
   Popular = "popular",
   Best = "best",

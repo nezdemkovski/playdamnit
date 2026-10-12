@@ -26,7 +26,7 @@ import { SteamConnectButton } from "@/components/steam/steam-connect";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
-import { useLibrary } from "@/hooks/library";
+import { useLibraryIndex } from "@/hooks/library";
 import { format } from "@/i18n/date";
 import { DateFormat, FriendsTab, ProfileTab } from "@/lib/enums";
 
@@ -60,7 +60,7 @@ function ProfileLayout() {
   const { username } = Route.useParams();
   const profile = useGetApiUserByUsername(username);
   // Badges come from the library; a private one simply shows none
-  const library = useLibrary(username);
+  const library = useLibraryIndex(username);
   const badges = useMemo(
     () =>
       library.data ? computeBadges(library.data.results, profile.data?.counts.reviews ?? 0) : null,

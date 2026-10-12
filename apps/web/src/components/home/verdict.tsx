@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import type { LibraryIndexItem } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -30,13 +30,7 @@ const useCountUp = (target: number) => {
 };
 
 /** The signed-in home: the verdict headline and the longest-ignored game */
-export function Verdict({
-  username,
-  entries,
-}: {
-  username: string;
-  entries: UserGameWithUserData[];
-}) {
+export function Verdict({ username, entries }: { username: string; entries: LibraryIndexItem[] }) {
   const { t, i18n } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
   const added = useCountUp(s.total);
@@ -94,7 +88,7 @@ export function Verdict({
           <h2 className="mt-3 pr-20 text-2xl">{exhibit.name}</h2>
           <div className="mt-4 flex gap-4">
             <Link to="/games/$id" params={{ id: String(exhibit.id) }} className="w-20 shrink-0">
-              <GameCover url={exhibit.cover?.url} name={exhibit.name} />
+              <GameCover url={exhibit.cover} name={exhibit.name} />
             </Link>
             <div className="text-sm text-dimmed">
               <p>

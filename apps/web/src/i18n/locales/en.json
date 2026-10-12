@@ -338,7 +338,8 @@
     "allowReactions": "Allow reactions on this review",
     "remove": "Remove",
     "removeTitle": "Remove {{name}}?",
-    "removeText": "Your grade, status and review for this game will be deleted."
+    "removeText": "Your grade, status and review for this game will be deleted.",
+    "loadFailed": "Your entry didn't load. Close this and try again."
   },
   "playthrough": {
     "title": "Playthroughs",

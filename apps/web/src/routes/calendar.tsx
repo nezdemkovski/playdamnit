@@ -3,7 +3,7 @@ import {
   useGetApiGames,
   useGetApiGamesReleaseDays,
   type Game,
-  type UserGameData,
+  type LibraryIndexEntry,
 } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -46,6 +46,8 @@ const COVERS_PER_DAY = 3;
 // A day's list in the dialog grows by this much, up to the API's page size
 const DAY_PAGE = 40;
 const DAY_MAX = 100;
+// "My list only" loads a month of the library's games in one page of the API
+const MINE_MAX = 100;
 const WEEK_STARTS_ON = 1;
 const DAY_SECONDS = 86_400;
 
@@ -100,17 +102,23 @@ function CalendarPage() {
     { query: { placeholderData: (prev) => prev, enabled: !search.mine } },
   );
 
-  // "My list only" works from the library: its games that release this month
-  const mine = useMemo(
+  // "My list only" picks the library's games that release this month from the light index,
+  // then loads just those as cards
+  const mineIds = useMemo(
     () =>
-      entries.filter(
-        (e) =>
-          e.firstReleaseDate &&
-          e.firstReleaseDate >= from &&
-          e.firstReleaseDate <= to &&
-          (!search.hot || e.isPopular),
-      ),
-    [entries, from, to, search.hot],
+      entries
+        .filter((e) => e.firstReleaseDate && e.firstReleaseDate >= from && e.firstReleaseDate <= to)
+        .map((e) => e.id)
+        .slice(0, MINE_MAX),
+    [entries, from, to],
+  );
+  const mineCards = useGetApiGames(
+    { ids: mineIds.join(","), limit: mineIds.length, popular, sort: GetApiGamesSort.Popular },
+    { query: { placeholderData: (prev) => prev, enabled: search.mine && mineIds.length > 0 } },
+  );
+  const mine = useMemo(
+    () => (mineIds.length ? (mineCards.data?.results ?? []) : []),
+    [mineIds, mineCards.data],
   );
 
   const { coversByDay, countByDay, total } = useMemo(() => {
@@ -146,7 +154,9 @@ function CalendarPage() {
     navigate({
       search: { ...search, month: format(addMonths(start, delta), DateFormat.IsoMonth) },
     });
-  const loading = !search.mine && (days.isPending || top.isPending);
+  const loading = search.mine
+    ? mineIds.length > 0 && mineCards.isPending
+    : days.isPending || top.isPending;
 
   return (
     <>
@@ -344,7 +354,7 @@ function DayDialog({
   mine: boolean;
   mineGames: Game[];
   count: number;
-  byGameId: Map<number, { userGameData: UserGameData }>;
+  byGameId: Map<number, { userGameData: LibraryIndexEntry }>;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -434,7 +444,7 @@ function DayRow({
 }: {
   rank: number;
   game: Game;
-  entry?: UserGameData;
+  entry?: LibraryIndexEntry;
   onNavigate: () => void;
 }) {
   return (

@@ -20,17 +20,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GameCover } from "@/components/game/game-cover";
+import { useDebounced } from "@/hooks/debounced";
 import { releaseYear } from "@/lib/format";
 import { IgdbSize } from "@/lib/enums";
-
-const useDebounced = <T,>(value: T, ms: number) => {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), ms);
-    return () => clearTimeout(t);
-  }, [value, ms]);
-  return debounced;
-};
 
 interface SearchDialogProps {
   open: boolean;

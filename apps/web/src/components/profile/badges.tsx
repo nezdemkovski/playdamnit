@@ -1,4 +1,4 @@
-import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type LibraryIndexItem } from "@playdamnit/api-client";
 import {
   AwardIcon,
   BookOpenIcon,
@@ -25,7 +25,7 @@ interface Badge {
 }
 
 /** Badges computed from the library (no server state) */
-export const computeBadges = (entries: UserGameWithUserData[], reviews: number): Badge[] => {
+export const computeBadges = (entries: LibraryIndexItem[], reviews: number): Badge[] => {
   const finished = entries.filter((e) => e.userGameData.status === StatusEnum.Finished).length;
   const rated = entries.filter((e) => e.userGameData.rating).length;
   const mastered = entries.filter((e) => e.userGameData.mastered).length;

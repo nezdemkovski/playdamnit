@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import type { LibraryIndexItem } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 import { InboxIcon, SearchXIcon } from "lucide-react";
@@ -12,7 +12,7 @@ import { DragDataType, Grade } from "@/lib/enums";
 import { GRADES, gradeOf, ratingOf } from "@/lib/grade";
 
 interface TierBoardProps {
-  entries: UserGameWithUserData[];
+  entries: LibraryIndexItem[];
   /** Arrange mode for the owner: drag or select-and-tap, plus the pool of ungraded games */
   arranging?: boolean;
 }
@@ -68,10 +68,10 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
         }
       : {};
 
-  const tile = (game: UserGameWithUserData) => {
+  const tile = (game: LibraryIndexItem) => {
     const content = (
       <>
-        <GameCover url={game.cover?.url} name={game.name} />
+        <GameCover url={game.cover} name={game.name} />
         <span
           className={cn(
             "pointer-events-none absolute inset-x-0 bottom-0 text-center leading-tight text-white",

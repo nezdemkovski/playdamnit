@@ -1,4 +1,4 @@
-import { StatusEnum, type UserGameWithUserData } from "@playdamnit/api-client";
+import { StatusEnum, type LibraryIndexEntry, type LibraryIndexItem } from "@playdamnit/api-client";
 
 import { t } from "@/i18n";
 import { LibraryAction } from "@/lib/enums";
@@ -13,9 +13,14 @@ const DAY = 86_400_000;
 export const daysSince = (iso: string | null | undefined): number =>
   iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / DAY)) : 0;
 
+/** What the idle lines read of an entry; an index item and a full entry both have it */
+interface Idle {
+  userGameData: Pick<LibraryIndexEntry, "status" | "addedAt" | "updatedAt" | "steamLastPlayedAt">;
+}
+
 /** Days an entry has sat untouched (status change or add) */
 // Steam's last launch is the truth when there is one; otherwise the last edit here
-export const idleDays = (entry: UserGameWithUserData): number =>
+export const idleDays = (entry: Idle): number =>
   daysSince(
     entry.userGameData.steamLastPlayedAt ??
       entry.userGameData.updatedAt ??
@@ -32,11 +37,11 @@ export interface LibrarySummary {
   finishedThisMonth: number;
   /** Finished + dropped over everything that is not "want" */
   completion: number;
-  longestIdle: UserGameWithUserData | null;
-  stalePlaying: UserGameWithUserData | null;
+  longestIdle: LibraryIndexItem | null;
+  stalePlaying: LibraryIndexItem | null;
 }
 
-export const summarize = (entries: UserGameWithUserData[]): LibrarySummary => {
+export const summarize = (entries: LibraryIndexItem[]): LibrarySummary => {
   const now = Date.now();
   let finished = 0;
   let playing = 0;
@@ -44,8 +49,8 @@ export const summarize = (entries: UserGameWithUserData[]): LibrarySummary => {
   let backlog = 0;
   let addedThisWeek = 0;
   let finishedThisMonth = 0;
-  let longestIdle: UserGameWithUserData | null = null;
-  let stalePlaying: UserGameWithUserData | null = null;
+  let longestIdle: LibraryIndexItem | null = null;
+  let stalePlaying: LibraryIndexItem | null = null;
   for (const e of entries) {
     const d = e.userGameData;
     if (d.status === StatusEnum.Finished) finished++;
@@ -92,7 +97,7 @@ export const verdictLine = (s: LibrarySummary): string => {
 };
 
 /** The owner's line under the profile's finished bar: when they last finished anything */
-export const lastFinishLine = (entries: UserGameWithUserData[]): string => {
+export const lastFinishLine = (entries: LibraryIndexItem[]): string => {
   const last = entries
     .filter((e) => e.userGameData.status === StatusEnum.Finished && e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))[0];
@@ -104,7 +109,7 @@ export const lastFinishLine = (entries: UserGameWithUserData[]): string => {
     : t("voice.lastFinish.old", { count: d });
 };
 
-export const idleLine = (entry: UserGameWithUserData): string => {
+export const idleLine = (entry: Idle): string => {
   const d = idleDays(entry);
   const status = entry.userGameData.status;
   if (status === StatusEnum.Finished) return t("voice.idle.finished");

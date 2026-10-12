@@ -1,10 +1,10 @@
-import type { Game, UserGameData } from "@playdamnit/api-client";
+import type { Game } from "@playdamnit/api-client";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { LogGameDialog } from "./log-game-dialog";
+import { LogGameDialog, type KnownEntry } from "./log-game-dialog";
 import { GradeBadge, StatusPill } from "./rating";
 import { PillSize } from "@/lib/enums";
 import { gradeOf } from "@/lib/grade";
@@ -14,7 +14,7 @@ type ButtonProps = ComponentProps<typeof Button>;
 
 interface LogGameButtonProps {
   game: Pick<Game, "id" | "name" | "cover" | "platforms" | "firstReleaseDate">;
-  entry?: UserGameData | null;
+  entry?: KnownEntry | null;
   size?: ButtonProps["size"];
   variant?: ButtonProps["variant"];
 }

@@ -1,7 +1,6 @@
 import {
   getGetApiHomeQueryKey,
   getGetApiMeRecommendationsQueryKey,
-  getGetApiUserByUsernameGamesQueryKey,
   getGetApiUserByUsernameQueryKey,
 } from "@playdamnit/api-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { invalidateLibrary } from "@/hooks/library";
 import { SteamConnectResult } from "@/lib/enums";
 
 // The API hands the outcome back on the page that started it as ?steam=<result>
@@ -28,7 +28,7 @@ export function useSteamReturn(username: string | undefined) {
     else if (result === SteamConnectResult.Private) toast.error(t("steam.private"));
     else toast.error(t("steam.connectFailed"));
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
-    queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
+    invalidateLibrary(queryClient, username);
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
   }, [username, queryClient, t]);

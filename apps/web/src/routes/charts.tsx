@@ -3,7 +3,7 @@ import {
   useGetApiCatalog,
   useGetApiGames,
   type Game,
-  type UserGameData,
+  type LibraryIndexEntry,
 } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -233,7 +233,7 @@ function ChartRow({
   rank: number;
   game: Game;
   /** The viewer's library entry for this game, if any */
-  entry: UserGameData | null;
+  entry: LibraryIndexEntry | null;
 }) {
   const grade = gradeOf(entry?.rating);
   return (

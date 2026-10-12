@@ -2,7 +2,7 @@ import { StatusEnum, type Game, type UserGameData } from "@playdamnit/api-client
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDownIcon, Trash2Icon } from "lucide-react";
 import { cn } from "cn";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -34,12 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Playthroughs } from "./playthroughs";
 import { useSession } from "@/hooks/auth";
 import { usePlayPlatforms } from "@/hooks/platforms";
-import { useLibraryMutations } from "@/hooks/library";
+import { useLibraryMutations, useMyEntry } from "@/hooks/library";
 import { GradeBadge } from "./rating";
 import { Grade as GradeEnum, PillSize } from "@/lib/enums";
 import { GRADES, gradeMeta, gradeOf, ratingOf } from "@/lib/grade";
@@ -48,9 +49,13 @@ import { GameCover } from "./game-cover";
 
 const MAX_REVIEW = 5000;
 
+/** What the caller knows of the viewer's entry: an index item's or a full one */
+export type KnownEntry = Pick<UserGameData, "status" | "rating">;
+
 interface LogGameDialogProps {
   game: Pick<Game, "id" | "name" | "cover" | "platforms" | "firstReleaseDate">;
-  entry?: UserGameData | null;
+  /** The entry, if the game is in the list; the dialog loads it in full (review included) */
+  entry?: KnownEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -67,6 +72,12 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const navigate = useNavigate();
   const library = useLibraryMutations();
   const platforms = usePlayPlatforms(game.platforms);
+  // Editing starts from the entry in full: lookups only carry whether there is a review
+  const editing = !!entry;
+  const full = useMyEntry(game.id, open && editing);
+  const current = editing ? (full.data?.userGameData ?? null) : null;
+  const ready = !editing || !!current;
+  const filled = useRef(false);
 
   const [grade, setGrade] = useState<GradeEnum | null>(null);
   // Bumped on every pick so the seal's animation restarts; 0 means "no moment yet"
@@ -80,20 +91,26 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
   const [allowReactions, setAllowReactions] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  // Reset the form from the entry every time the dialog opens
+  // Reset the form from the entry once per opening, as soon as it is there; a refetch while
+  // the dialog is open must not wipe what is being typed
   useEffect(() => {
-    if (!open) return;
-    setGrade(gradeOf(entry?.rating));
+    if (!open) {
+      filled.current = false;
+      return;
+    }
+    if (!ready || filled.current) return;
+    filled.current = true;
+    setGrade(gradeOf(current?.rating));
     setMoment(0);
-    setStatus(entry?.status ?? StatusEnum.WantToPlay);
-    setPlatformId(String(entry?.platformId ?? game.platforms[0]?.id ?? ""));
-    setEndedAt(toDateInput(entry?.endedAt));
-    setReview(entry?.review ?? "");
-    setMastered(entry?.mastered ?? false);
-    setSpoilers(entry?.spoilers ?? false);
-    setAllowReactions(entry?.allowReactions ?? true);
-    setDetailsOpen(!!entry?.endedAt || !!entry?.mastered);
-  }, [open, entry, game.platforms]);
+    setStatus(current?.status ?? StatusEnum.WantToPlay);
+    setPlatformId(String(current?.platformId ?? game.platforms[0]?.id ?? ""));
+    setEndedAt(toDateInput(current?.endedAt));
+    setReview(current?.review ?? "");
+    setMastered(current?.mastered ?? false);
+    setSpoilers(current?.spoilers ?? false);
+    setAllowReactions(current?.allowReactions ?? true);
+    setDetailsOpen(!!current?.endedAt || !!current?.mastered);
+  }, [open, ready, current, game.platforms]);
 
   if (open && !user) {
     onOpenChange(false);
@@ -166,7 +183,13 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
           </div>
         </DialogHeader>
 
-        <form onSubmit={submit} className="mt-2 space-y-6">
+        {!ready &&
+          (full.isError ? (
+            <p className="mt-2 text-sm text-dimmed">{t("log.loadFailed")}</p>
+          ) : (
+            <Skeleton className="mt-2 h-96" />
+          ))}
+        <form onSubmit={submit} className={cn("mt-2 space-y-6", !ready && "hidden")}>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>{t("log.grade")}</Label>
@@ -278,13 +301,13 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
                 <Switch id="mastered" checked={mastered} onCheckedChange={setMastered} />
                 <Label htmlFor="mastered">{t("log.mastered")}</Label>
               </div>
-              {entry && user?.username && (
+              {current && user?.username && (
                 <div className="sm:col-span-2">
                   <Playthroughs
                     username={user.username}
                     gameId={game.id}
                     platforms={platforms}
-                    defaultPlatformId={entry.platformId}
+                    defaultPlatformId={current.platformId}
                   />
                 </div>
               )}

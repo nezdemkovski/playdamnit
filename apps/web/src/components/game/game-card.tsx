@@ -9,8 +9,13 @@ import { GradeBadge } from "./rating";
 import type { Grade } from "@/lib/enums";
 import { releaseYear } from "@/lib/format";
 
+/** A catalog card, or a library index item, whose cover is the URL itself */
+type CardGame = Pick<Game, "id" | "name" | "firstReleaseDate"> & {
+  cover: Game["cover"] | string | null;
+};
+
 interface GameCardProps {
-  game: Pick<Game, "id" | "name" | "cover" | "firstReleaseDate">;
+  game: CardGame;
   /** The viewer's own grade, shown as a corner tile */
   grade?: Grade | null;
   /** A red corner tag, e.g. days idle */
@@ -31,7 +36,10 @@ export function GameCard({ game, grade, tag, className }: GameCardProps) {
       )}
       title={game.name}
     >
-      <GameCover url={game.cover?.url} name={game.name} />
+      <GameCover
+        url={typeof game.cover === "string" ? game.cover : game.cover?.url}
+        name={game.name}
+      />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-end overflow-hidden bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
         <div className="line-clamp-2 text-sm font-bold leading-tight text-white">{game.name}</div>
         {year && <div className="num mt-0.5 text-[11px] text-white/70">{year}</div>}

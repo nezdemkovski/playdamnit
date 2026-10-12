@@ -37,7 +37,7 @@ import { MediaLightbox, type MediaSlide } from "@/components/media-lightbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
-import { useMyLibrary } from "@/hooks/library";
+import { useMyEntry, useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, MediaSlideType, PillSize } from "@/lib/enums";
@@ -97,6 +97,8 @@ function GameDetail({ game }: { game: Game }) {
   const { user } = useSession();
   const { byGameId } = useMyLibrary();
   const entry = byGameId.get(game.id)?.userGameData ?? null;
+  // The lookup only says there is a review; its text comes with the entry in full
+  const reviewText = useMyEntry(game.id, !!entry?.hasReview).data?.userGameData.review;
 
   const hero = igdbImage(game.screenshots?.[0]?.url, IgdbSize.P1080);
   const typeName = gameTypeName(game.gameType, game.types[0]?.type);
@@ -309,7 +311,7 @@ function GameDetail({ game }: { game: Game }) {
           <p className="whitespace-pre-line leading-relaxed text-white/80">{game.storyline}</p>
         </div>
       )}
-      {entry?.review && (
+      {entry?.hasReview && reviewText && (
         <div className="panel mt-6 max-w-3xl p-5">
           <div className="mb-2 flex items-center gap-2 text-sm">
             <span className="font-semibold">{t("game.yourReview")}</span>
@@ -318,7 +320,7 @@ function GameDetail({ game }: { game: Game }) {
               <span className="text-xs text-dimmed">{t("game.markedSpoilers")}</span>
             )}
           </div>
-          <Markdown>{entry.review}</Markdown>
+          <Markdown>{reviewText}</Markdown>
         </div>
       )}
 

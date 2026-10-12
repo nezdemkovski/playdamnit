@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import type { LibraryIndexItem } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
 import { igdbImage } from "@/lib/image";
@@ -11,8 +11,8 @@ const SHELF = 14;
  * The covers that define a player, best first: the S tier, then the rest by grade, then the
  * ungraded by when they were added. A small library repeats so the shelf is always full.
  */
-export const hallOfFame = (entries: UserGameWithUserData[]): UserGameWithUserData[] => {
-  const withCover = entries.filter((e) => e.cover?.url);
+export const hallOfFame = (entries: LibraryIndexItem[]): LibraryIndexItem[] => {
+  const withCover = entries.filter((e) => e.cover);
   if (!withCover.length) return [];
   const ranked = [...withCover].sort(
     (a, b) =>
@@ -23,7 +23,7 @@ export const hallOfFame = (entries: UserGameWithUserData[]): UserGameWithUserDat
 };
 
 /** A dimmed shelf of covers across the top of the profile header */
-export function HallOfFame({ entries }: { entries: UserGameWithUserData[] }) {
+export function HallOfFame({ entries }: { entries: LibraryIndexItem[] }) {
   const { t } = useTranslation();
   const shelf = hallOfFame(entries);
   const isS = shelf.length > 0 && gradeOf(shelf[0].userGameData.rating) === Grade.S;
@@ -33,7 +33,7 @@ export function HallOfFame({ entries }: { entries: UserGameWithUserData[] }) {
         {shelf.map((e, i) => (
           <img
             key={`${e.id}-${i}`}
-            src={igdbImage(e.cover?.url, IgdbSize.CoverBig) ?? undefined}
+            src={igdbImage(e.cover, IgdbSize.CoverBig) ?? undefined}
             alt=""
             loading={ImageLoading.Lazy}
             className="h-full w-auto shrink-0 object-cover opacity-45 saturate-[.6]"

@@ -10,8 +10,8 @@ export const Route = createFileRoute("/$username/games")({
 });
 
 function ProfileGames() {
-  const { entries, library, isOwn, isPrivate } = useProfileContext();
+  const { username, entries, library, isOwn, isPrivate } = useProfileContext();
   if (isPrivate) return <PrivateNotice />;
   if (library.isPending) return <Skeleton className="h-64 rounded-card" />;
-  return <LibraryList entries={entries} editable={isOwn} />;
+  return <LibraryList username={username} entries={entries} editable={isOwn} />;
 }

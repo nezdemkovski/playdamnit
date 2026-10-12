@@ -1,4 +1,4 @@
-import type { UserGameWithUserData } from "@playdamnit/api-client";
+import type { LibraryIndexItem } from "@playdamnit/api-client";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -16,7 +16,7 @@ export function ProfileStatStrip({
   entries,
   own = false,
 }: {
-  entries: UserGameWithUserData[];
+  entries: LibraryIndexItem[];
   own?: boolean;
 }) {
   const { t } = useTranslation();

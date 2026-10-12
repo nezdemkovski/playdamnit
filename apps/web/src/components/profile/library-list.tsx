@@ -1,4 +1,9 @@
-import { type UserGameWithUserData, StatusEnum } from "@playdamnit/api-client";
+import {
+  getApiUserByUsernameGames,
+  getGetApiUserByUsernameGamesQueryKey,
+  LibrarySortEnum,
+  type LibraryIndexItem,
+} from "@playdamnit/api-client";
 import { ArrowDownUpIcon, LayoutGridIcon, ListIcon, SearchIcon } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
@@ -20,50 +25,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GameCard } from "@/components/game/game-card";
+import { LoadMore } from "@/components/load-more";
+import { useDebounced } from "@/hooks/debounced";
+import { usePaged } from "@/hooks/paged";
 import { STATUSES, type LibraryStatus } from "@/lib/statuses";
-import { idleDays } from "@/lib/voice";
 import { LibraryRow } from "./library-row";
-import { AllOption, LibrarySort, LibraryView, StorageKey } from "@/lib/enums";
+import { AllOption, LibraryView, StorageKey } from "@/lib/enums";
 import { gradeOf } from "@/lib/grade";
 
-const SORTS = Object.values(LibrarySort);
-
-// Untouched backlog first, then stale "playing", finished games last
-const SHAME_RANK: Record<StatusEnum, number> = {
-  [StatusEnum.Backlog]: 0,
-  [StatusEnum.WantToPlay]: 0,
-  [StatusEnum.OnHold]: 1,
-  [StatusEnum.Playing]: 2,
-  [StatusEnum.Online]: 3,
-  [StatusEnum.Dropped]: 4,
-  [StatusEnum.Finished]: 5,
-};
-
-const compare: Record<LibrarySort, (a: UserGameWithUserData, b: UserGameWithUserData) => number> = {
-  [LibrarySort.Shame]: (a, b) =>
-    SHAME_RANK[a.userGameData.status] - SHAME_RANK[b.userGameData.status] ||
-    idleDays(b) - idleDays(a),
-  [LibrarySort.Added]: (a, b) =>
-    (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
-  [LibrarySort.Grade]: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
-  [LibrarySort.Hours]: (a, b) =>
-    (b.userGameData.steamMinutes ?? 0) - (a.userGameData.steamMinutes ?? 0),
-  [LibrarySort.Name]: (a, b) => a.name.localeCompare(b.name),
-  [LibrarySort.Release]: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
-};
+const SORTS = Object.values(LibrarySortEnum);
+const PAGE = 50;
 
 interface LibraryListProps {
-  entries: UserGameWithUserData[];
+  username: string;
+  /** The whole library, light: the tab counts and the filter options come from it */
+  entries: LibraryIndexItem[];
   editable: boolean;
 }
 
-/** Status tabs with counts, search-in-list, sort and the ranked rows */
-export function LibraryList({ entries, editable }: LibraryListProps) {
+/** Status tabs with counts, search-in-list, sort and the ranked rows, a page at a time */
+export function LibraryList({ username, entries, editable }: LibraryListProps) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<LibraryStatus | AllOption>(AllOption.All);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState(LibrarySort.Shame);
+  const q = useDebounced(query.trim(), 250);
+  const [sort, setSort] = useState(LibrarySortEnum.Shame);
   const [view, setView] = useState<LibraryView>(() => {
     try {
       return localStorage.getItem(StorageKey.LibraryView) === LibraryView.Grid
@@ -82,6 +70,15 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
     }
     return [...set].sort((a, b) => b - a);
   }, [entries]);
+  // The server filters and sorts; the rows are full cards (genres, type, review)
+  const params = { status: status === AllOption.All ? undefined : status, q: q || undefined, sort };
+  const list = usePaged({
+    queryKey: getGetApiUserByUsernameGamesQueryKey(username, params),
+    fetchPage: (offset, limit, signal) =>
+      getApiUserByUsernameGames(username, { ...params, limit, offset }, undefined, signal),
+    pageSize: PAGE,
+    keepPrevious: true,
+  });
   const switchView = (v: LibraryView) => {
     setView(v);
     try {
@@ -96,7 +93,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
     () =>
       entries.some((e) => e.userGameData.steamMinutes)
         ? SORTS
-        : SORTS.filter((s) => s !== LibrarySort.Hours),
+        : SORTS.filter((s) => s !== LibrarySortEnum.Hours),
     [entries],
   );
 
@@ -106,19 +103,6 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
       map.set(entry.userGameData.status, (map.get(entry.userGameData.status) ?? 0) + 1);
     return map;
   }, [entries]);
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return entries
-      .filter((e) => status === AllOption.All || e.userGameData.status === status)
-      .filter(
-        (e) =>
-          !q ||
-          e.name.toLowerCase().includes(q) ||
-          e.alternativeNames.some((n) => n.toLowerCase().includes(q)),
-      )
-      .sort(compare[sort]);
-  }, [entries, status, query, sort]);
 
   return (
     <div className="mt-4 space-y-3">
@@ -191,7 +175,10 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as LibrarySort)}>
+            <DropdownMenuRadioGroup
+              value={sort}
+              onValueChange={(v) => setSort(v as LibrarySortEnum)}
+            >
               {sorts.map((value) => (
                 <DropdownMenuRadioItem key={value} value={value}>
                   {t(`profile.library.sort.${value}`)}
@@ -202,23 +189,26 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
         </DropdownMenu>
       </div>
 
-      {visible.length === 0 ? (
+      {list.isPending ? (
+        <Skeleton className="h-64 rounded-card" />
+      ) : list.items.length === 0 ? (
         <div className="panel p-10 text-center text-sm text-dimmed">
           {entries.length === 0 ? t("profile.library.emptyList") : t("profile.library.noMatch")}
         </div>
       ) : view === LibraryView.Grid ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {visible.map((entry) => (
+          {list.items.map((entry) => (
             <GameCard key={entry.id} game={entry} grade={gradeOf(entry.userGameData.rating)} />
           ))}
         </div>
       ) : (
         <div className="border-t border-border">
-          {visible.map((entry, i) => (
+          {list.items.map((entry, i) => (
             <LibraryRow key={entry.id} rank={i + 1} entry={entry} editable={editable} />
           ))}
         </div>
       )}
+      <LoadMore {...list} />
     </div>
   );
 }

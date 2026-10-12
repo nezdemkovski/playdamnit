@@ -2,21 +2,25 @@ import {
   getGetApiHomeQueryKey,
   getGetApiGamesByIdQueryKey,
   getGetApiMeRecommendationsQueryKey,
+  getGetApiUserByUsernameGamesByIdQueryKey,
+  getGetApiUserByUsernameGamesIndexQueryKey,
   getGetApiUserByUsernameGamesQueryKey,
   useDeleteApiUserByUsernameGamesById,
-  useGetApiUserByUsernameGames,
+  useGetApiUserByUsernameGamesById,
+  useGetApiUserByUsernameGamesIndex,
   usePatchApiUserByUsernameGamesById,
   usePostApiUserByUsernameGames,
   usePostApiUserByUsernameGamesImport,
   type Game,
   type GameCommunity,
+  type LibraryIndexItem,
+  type LibraryIndexResponse,
   type PostApiUserByUsernameGamesImportBodyTwo,
-  type UserGameResponse,
   type UserGameCreateRequest,
   type UserGameUpdateRequest,
   type UserGameWithUserData,
 } from "@playdamnit/api-client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
@@ -28,9 +32,12 @@ import { useSession } from "./auth";
 const apiError = (error: unknown, fallback: string) =>
   (error as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
 
-/** A user's whole library (the API returns it in one page when no limit is given) */
-export const useLibrary = (username: string | null | undefined) =>
-  useGetApiUserByUsernameGames(username ?? "", undefined, {
+/**
+ * A user's whole library, light: every entry without its review text on a minimal game card.
+ * Lookups, summaries, the profile header and the tier board all work from this.
+ */
+export const useLibraryIndex = (username: string | null | undefined) =>
+  useGetApiUserByUsernameGamesIndex(username ?? "", {
     query: { enabled: !!username },
   });
 
@@ -38,13 +45,43 @@ export const useLibrary = (username: string | null | undefined) =>
 export const useMyLibrary = () => {
   const { user } = useSession();
   const username = user?.username ?? null;
-  const query = useLibrary(username);
+  const query = useLibraryIndex(username);
   const byGameId = useMemo(() => {
-    const map = new Map<number, UserGameWithUserData>();
+    const map = new Map<number, LibraryIndexItem>();
     for (const entry of query.data?.results ?? []) map.set(entry.id, entry);
     return map;
   }, [query.data]);
   return { username, byGameId, entries: query.data?.results ?? [], isLoading: query.isPending };
+};
+
+/** One of the signed-in user's entries in full, review included (the index leaves it out) */
+export const useMyEntry = (gameId: number, enabled: boolean) => {
+  const { user } = useSession();
+  const username = user?.username ?? "";
+  return useGetApiUserByUsernameGamesById(username, gameId, {
+    query: { enabled: enabled && !!username },
+  });
+};
+
+/** Everything cached from a user's library (index, lists, single entries) is stale */
+export const invalidateLibrary = (queryClient: QueryClient, username: string) => {
+  // The keys are the URLs, so the list's URL is a prefix of the index's and every entry's
+  const [prefix] = getGetApiUserByUsernameGamesQueryKey(username);
+  queryClient.invalidateQueries({
+    predicate: ({ queryKey: [head] }) => typeof head === "string" && head.startsWith(prefix),
+  });
+};
+
+/** A full entry as the index serves it: the review reduced to whether there is one */
+const toIndexItem = (entry: UserGameWithUserData): LibraryIndexItem => {
+  const { review, ...data } = entry.userGameData;
+  return {
+    id: entry.id,
+    name: entry.name,
+    firstReleaseDate: entry.firstReleaseDate ?? null,
+    cover: entry.cover?.url ?? null,
+    userGameData: { ...data, endedAt: data.endedAt ?? null, hasReview: !!review },
+  };
 };
 
 /** Add / update / remove entries of the signed-in user's library, refreshing every view of it */
@@ -57,16 +94,17 @@ export const useLibraryMutations = () => {
     toastFor(kind, status, summarize(entries));
 
   const refresh = (gameId: number) => {
-    queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
+    invalidateLibrary(queryClient, username);
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdQueryKey(gameId) });
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
   };
 
   /**
-   * Puts what a write answered into the cached library and game page instead of loading both
-   * again: the entry (or its removal) and the game's new member numbers. An answer without them
-   * (an older API) falls back to reloading.
+   * Puts what a write answered into the cached index, the entry and the game page instead of
+   * loading them again: the entry (or its removal) and the game's new member numbers. The paged
+   * lists sort and filter on the server, so they reload. An answer without the entry or the
+   * numbers (an older API) falls back to reloading everything.
    */
   const apply = (
     gameId: number,
@@ -77,20 +115,27 @@ export const useLibraryMutations = () => {
       return;
     }
     const { entry, community } = change;
-    queryClient.setQueriesData<UserGameResponse>(
-      { queryKey: getGetApiUserByUsernameGamesQueryKey(username) },
+    const item = entry ? toIndexItem(entry) : null;
+    queryClient.setQueryData<LibraryIndexResponse>(
+      getGetApiUserByUsernameGamesIndexQueryKey(username),
       (old) => {
         if (!old) return old;
         const known = old.results.some((e) => e.id === gameId);
-        // An edit stays in place; a new entry goes first, as the list orders by when it was added
-        const results = !entry
+        // An edit stays in place; a new entry goes first, as the index orders by when it was added
+        const results = !item
           ? old.results.filter((e) => e.id !== gameId)
           : known
-            ? old.results.map((e) => (e.id === gameId ? entry : e))
-            : [entry, ...old.results];
-        return { ...old, results, meta: { ...old.meta, total: results.length } };
+            ? old.results.map((e) => (e.id === gameId ? item : e))
+            : [item, ...old.results];
+        return { ...old, results };
       },
     );
+    const entryKey = getGetApiUserByUsernameGamesByIdQueryKey(username, gameId);
+    // A removed entry's copy is never read again (nothing asks for a game not in the list) and
+    // a later add replaces it; marking it stale keeps an open dialog from asking for it again
+    if (entry) queryClient.setQueryData(entryKey, entry);
+    else queryClient.invalidateQueries({ queryKey: entryKey, refetchType: "none" });
+    queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.setQueriesData<Game>({ queryKey: getGetApiGamesByIdQueryKey(gameId) }, (old) =>
       old ? { ...old, community } : old,
     );
@@ -131,9 +176,7 @@ export const useLibraryMutations = () => {
   const importGames = usePostApiUserByUsernameGamesImport({
     mutation: {
       onSuccess: (result) => {
-        queryClient.invalidateQueries({
-          queryKey: getGetApiUserByUsernameGamesQueryKey(username),
-        });
+        invalidateLibrary(queryClient, username);
         queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetApiHomeQueryKey() });
         toast.success(
