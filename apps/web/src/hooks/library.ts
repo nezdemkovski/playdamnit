@@ -7,7 +7,10 @@ import {
   usePatchApiUserByUsernameGamesById,
   usePostApiUserByUsernameGames,
   usePostApiUserByUsernameGamesImport,
+  type Game,
+  type GameCommunity,
   type PostApiUserByUsernameGamesImportBodyTwo,
+  type UserGameResponse,
   type UserGameCreateRequest,
   type UserGameUpdateRequest,
   type UserGameWithUserData,
@@ -58,10 +61,44 @@ export const useLibraryMutations = () => {
     queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
   };
 
+  /**
+   * Puts what a write answered into the cached library and game page instead of loading both
+   * again: the entry (or its removal) and the game's new member numbers. An answer without them
+   * (an older API) falls back to reloading.
+   */
+  const apply = (
+    gameId: number,
+    change: { entry?: UserGameWithUserData | null; removed?: boolean; community?: GameCommunity },
+  ) => {
+    if (!change.community || (!change.entry && !change.removed)) {
+      refresh(gameId);
+      return;
+    }
+    const { entry, community } = change;
+    queryClient.setQueriesData<UserGameResponse>(
+      { queryKey: getGetApiUserByUsernameGamesQueryKey(username) },
+      (old) => {
+        if (!old) return old;
+        const known = old.results.some((e) => e.id === gameId);
+        // An edit stays in place; a new entry goes first, as the list orders by when it was added
+        const results = !entry
+          ? old.results.filter((e) => e.id !== gameId)
+          : known
+            ? old.results.map((e) => (e.id === gameId ? entry : e))
+            : [entry, ...old.results];
+        return { ...old, results, meta: { ...old.meta, total: results.length } };
+      },
+    );
+    queryClient.setQueriesData<Game>({ queryKey: getGetApiGamesByIdQueryKey(gameId) }, (old) =>
+      old ? { ...old, community } : old,
+    );
+    queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
+  };
+
   const add = usePostApiUserByUsernameGames({
     mutation: {
-      onSuccess: (_data, vars) => {
-        refresh(vars.data.gameId);
+      onSuccess: (data, vars) => {
+        apply(vars.data.gameId, data);
         toast.success(voice(LibraryAction.Add, vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, t("toast.addGameFailed"))),
@@ -70,8 +107,8 @@ export const useLibraryMutations = () => {
 
   const update = usePatchApiUserByUsernameGamesById({
     mutation: {
-      onSuccess: (_data, vars) => {
-        refresh(vars.id);
+      onSuccess: (data, vars) => {
+        apply(vars.id, data);
         toast.success(voice(LibraryAction.Update, vars.data.status));
       },
       onError: (error) => toast.error(apiError(error, t("toast.saveGameFailed"))),
@@ -80,8 +117,8 @@ export const useLibraryMutations = () => {
 
   const remove = useDeleteApiUserByUsernameGamesById({
     mutation: {
-      onSuccess: (_data, vars) => {
-        refresh(vars.id);
+      onSuccess: (data, vars) => {
+        apply(vars.id, { removed: true, community: data.community });
         toast.success(voice(LibraryAction.Remove));
       },
       onError: (error) => toast.error(apiError(error, t("toast.removeGameFailed"))),

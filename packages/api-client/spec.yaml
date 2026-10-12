@@ -102,6 +102,14 @@ components:
         - system
         - function
 
+    UserGameDeleteResponse:
+      allOf:
+        - $ref: "#/components/schemas/DeleteSuccessResponse"
+        - type: object
+          properties:
+            community:
+              $ref: "#/components/schemas/GameCommunity"
+
     DeleteSuccessResponse:
       type: object
       properties:
@@ -1227,6 +1235,14 @@ components:
           type: string
           enum:
             - Game updated successfully
+        entry:
+          allOf:
+            - $ref: "#/components/schemas/UserGameWithUserData"
+          description: The updated entry as the library list serves it
+        community:
+          allOf:
+            - $ref: "#/components/schemas/GameCommunity"
+          description: The game's member numbers after the change
         game:
           type: object
           properties:
@@ -2046,6 +2062,14 @@ paths:
                       - Game added successfully
                   game:
                     type: object
+                  entry:
+                    allOf:
+                      - $ref: "#/components/schemas/UserGameWithUserData"
+                    description: The new entry as the library list serves it
+                  community:
+                    allOf:
+                      - $ref: "#/components/schemas/GameCommunity"
+                    description: The game's member numbers after the change
                 required:
                   - message
                   - game
@@ -2163,7 +2187,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeleteSuccessResponse"
+                $ref: "#/components/schemas/UserGameDeleteResponse"
         "404":
           description: Game not found in library
           content:

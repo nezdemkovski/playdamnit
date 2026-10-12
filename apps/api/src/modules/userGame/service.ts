@@ -8,6 +8,7 @@ import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/util
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
+import { GameService } from "@/modules/game/service";
 
 const MAX_IMPORT_GAMES = 1000;
 const IMPORT_FETCH_TIMEOUT_MS = 30_000;
@@ -84,6 +85,40 @@ const isUniqueViolation = (error: unknown): boolean => {
   return cause !== undefined && cause !== error && isUniqueViolation(cause);
 };
 
+type EntryRow = typeof userGames.$inferSelect & {
+  game: Parameters<typeof transformGameResponse>[0] | null;
+};
+
+/** A library row as the list serves it: the game's card with the member's entry on it */
+const toLibraryEntry = (entry: EntryRow & { game: NonNullable<EntryRow["game"]> }) => ({
+  ...transformGameResponse(entry.game),
+  userGameData: {
+    id: entry.id,
+    status: entry.status,
+    rating: entry.rating !== null ? Number(entry.rating) : null,
+    review: entry.review,
+    platformId: entry.platformId,
+    addedAt: entry.addedAt,
+    endedAt: entry.endedAt,
+    source: entry.source,
+    mastered: entry.mastered,
+    spoilers: entry.spoilers,
+    allowReactions: entry.allowReactions,
+    steamMinutes: entry.steamMinutes,
+    steamLastPlayedAt: entry.steamLastPlayedAt,
+    updatedAt: entry.updatedAt,
+  },
+});
+
+/** One member's entry for a game as the list serves it, or null when the game is not in it */
+const libraryEntry = async (userId: string, gameId: number) => {
+  const entry = await postgresDb.query.userGames.findFirst({
+    where: { userId, gameId },
+    with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
+  });
+  return entry?.game ? toLibraryEntry({ ...entry, game: entry.game }) : null;
+};
+
 /**
  * UserGame service - handles all business logic for user game library operations
  */
@@ -124,27 +159,9 @@ export abstract class UserGameService {
 
     return {
       // Entries whose game the catalog hasn't fetched yet (pre-FK data) are skipped
-      results: entries
-        .filter((entry) => entry.game)
-        .map((entry) => ({
-          ...transformGameResponse(entry.game),
-          userGameData: {
-            id: entry.id,
-            status: entry.status,
-            rating: entry.rating !== null ? Number(entry.rating) : null,
-            review: entry.review,
-            platformId: entry.platformId,
-            addedAt: entry.addedAt,
-            endedAt: entry.endedAt,
-            source: entry.source,
-            mastered: entry.mastered,
-            spoilers: entry.spoilers,
-            allowReactions: entry.allowReactions,
-            steamMinutes: entry.steamMinutes,
-            steamLastPlayedAt: entry.steamLastPlayedAt,
-            updatedAt: entry.updatedAt,
-          },
-        })),
+      results: entries.flatMap((entry) =>
+        entry.game ? [toLibraryEntry({ ...entry, game: entry.game })] : [],
+      ),
       meta: { total, limit: opts.limit, offset: opts.offset ?? 0 },
     };
   }
@@ -183,9 +200,17 @@ export abstract class UserGameService {
         throw new ConflictError("Game already exists in library");
       }
 
+      // The entry as the list serves it and the game's new member numbers, so clients update
+      // what they hold instead of loading the library and the game again
+      const [entry, community] = await Promise.all([
+        libraryEntry(userId, gameId),
+        GameService.community(gameId),
+      ]);
       return {
         message: "Game added successfully",
         game: { ...inserted, rating: inserted.rating !== null ? Number(inserted.rating) : null },
+        entry,
+        community,
       };
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -226,9 +251,15 @@ export abstract class UserGameService {
       throw new NotFoundError("Game not found in user's library");
     }
 
+    const [entry, community] = await Promise.all([
+      libraryEntry(userId, gameId),
+      GameService.community(gameId),
+    ]);
     return {
       message: "Game updated successfully",
       game: { ...updated, rating: updated.rating !== null ? Number(updated.rating) : null },
+      entry,
+      community,
     };
   }
 
@@ -248,6 +279,7 @@ export abstract class UserGameService {
     return {
       message: "Removed successfully",
       id: deletedGame.gameId,
+      community: await GameService.community(gameId),
     };
   }
 

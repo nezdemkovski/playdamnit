@@ -400,6 +400,11 @@ export abstract class GameService {
     });
   }
 
+  /** The members' numbers for one game, as the detail view shows them */
+  static community(gameId: number) {
+    return communityStats(gameId);
+  }
+
   static async like(userId: string, gameId: number) {
     const exists = await db.query.game.findFirst({ where: { id: gameId }, columns: { id: true } });
     if (!exists) throw new NotFoundError("Game not found");

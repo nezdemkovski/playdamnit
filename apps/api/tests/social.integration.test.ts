@@ -269,12 +269,16 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect((await UserService.journal("alice", null, { year: 2025 })).results).toHaveLength(1);
 
     // bob finished the other game without logging a playthrough: it shows up as an entry
-    await UserGameService.addUserGame("bob", OTHER_GAME, {
+    const added = await UserGameService.addUserGame("bob", OTHER_GAME, {
       status: UserGameStatus.Dropped,
       rating: 3,
       platformId: 6,
       endedAt: "2024-12-31",
     });
+    // The answer carries the entry as the list serves it and the game's member numbers
+    expect(added.entry?.id).toBe(OTHER_GAME);
+    expect(added.entry?.userGameData.status).toBe(UserGameStatus.Dropped);
+    expect(added.community.statuses[UserGameStatus.Dropped]).toBeGreaterThan(0);
     const bobs = await UserService.journal("bob", null, {});
     expect(bobs.results.map((i) => [i.kind, i.date, i.game.id])).toEqual([
       ["entry", "2024-12-31", OTHER_GAME],
