@@ -526,7 +526,7 @@
       "typicalTip_other": "Middle of {{count}} grades"
     },
     "evenings": {
-      "title": "Past year",
+      "title": "{{from}} – {{to}}",
       "less": "Less",
       "more": "More",
       "tip": {

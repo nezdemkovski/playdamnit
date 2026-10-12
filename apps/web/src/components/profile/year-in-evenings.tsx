@@ -125,7 +125,7 @@ const useYear = (
     const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
     for (const day of days)
       day.level = day.level === 0 ? 0 : 1 + cut.filter((c) => day.level > c).length;
-    return { days };
+    return { days, first };
   }, [entries, played]);
 
 /**
@@ -142,7 +142,7 @@ export function YearInEvenings({
   className?: string;
 }) {
   const activity = useGetApiUserByUsernameSteamActivity(username);
-  const { days } = useYear(entries, activity.data?.days ?? EMPTY);
+  const { days, first } = useYear(entries, activity.data?.days ?? EMPTY);
 
   const heat = useMemo(
     () =>
@@ -176,7 +176,12 @@ export function YearInEvenings({
   return (
     <div className={cn("min-w-0", className)}>
       <div className="eyebrow flex items-center justify-between gap-3 normal-case tracking-normal">
-        <span>{t("profile.evenings.title")}</span>
+        <span>
+          {t("profile.evenings.title", {
+            from: format(first, DateFormat.MonthYearShort),
+            to: format(new Date(), DateFormat.MonthYearShort),
+          })}
+        </span>
         <span className="flex items-center gap-1">
           <span className="mr-1">{t("profile.evenings.less")}</span>
           {LEVEL_COLORS.map((color) => (
