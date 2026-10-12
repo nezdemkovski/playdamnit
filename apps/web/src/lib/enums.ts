@@ -206,6 +206,11 @@ export enum QueryKeySuffix {
   Reviews = "/reviews",
 }
 
+/** Marks the query key of a list loaded page by page, apart from the one-page query */
+export enum QueryKeyPart {
+  Paged = "paged",
+}
+
 /** Browser drag-and-drop payload format. */
 export enum DragDataType {
   Text = "text/plain",
