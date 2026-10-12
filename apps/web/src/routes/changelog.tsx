@@ -36,9 +36,10 @@ function Changelog() {
                 {format(new Date(`${release.date}T12:00:00`), DateFormat.MonthDayYearShort)}
               </span>
             </h2>
-            <ul className="mt-4 space-y-4">
+            {/* The label column is as wide as the widest label in the release, so titles line up */}
+            <ul className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-4">
               {release.changes.map((change) => (
-                <li key={change.title} className="grid grid-cols-[5.5rem_1fr] items-baseline gap-3">
+                <li key={change.title} className="col-span-2 grid grid-cols-subgrid items-baseline">
                   <span
                     className={cn(
                       "eyebrow justify-self-start border px-1.5 py-1",
