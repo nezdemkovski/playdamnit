@@ -24,10 +24,28 @@ export const GAME_DETAIL_WITH = {
   timeToBeat: true,
 } as const;
 
-// Columns never sent to clients: the raw IGDB document and the search key. Lists also skip
-// the similar-game ids, which only the detail view turns into `similarGames`.
+// Columns never sent to clients: the raw IGDB document and the search key
 export const GAME_DETAIL_COLUMNS = { raw: false, searchNames: false } as const;
-export const GAME_CARD_COLUMNS = { ...GAME_DETAIL_COLUMNS, similarGameIds: false } as const;
+
+// What a card in a list carries, listed so a new column does not ride along in every list. The
+// long texts (summary, storyline), the timestamps and the similar-game ids are the detail view's
+// only; they made up more than half of a card.
+export const GAME_CARD_COLUMNS = {
+  id: true,
+  name: true,
+  slug: true,
+  firstReleaseDate: true,
+  firstReleaseDatePrecision: true,
+  totalRating: true,
+  totalRatingCount: true,
+  hypes: true,
+  isPopular: true,
+  gameType: true,
+  parentGameId: true,
+  versionParentId: true,
+  alternativeNames: true,
+  deletedAt: true,
+} as const;
 
 // What a related game (DLC, edition) carries in the detail view
 export const GAME_RELATED_COLUMNS = {
