@@ -10,6 +10,7 @@ import { TierBoard } from "@/components/profile/tier-board";
 import { YearInEvenings } from "@/components/profile/year-in-evenings";
 import { Section } from "@/components/section";
 import { ReviewCard } from "@/components/social/review-card";
+import { SteamPanel } from "@/components/steam/steam-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
@@ -135,9 +136,26 @@ function ProfileOverview() {
         </Section>
       )}
 
-      {entries.length === 0 && (
-        <div className="panel mt-8 p-12 text-center text-dimmed">{t("profile.overview.empty")}</div>
-      )}
+      {entries.length === 0 &&
+        (isOwn ? (
+          <section className="panel p-6 sm:p-8">
+            <div className="eyebrow">{t("steam.onboarding.eyebrow")}</div>
+            <h2 className="mt-2 text-2xl sm:text-3xl">{t("steam.onboarding.title")}</h2>
+            <p className="mt-2 max-w-2xl text-dimmed">{t("steam.onboarding.text")}</p>
+            <div className="mt-6 max-w-2xl">
+              <SteamPanel
+                username={username}
+                steamId={profile.data?.steamId}
+                steamSyncedAt={profile.data?.steamSyncedAt}
+              />
+            </div>
+            <p className="mt-6 text-sm text-dimmed">{t("steam.onboarding.manual")}</p>
+          </section>
+        ) : (
+          <div className="panel mt-8 p-12 text-center text-dimmed">
+            {t("profile.overview.empty")}
+          </div>
+        ))}
     </>
   );
 }

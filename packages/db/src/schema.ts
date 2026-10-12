@@ -53,6 +53,9 @@ export const user = pgTable("user", {
   bio: text("bio"),
   links: jsonb("links").$type<string[]>().notNull().default([]),
   listPublic: boolean("list_public").notNull().default(true),
+  // The linked Steam account (SteamID64) for library syncs, and when it last synced
+  steamId: text("steam_id"),
+  steamSyncedAt: timestamp("steam_synced_at"),
 });
 
 export const session = pgTable(

@@ -14,7 +14,7 @@ export const steamImportRoutes = new Elysia()
   .use(betterAuth)
   .post(
     "/me/import/steam/preview",
-    { auth: true, body: t.Object({ profile }) },
+    { auth: true, body: t.Object({ profile: t.Optional(profile) }) },
     ({ user, body, request, server }) => {
       steamLimiter.check(clientKey({ request, server }, user.id));
       return SteamService.preview(user.id, body.profile);
@@ -25,12 +25,13 @@ export const steamImportRoutes = new Elysia()
     {
       auth: true,
       body: t.Object({
-        profile,
+        profile: t.Optional(profile),
         playedStatus: t.Optional(t.Enum(UserGameStatus)),
       }),
     },
     ({ user, body, request, server }) => {
       steamLimiter.check(clientKey({ request, server }, user.id));
-      return SteamService.import(user.id, body.profile, body.playedStatus ?? UserGameStatus.OnHold);
+      return SteamService.import(user.id, body.playedStatus ?? UserGameStatus.OnHold, body.profile);
     },
-  );
+  )
+  .delete("/me/steam", { auth: true }, ({ user }) => SteamService.unlink(user.id));

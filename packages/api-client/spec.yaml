@@ -1,4 +1,4 @@
-openapi: 3.1.1
+openapi: 3.0.3
 info:
   title: Your API
   description: Development documentation
@@ -1363,6 +1363,14 @@ components:
           type: boolean
         isOwn:
           type: boolean
+        steamId:
+          type: string
+          nullable: true
+          description: The linked SteamID64; only the owner sees it
+        steamSyncedAt:
+          type: string
+          nullable: true
+          description: When the linked Steam library was last imported; only the owner sees it
       required:
         - id
         - image
@@ -1575,9 +1583,9 @@ components:
           type: string
           minLength: 2
           maxLength: 200
-          description: SteamID64, a steamcommunity.com profile URL or a custom URL name
-      required:
-        - profile
+          description: >-
+            SteamID64, a steamcommunity.com profile URL or a custom URL name; leave it out to use
+            the linked Steam account
 
     SteamImportPreview:
       type: object
@@ -2594,6 +2602,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameImportResponse"
+
+  /api/me/steam:
+    delete:
+      operationId: deleteApiMeSteam
+      tags:
+        - Library
+      summary: Unlink the Steam account
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Unlinked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
 
   /api/me/feed:
     get:

@@ -20,6 +20,7 @@ import { BadgeStrip, computeBadges } from "@/components/profile/badges";
 import { HallOfFame } from "@/components/profile/hall-of-fame";
 import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { FollowButton } from "@/components/social/follow-button";
+import { SteamButton } from "@/components/steam/steam-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
@@ -106,11 +107,18 @@ function ProfileLayout() {
             />
             <div className="flex shrink-0 gap-2">
               {user.isOwn ? (
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/$username/settings" params={{ username }}>
-                    <SettingsIcon /> {t("profile.editProfile")}
-                  </Link>
-                </Button>
+                <>
+                  <SteamButton
+                    username={username}
+                    steamId={user.steamId}
+                    steamSyncedAt={user.steamSyncedAt}
+                  />
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/$username/settings" params={{ username }}>
+                      <SettingsIcon /> {t("profile.editProfile")}
+                    </Link>
+                  </Button>
+                </>
               ) : (
                 <FollowButton username={user.username} isFollowing={user.isFollowing} />
               )}

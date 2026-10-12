@@ -7,13 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getConfig } from "@/config";
 import { useLibraryMutations } from "@/hooks/library";
-import { SteamImport } from "./steam-import";
-import { GetApiUserByUsernameGamesExportFormat } from "@playdamnit/api-client";
+import { SteamPanel } from "@/components/steam/steam-panel";
+import {
+  GetApiUserByUsernameGamesExportFormat,
+  useGetApiUserByUsername,
+} from "@playdamnit/api-client";
 
 /** Export the list as JSON or CSV, import a file exported here (or a hand-made one) */
 export function DataSettings({ username }: { username: string }) {
   const { t } = useTranslation();
   const library = useLibraryMutations();
+  const profile = useGetApiUserByUsername(username);
   const [overwrite, setOverwrite] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -65,7 +69,15 @@ export function DataSettings({ username }: { username: string }) {
           {library.importPending ? t("settings.data.importing") : t("settings.data.chooseFile")}
         </Button>
       </section>
-      <SteamImport username={username} />
+      <section className="panel space-y-4 p-5 md:col-span-2">
+        <h3 className="font-semibold">{t("steam.title")}</h3>
+        <p className="text-sm text-dimmed">{t("steam.text")}</p>
+        <SteamPanel
+          username={username}
+          steamId={profile.data?.steamId}
+          steamSyncedAt={profile.data?.steamSyncedAt}
+        />
+      </section>
     </div>
   );
 }

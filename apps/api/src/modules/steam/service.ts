@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { externalGame, game, userGames } from "@playdamnit/db/schema";
+import { externalGame, game, user, userGames } from "@playdamnit/db/schema";
 import { UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 
 import { getConfig } from "@/config";
@@ -123,10 +123,21 @@ const libraryIds = async (userId: string, gameIds: number[]) =>
       : [],
   );
 
+/** The profile given, or the Steam account already linked to the user */
+const steamIdFor = async (userId: string, profile?: string) => {
+  if (profile?.trim()) return resolveSteamId(profile);
+  const row = await postgresDb.query.user.findFirst({
+    where: { id: userId },
+    columns: { steamId: true },
+  });
+  if (!row?.steamId) throw new BadRequestError("Connect a Steam profile first");
+  return row.steamId;
+};
+
 export abstract class SteamService {
-  /** What an import of this Steam profile would do, without writing anything */
-  static async preview(userId: string, profile: string) {
-    const steamId = await resolveSteamId(profile);
+  /** What an import of this Steam profile (or the linked one) would do, writing nothing */
+  static async preview(userId: string, profile?: string) {
+    const steamId = await steamIdFor(userId, profile);
     const owned = await ownedGames(steamId);
     const matches = await matchToCatalog(owned);
     const inLibrary = await libraryIds(
@@ -154,10 +165,11 @@ export abstract class SteamService {
 
   /**
    * Adds the Steam library to the user's list on PC: never-launched games go to the backlog,
-   * played ones to the status the user picked. Games already in the list are left alone.
+   * played ones to the status the user picked. Games already in the list are left alone, so
+   * running it again only brings in what's new.
    */
-  static async import(userId: string, profile: string, playedStatus: UserGameStatus) {
-    const steamId = await resolveSteamId(profile);
+  static async import(userId: string, playedStatus: UserGameStatus, profile?: string) {
+    const steamId = await steamIdFor(userId, profile);
     const matches = await matchToCatalog(await ownedGames(steamId));
     const rows = matches.map((m) => ({
       gameId: m.gameId,
@@ -167,9 +179,23 @@ export abstract class SteamService {
     if (rows.length === 0) {
       throw new BadRequestError("None of these Steam games are in the catalog yet");
     }
-    return UserGameService.importUserGames(userId, rows, false, {
+    const result = await UserGameService.importUserGames(userId, rows, false, {
       source: UserGameSource.Steam,
       maxGames: MAX_STEAM_IMPORT,
     });
+    // An import links the account, so the next sync needs no profile
+    await postgresDb
+      .update(user)
+      .set({ steamId, steamSyncedAt: new Date() })
+      .where(eq(user.id, userId));
+    return result;
+  }
+
+  static async unlink(userId: string) {
+    await postgresDb
+      .update(user)
+      .set({ steamId: null, steamSyncedAt: null })
+      .where(eq(user.id, userId));
+    return { message: "Steam account unlinked" };
   }
 }

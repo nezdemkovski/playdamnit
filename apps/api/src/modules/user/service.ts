@@ -88,6 +88,9 @@ export abstract class UserService {
       isFollowing: follows,
       followsYou,
       isOwn: data.id === viewerId,
+      // Only the owner sees which Steam account is linked
+      steamId: data.id === viewerId ? data.steamId : null,
+      steamSyncedAt: data.id === viewerId ? data.steamSyncedAt : null,
     };
   }
 
