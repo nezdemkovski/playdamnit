@@ -1,9 +1,11 @@
+import { t } from "@/i18n";
 import { ChangeKind } from "@/lib/enums";
 
 /**
  * What's new for members, newest release first. 1.0 is the first release; every new feature
  * after it gets an entry in the commit that ships it. Fixes and polish are not news and stay out.
- * Each entry says what members can now do, not how it was built.
+ * Each entry says what members can now do, not how it was built. The text lives in en.json
+ * (`changelog.entries.*`), read through getters so a language switch picks it up.
  */
 
 export interface Change {
@@ -23,6 +25,13 @@ export const CHANGELOG: Release[] = [
   {
     version: "1.0",
     date: "2026-10-12",
-    changes: [{ kind: ChangeKind.New, title: "First release" }],
+    changes: [
+      {
+        kind: ChangeKind.New,
+        get title() {
+          return t("changelog.entries.initialRelease");
+        },
+      },
+    ],
   },
 ];

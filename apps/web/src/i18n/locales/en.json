@@ -739,6 +739,9 @@
   },
   "changelog": {
     "title": "Changelog",
+    "entries": {
+      "initialRelease": "Initial release"
+    },
     "kinds": {
       "new": "New",
       "changed": "Changed",
