@@ -50,6 +50,7 @@ const raw: IGDBGameResponse = {
   themes: [{ id: 17, name: "Fantasy", slug: "fantasy" }],
   collections: [{ id: 106, name: "The Legend of Zelda", slug: "the-legend-of-zelda" }],
   keywords: [{ id: 9, name: "open world", slug: "open-world" }],
+  hypes: 321,
 };
 
 describe("deriveGame", () => {
@@ -60,6 +61,7 @@ describe("deriveGame", () => {
       id: 7346,
       gameType: 0,
       isPopular: true,
+      hypes: 321,
       firstReleaseDatePrecision: "day",
       alternativeNames: ["ゼルダの伝説 ブレス オブ ザ ワイルド", "BotW"],
       searchNames:

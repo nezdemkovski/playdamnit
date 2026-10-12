@@ -73,6 +73,8 @@ export interface IGDBGameResponse {
   first_release_date?: number;
   total_rating?: number;
   total_rating_count?: number;
+  /** Follows before release; IGDB leaves the field out when it is zero */
+  hypes?: number;
   summary?: string;
   storyline?: string;
   url?: string;

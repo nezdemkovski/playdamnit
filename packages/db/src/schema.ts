@@ -480,6 +480,8 @@ export const game = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     isPopular: boolean("is_popular").notNull().default(false),
     totalRatingCount: integer("total_rating_count"),
+    // IGDB "hypes": people following the game before release, the anticipation signal
+    hypes: integer("hypes"),
     // IGDB date precision for first_release_date ("YYYYMMMMDD", "YYYYMMMM", "YYYY", ...)
     firstReleaseDatePrecision: text("first_release_date_precision", {
       enum: enumValues(ReleaseDatePrecision),
@@ -512,6 +514,7 @@ export const game = pgTable(
     index("idx_game_search_names_trgm").using("gin", table.searchNames.op("gin_trgm_ops")),
     index("idx_game_slug").on(table.slug),
     index("idx_game_popular").on(table.isPopular),
+    index("idx_game_hypes").on(table.hypes),
     index("idx_game_rating").on(table.totalRating),
     index("idx_game_type").on(table.gameType),
     index("idx_game_parent_game_id").on(table.parentGameId),

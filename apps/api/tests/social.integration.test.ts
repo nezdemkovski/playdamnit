@@ -343,5 +343,11 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     });
     expect(popular.results.map((g) => g.id)).toEqual([GAME]);
     await pg.query(`update game set is_popular = false where id = $1`, [GAME]);
+    // Follows before release make an unrated game hot too
+    await pg.query(`update game set hypes = 25 where id = $1`, [OTHER_GAME]);
+    expect((await GameService.releaseDays({ ...range, popular: true })).days).toEqual([
+      { date: "2020-09-13", count: 1 },
+    ]);
+    await pg.query(`update game set hypes = null where id = $1`, [OTHER_GAME]);
   });
 });

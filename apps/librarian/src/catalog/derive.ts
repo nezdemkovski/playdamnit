@@ -128,6 +128,7 @@ export const deriveGame = (raw: IGDBGameResponse, now: Date): DerivedGame => {
       firstReleaseDatePrecision: releasePrecision(raw),
       totalRating: raw.total_rating ?? null,
       totalRatingCount: raw.total_rating_count ?? null,
+      hypes: raw.hypes ?? null,
       isPopular: (raw.total_rating_count ?? 0) >= POPULAR_RATING_COUNT,
       gameType: raw.game_type?.id ?? null,
       parentGameId: raw.parent_game ?? null,

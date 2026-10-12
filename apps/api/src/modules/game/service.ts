@@ -28,6 +28,8 @@ export const MAX_GAMES_PAGE_SIZE = 100;
 const SIMILAR_GAMES_LIMIT = 12;
 // "Best" needs enough IGDB votes to mean anything
 const MIN_RATINGS_FOR_BEST = 50;
+// Unreleased games have no ratings yet; this many IGDB follows before release make one "hot"
+const HOT_HYPES = 10;
 
 export interface GameFilters {
   limit?: number;
@@ -42,7 +44,7 @@ export interface GameFilters {
   /** IGDB game_type ids */
   types?: number[];
   ids?: number[];
-  /** Only games IGDB flags as popular */
+  /** Only hot games: popular by ratings, or anticipated by follows before release */
   popular?: boolean;
   sort?: GameSort;
 }
@@ -55,6 +57,7 @@ type GameRef = {
   totalRating: unknown;
   totalRatingCount: unknown;
   isPopular: unknown;
+  hypes: unknown;
 };
 
 const yearBounds = (year: number) => ({
@@ -90,7 +93,7 @@ const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
   if (to !== undefined) filters.push(sql`${t.firstReleaseDate} <= ${to}`);
   if (opts.types?.length) filters.push(sql`${t.gameType} in ${opts.types}`);
   if (opts.ids?.length) filters.push(sql`${t.id} in ${opts.ids}`);
-  if (opts.popular) filters.push(sql`${t.isPopular} = true`);
+  if (opts.popular) filters.push(sql`(${t.isPopular} or ${t.hypes} >= ${HOT_HYPES})`);
   if (sort === GameSort.Recent) {
     filters.push(sql`${t.firstReleaseDate} <= extract(epoch from now())::bigint`, hasCover(t));
   }
@@ -111,7 +114,8 @@ const orderFor = (sort: GameSort) => (t: GameRef) => {
   const popularity = sql`${t.totalRatingCount} desc nulls last`;
   switch (sort) {
     case GameSort.Popular:
-      return [sql`${t.isPopular} desc`, popularity, sql`${t.id}`];
+      // Ratings first; for unreleased games (no ratings yet) the follows decide
+      return [sql`${t.isPopular} desc`, popularity, sql`${t.hypes} desc nulls last`, sql`${t.id}`];
     case GameSort.Rating:
       return [sql`${t.totalRating} desc nulls last`, popularity];
     case GameSort.Recent:

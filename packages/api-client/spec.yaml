@@ -1757,7 +1757,7 @@ paths:
         - name: popular
           in: query
           required: false
-          description: '"1" or "true" keeps only the games IGDB flags as popular'
+          description: '"1" or "true" keeps only hot games: 100+ IGDB ratings, or 10+ follows before release'
           schema:
             type: string
         - name: sort
@@ -1817,7 +1817,7 @@ paths:
         - name: popular
           in: query
           required: false
-          description: '"1" or "true" counts only the games IGDB flags as popular'
+          description: '"1" or "true" counts only hot games: 100+ IGDB ratings, or 10+ follows before release'
           schema:
             type: string
       operationId: getApiGamesReleaseDays
