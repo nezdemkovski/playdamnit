@@ -10,7 +10,9 @@ const ITEM =
 
 // Steam's navy plate with its blue, like a profile card on Steam itself
 const CHIP =
-  "inline-flex items-center gap-2 bg-gradient-to-r from-steam-ink to-steam-navy pr-3 text-left ring-1 ring-steam-blue/25 transition-shadow hover:ring-steam-blue/70";
+  "inline-flex items-center gap-2 bg-gradient-to-r from-steam-ink to-steam-navy pr-3 text-left ring-1 ring-steam-blue/25";
+// Only a badge that does something lights up under the pointer
+const ACTIVE = `${CHIP} cursor-pointer transition-shadow hover:ring-steam-blue/70`;
 
 /** The connected Steam account in the profile header: a link for visitors, sync for the owner */
 export function SteamBadge({
@@ -59,7 +61,7 @@ export function SteamBadge({
         href={url}
         target="_blank"
         rel="noreferrer nofollow"
-        className={CHIP}
+        className={ACTIVE}
         title={name ?? undefined}
       >
         {label}
@@ -73,12 +75,12 @@ export function SteamBadge({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button type="button" className={CHIP} title={name ?? undefined}>
+        <button type="button" className={ACTIVE} title={name ?? undefined}>
           {label}
         </button>
       </PopoverTrigger>
       <PopoverContent
-        align="start"
+        align="end"
         // Opening the menu shouldn't put a focus ring on its first item
         onOpenAutoFocus={(event) => event.preventDefault()}
         className="w-56 rounded-none p-1 text-sm"
