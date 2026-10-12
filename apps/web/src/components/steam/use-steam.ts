@@ -1,5 +1,6 @@
 import {
   getGetApiUserByUsernameGamesQueryKey,
+  getGetApiMeRecommendationsQueryKey,
   getGetApiUserByUsernameQueryKey,
   useDeleteApiMeSteam,
   usePostApiMeImportSteam,
@@ -19,6 +20,7 @@ export const useSteam = (username: string, onImported?: () => void) => {
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
+    queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
   };
   const run = usePostApiMeImportSteam({
     mutation: {

@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 
 import { meRoutes } from "./me";
+import { recommendationRoutes } from "./me/recommendations";
 import { steamImportRoutes } from "./me/steam";
 import { getSteamActivity } from "./user/[username]/steam-activity";
 
@@ -34,6 +35,7 @@ import { postIgdbWebhook } from "./webhooks/igdb/POST";
 export const routes = new Elysia()
   .use(meRoutes)
   .use(steamImportRoutes)
+  .use(recommendationRoutes)
   .use(getSteamActivity)
 
   .use(getUser)

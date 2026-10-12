@@ -1,5 +1,6 @@
 import {
   getGetApiGamesByIdQueryKey,
+  getGetApiMeRecommendationsQueryKey,
   getGetApiUserByUsernameGamesQueryKey,
   useDeleteApiUserByUsernameGamesById,
   useGetApiUserByUsernameGames,
@@ -54,6 +55,7 @@ export const useLibraryMutations = () => {
   const refresh = (gameId: number) => {
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiGamesByIdQueryKey(gameId) });
+    queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
   };
 
   const add = usePostApiUserByUsernameGames({
@@ -92,6 +94,7 @@ export const useLibraryMutations = () => {
         queryClient.invalidateQueries({
           queryKey: getGetApiUserByUsernameGamesQueryKey(username),
         });
+        queryClient.invalidateQueries({ queryKey: getGetApiMeRecommendationsQueryKey() });
         toast.success(
           t("toast.imported", {
             imported: result.imported,

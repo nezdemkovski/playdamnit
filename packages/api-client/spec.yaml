@@ -2574,6 +2574,39 @@ paths:
                 required:
                   - users
 
+  /api/me/recommendations:
+    get:
+      operationId: getApiMeRecommendations
+      tags:
+        - Games
+      summary: Games to play next
+      description: Similar games of the viewer's library, weighted by grades, statuses, Steam hours and likes. Released whole games only, nothing already in the library.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 40
+            default: 20
+      responses:
+        "200":
+          description: Recommended games, best first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Game"
+                required:
+                  - results
+
   /api/user/{username}/steam-activity:
     get:
       operationId: getApiUserByUsernameSteamActivity

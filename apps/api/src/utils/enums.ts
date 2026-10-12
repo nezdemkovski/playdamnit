@@ -199,6 +199,15 @@ export enum ExternalGameSourceId {
   Steam = 1,
 }
 
+/** IGDB game_type ids worth recommending: whole games, not DLC, bundles, mods or episodes */
+export enum RecommendableGameType {
+  MainGame = 0,
+  StandaloneExpansion = 4,
+  Remake = 8,
+  Remaster = 9,
+  ExpandedGame = 10,
+}
+
 /** IGDB platform ids the API assigns on its own */
 export enum PlatformId {
   Pc = 6,

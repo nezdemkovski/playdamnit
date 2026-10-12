@@ -4,6 +4,7 @@ import {
   GetApiGamesSort,
   useGetApiGames,
   useGetApiMeFeed,
+  useGetApiMeRecommendations,
   useGetApiReviews,
   type Game,
 } from "@playdamnit/api-client";
@@ -12,6 +13,7 @@ import { format } from "@/i18n/date";
 import {
   ActivityIcon,
   CalendarIcon,
+  CompassIcon,
   FlameIcon,
   Gamepad2Icon,
   LibraryIcon,
@@ -57,6 +59,7 @@ function Home() {
   });
   const freshReviews = useGetApiReviews({ limit: 6 });
   const feed = useGetApiMeFeed({ limit: 12 }, { query: { enabled: !!user } });
+  const forYou = useGetApiMeRecommendations({ limit: RAIL }, { query: { enabled: !!user } });
 
   const playing = entries
     .filter((e) => e.userGameData.status === StatusEnum.Playing)
@@ -97,6 +100,12 @@ function Home() {
               <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
             ))}
           </GameRail>
+        </Section>
+      )}
+
+      {forYou.data && forYou.data.results.length > 0 && (
+        <Section title={t("home.sections.forYou")} icon={CompassIcon}>
+          <Rail games={forYou.data.results} byGameId={byGameId} />
         </Section>
       )}
 

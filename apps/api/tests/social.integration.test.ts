@@ -367,4 +367,25 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ]);
     await pg.query(`update game set hypes = null where id = $1`, [OTHER_GAME]);
   });
+
+  test("recommendations follow liked games to their similar games, never to owned ones", async () => {
+    const { RecommendationService } = await import("@/modules/recommendation/service");
+    const ids = async (userId: string) =>
+      (await RecommendationService.forUser(userId, 10)).results.map((g) => g.id);
+    await pg.query(`update game set similar_game_ids = $2 where id = $1`, [GAME, [OTHER_GAME]]);
+    // Graded S, and an ungraded wishlist entry (rating 0) still counts as a hint
+    expect(await ids("alice")).toEqual([OTHER_GAME]);
+    expect(await ids("carol")).toEqual([OTHER_GAME]);
+    // Bob already has it
+    expect(await ids("bob")).toEqual([]);
+    // A low grade pushes the neighbours away
+    await pg.query(`update user_games set rating = 2 where user_id = 'alice' and game_id = $1`, [
+      GAME,
+    ]);
+    expect(await ids("alice")).toEqual([]);
+    await pg.query(`update user_games set rating = 9 where user_id = 'alice' and game_id = $1`, [
+      GAME,
+    ]);
+    await pg.query(`update game set similar_game_ids = '{}' where id = $1`, [GAME]);
+  });
 });
