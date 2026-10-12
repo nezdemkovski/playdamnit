@@ -90,6 +90,8 @@ export abstract class UserService {
       isOwn: data.id === viewerId,
       // Everyone sees that Steam is connected; only the owner sees which account
       steamLinked: !!data.steamId,
+      steamName: data.steamId ? data.steamName : null,
+      steamProfileUrl: data.steamId ? data.steamProfileUrl : null,
       steamId: data.id === viewerId ? data.steamId : null,
       steamSyncedAt: data.id === viewerId ? data.steamSyncedAt : null,
     };

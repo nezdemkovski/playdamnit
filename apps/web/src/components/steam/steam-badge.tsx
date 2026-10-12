@@ -1,58 +1,58 @@
-import { Gamepad2Icon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { relativeDate } from "@/lib/format";
+import { SteamLogo } from "./steam-logo";
 import { useSteam } from "./use-steam";
 
 const CHIP =
-  "inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-xs font-semibold text-dimmed";
+  "inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-xs font-semibold text-dimmed hover:border-foreground/40 hover:text-foreground";
 
-/**
- * "Steam" in the profile header of a player whose library is connected. The owner can open it:
- * when it last synced, sync now, unlink. Everyone else just sees the chip.
- */
+/** The connected Steam account in the profile header: a link for visitors, sync for the owner */
 export function SteamBadge({
   username,
   isOwn,
-  steamSyncedAt,
+  name,
+  url,
+  syncedAt,
 }: {
   username: string;
   isOwn: boolean;
-  steamSyncedAt?: string | null;
+  name?: string | null;
+  url?: string | null;
+  syncedAt?: string | null;
 }) {
   const { t } = useTranslation();
   const steam = useSteam(username);
+  const label = (
+    <>
+      <SteamLogo className={steam.pending ? "size-3.5 animate-spin" : "size-3.5"} />
+      {name || t("steam.badge")}
+    </>
+  );
   if (!isOwn) {
-    return (
-      <span className={CHIP} title={t("steam.badgeTitle")}>
-        <Gamepad2Icon className="size-3.5" /> {t("steam.badge")}
-      </span>
+    return url ? (
+      <a href={url} target="_blank" rel="noreferrer nofollow" className={CHIP}>
+        {label}
+      </a>
+    ) : (
+      <span className={CHIP}>{label}</span>
     );
   }
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={`${CHIP} hover:border-foreground/40 hover:text-foreground`}
-        >
-          <Gamepad2Icon className={steam.pending ? "size-3.5 animate-spin" : "size-3.5"} />{" "}
-          {t("steam.badge")}
+        <button type="button" className={CHIP}>
+          {label}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 space-y-3 rounded-none text-sm">
-        <div>
-          <div className="font-semibold">{t("steam.connected")}</div>
+      <PopoverContent align="start" className="w-60 space-y-3 rounded-none text-sm">
+        {syncedAt && (
           <div className="text-xs text-dimmed">
-            {steamSyncedAt
-              ? t("steam.syncedAgo", { when: relativeDate(steamSyncedAt) })
-              : t("steam.neverSynced")}
-            {" · "}
-            {t("steam.auto")}
+            {t("steam.syncedAgo", { when: relativeDate(syncedAt) })}
           </div>
-        </div>
+        )}
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -62,6 +62,13 @@ export function SteamBadge({
           >
             {steam.pending ? t("steam.importing") : t("steam.syncNow")}
           </Button>
+          {url && (
+            <Button asChild size="sm" variant="ghost">
+              <a href={url} target="_blank" rel="noreferrer nofollow">
+                {t("steam.open")}
+              </a>
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"

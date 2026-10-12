@@ -181,7 +181,9 @@ function ProfileLayout() {
               <SteamBadge
                 username={username}
                 isOwn={user.isOwn}
-                steamSyncedAt={user.steamSyncedAt}
+                name={user.steamName}
+                url={user.steamProfileUrl}
+                syncedAt={user.steamSyncedAt}
               />
             )}
             {badges && (

@@ -55,6 +55,9 @@ export const user = pgTable("user", {
   listPublic: boolean("list_public").notNull().default(true),
   // The linked Steam account (SteamID64) for library syncs, and when it last synced
   steamId: text("steam_id"),
+  // The Steam profile's display name and URL, refreshed on every sync, shown on the profile
+  steamName: text("steam_name"),
+  steamProfileUrl: text("steam_profile_url"),
   steamSyncedAt: timestamp("steam_synced_at"),
 });
 

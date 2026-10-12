@@ -713,7 +713,6 @@
     "import": "Import",
     "importing": "Importing…",
     "connect": "Connect Steam",
-    "connected": "Steam is connected.",
     "unlink": "Unlink",
     "added_one": "{{count}} game added from Steam.",
     "added_other": "{{count}} games added from Steam.",
@@ -721,10 +720,8 @@
     "failed": "Couldn't import from Steam.",
     "onboarding": "Import your Steam library",
     "badge": "Steam",
-    "badgeTitle": "Steam library connected",
     "syncedAgo": "Synced {{when}}",
-    "neverSynced": "Not synced yet",
-    "auto": "new games come in on their own",
-    "syncNow": "Sync now"
+    "syncNow": "Sync now",
+    "open": "Open"
   }
 }

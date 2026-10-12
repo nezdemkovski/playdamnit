@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SteamLogo } from "./steam-logo";
 import { useSteam } from "./use-steam";
 
 /** A Steam profile field and an Import button; importing also links the account */
@@ -42,16 +43,20 @@ export function SteamImportForm({
 export function SteamSettings({
   username,
   steamId,
+  name,
 }: {
   username: string;
   steamId?: string | null;
+  name?: string | null;
 }) {
   const { t } = useTranslation();
   const steam = useSteam(username);
   if (!steamId) return <SteamImportForm username={username} />;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-auto text-sm">{t("steam.connected")}</span>
+      <span className="mr-auto flex items-center gap-2 text-sm font-semibold">
+        <SteamLogo className="size-4" /> {name || t("steam.badge")}
+      </span>
       <Button variant="secondary" onClick={() => steam.importLibrary()} disabled={steam.pending}>
         {steam.pending ? t("steam.importing") : t("steam.syncNow")}
       </Button>

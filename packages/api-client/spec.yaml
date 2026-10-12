@@ -197,13 +197,15 @@ components:
           type: number
           nullable: true
         createdAt:
-          type: number
+          type: string
+          format: date-time
           nullable: true
         totalRating:
           type: number
           nullable: true
         updatedAt:
-          type: number
+          type: string
+          format: date-time
           nullable: true
         isPopular:
           type: boolean
@@ -1366,6 +1368,14 @@ components:
         steamLinked:
           type: boolean
           description: Whether a Steam account is connected (its library syncs on its own)
+        steamName:
+          type: string
+          nullable: true
+          description: The connected Steam profile's display name
+        steamProfileUrl:
+          type: string
+          nullable: true
+          description: The connected Steam profile's page
         steamId:
           type: string
           nullable: true

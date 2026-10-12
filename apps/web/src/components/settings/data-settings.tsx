@@ -71,7 +71,11 @@ export function DataSettings({ username }: { username: string }) {
       </section>
       <section className="panel space-y-4 p-5 md:col-span-2">
         <h3 className="font-semibold">{t("steam.title")}</h3>
-        <SteamSettings username={username} steamId={profile.data?.steamId} />
+        <SteamSettings
+          username={username}
+          steamId={profile.data?.steamId}
+          name={profile.data?.steamName}
+        />
       </section>
     </div>
   );

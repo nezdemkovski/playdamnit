@@ -73,6 +73,15 @@ const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
   return result.response.games;
 };
 
+/** The profile's display name and URL (public even when the game details are private) */
+const playerSummary = async (steamId: string) => {
+  const result = await steamGet<{
+    response: { players: { personaname?: string; profileurl?: string }[] };
+  }>("/ISteamUser/GetPlayerSummaries/v2/", { steamids: steamId });
+  const player = result.response.players[0];
+  return { name: player?.personaname ?? null, url: player?.profileurl ?? null };
+};
+
 /**
  * The owned Steam games found in the catalog through IGDB's Steam links. One app can link to
  * several catalog entries (editions, ports); the base game with the most ratings wins.
@@ -140,10 +149,15 @@ export abstract class SteamService {
       source: UserGameSource.Steam,
       maxGames: MAX_STEAM_IMPORT,
     });
-    // An import links the account, so the next sync needs no profile
+    // An import links the account, so the next sync needs no profile; the name may have changed
+    const summary = await playerSummary(steamId).catch(() => null);
     await postgresDb
       .update(user)
-      .set({ steamId, steamSyncedAt: new Date() })
+      .set({
+        steamId,
+        steamSyncedAt: new Date(),
+        ...(summary && { steamName: summary.name, steamProfileUrl: summary.url }),
+      })
       .where(eq(user.id, userId));
     return result;
   }
@@ -178,7 +192,7 @@ export abstract class SteamService {
   static async unlink(userId: string) {
     await postgresDb
       .update(user)
-      .set({ steamId: null, steamSyncedAt: null })
+      .set({ steamId: null, steamName: null, steamProfileUrl: null, steamSyncedAt: null })
       .where(eq(user.id, userId));
     return { message: "Steam account unlinked" };
   }
