@@ -16,6 +16,7 @@ export enum LibrarySort {
   Shame = "shame",
   Added = "added",
   Grade = "grade",
+  Hours = "hours",
   Name = "name",
   Release = "release",
 }

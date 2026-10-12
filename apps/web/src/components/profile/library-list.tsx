@@ -47,6 +47,8 @@ const compare: Record<LibrarySort, (a: UserGameWithUserData, b: UserGameWithUser
   [LibrarySort.Added]: (a, b) =>
     (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
   [LibrarySort.Grade]: (a, b) => (b.userGameData.rating ?? -1) - (a.userGameData.rating ?? -1),
+  [LibrarySort.Hours]: (a, b) =>
+    (b.userGameData.steamMinutes ?? 0) - (a.userGameData.steamMinutes ?? 0),
   [LibrarySort.Name]: (a, b) => a.name.localeCompare(b.name),
   [LibrarySort.Release]: (a, b) => (b.firstReleaseDate ?? 0) - (a.firstReleaseDate ?? 0),
 };
@@ -88,6 +90,15 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
       // storage may be unavailable
     }
   };
+
+  // Hours only sort anything once Steam has filled them in
+  const sorts = useMemo(
+    () =>
+      entries.some((e) => e.userGameData.steamMinutes)
+        ? SORTS
+        : SORTS.filter((s) => s !== LibrarySort.Hours),
+    [entries],
+  );
 
   const counts = useMemo(() => {
     const map = new Map<string, number>();
@@ -181,7 +192,7 @@ export function LibraryList({ entries, editable }: LibraryListProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as LibrarySort)}>
-              {SORTS.map((value) => (
+              {sorts.map((value) => (
                 <DropdownMenuRadioItem key={value} value={value}>
                   {t(`profile.library.sort.${value}`)}
                 </DropdownMenuRadioItem>

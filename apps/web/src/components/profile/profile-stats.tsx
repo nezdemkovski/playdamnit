@@ -19,7 +19,7 @@ export function ProfileStatStrip({
   entries: UserGameWithUserData[];
   own?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const s = useMemo(() => summarize(entries), [entries]);
   // The median, not the mean: it is always a grade the person actually gave, and a mix of
   // S and F does not average out to a C nobody got
@@ -30,6 +30,9 @@ export function ProfileStatStrip({
         .filter((r): r is number => !!r)
         .sort((a, b) => b - a),
     [entries],
+  );
+  const hours = Math.round(
+    entries.reduce((sum, e) => sum + (e.userGameData.steamMinutes ?? 0), 0) / 60,
   );
   const typicalGrade = graded.length ? gradeOf(graded[Math.floor((graded.length - 1) / 2)]) : null;
 
@@ -60,6 +63,12 @@ export function ProfileStatStrip({
         </Tooltip>
       ) : (
         finished
+      )}
+      {hours > 0 && (
+        <span>
+          <b>{hours.toLocaleString(i18n.language)}</b>
+          <span className="text-dimmed"> {t("profile.stats.hours")}</span>
+        </span>
       )}
       {typicalGrade && (
         <Tooltip>

@@ -1,6 +1,6 @@
 import { StatusEnum, useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Gamepad2Icon, MessageSquareTextIcon, Rows3Icon } from "lucide-react";
+import { Gamepad2Icon, HourglassIcon, MessageSquareTextIcon, Rows3Icon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,7 @@ import { SteamImportForm } from "@/components/steam/steam-panel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
+import { formatPlaytime } from "@/lib/format";
 import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/$username/")({
@@ -36,6 +37,10 @@ function ProfileOverview() {
   if (library.isPending) return <Skeleton className="h-40 rounded-card" />;
 
   const playing = entries.filter((e) => e.userGameData.status === StatusEnum.Playing).slice(0, 12);
+  const mostPlayed = entries
+    .filter((e) => e.userGameData.steamMinutes)
+    .sort((a, b) => (b.userGameData.steamMinutes ?? 0) - (a.userGameData.steamMinutes ?? 0))
+    .slice(0, 12);
   const recent = [...entries]
     .filter((e) => e.userGameData.endedAt)
     .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))
@@ -84,6 +89,21 @@ function ProfileOverview() {
           <GameRail>
             {playing.map((g) => (
               <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
+            ))}
+          </GameRail>
+        </Section>
+      )}
+
+      {mostPlayed.length > 0 && (
+        <Section title={t("profile.overview.mostPlayed")} icon={HourglassIcon} className="mt-8">
+          <GameRail>
+            {mostPlayed.map((g) => (
+              <GameCard
+                key={g.id}
+                game={g}
+                grade={gradeOf(g.userGameData.rating)}
+                tag={formatPlaytime(g.userGameData.steamMinutes)}
+              />
             ))}
           </GameRail>
         </Section>

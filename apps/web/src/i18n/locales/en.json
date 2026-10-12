@@ -470,6 +470,7 @@
     "overview": {
       "tiers": "Tiers",
       "nowPlaying": "Now playing",
+      "mostPlayed": "Most played",
       "recentlyPlayed": "Recently played",
       "journal": "Journal",
       "recentlyReviewed": "Recently reviewed",
@@ -512,6 +513,7 @@
         "shame": "Shame",
         "added": "Date added",
         "grade": "Grade",
+        "hours": "Hours played",
         "name": "Name",
         "release": "Release year"
       }
@@ -519,6 +521,7 @@
     "stats": {
       "finished": "finished",
       "typical": "typically",
+      "hours": "h played",
       "typicalTip_one": "The only grade given",
       "typicalTip_other": "Middle of {{count}} grades"
     },
