@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { relativeDate } from "@/lib/format";
 import { SteamLogo } from "./steam-logo";
 import { useSteam } from "./use-steam";
+
+const ITEM =
+  "flex w-full items-center px-3 py-2 text-left outline-none hover:bg-card focus-visible:bg-card disabled:opacity-50";
 
 const CHIP =
   "inline-flex items-center gap-1.5 border border-border px-2 py-0.5 text-xs font-semibold text-dimmed hover:border-foreground/40 hover:text-foreground";
@@ -47,37 +49,37 @@ export function SteamBadge({
           {label}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-60 space-y-3 rounded-none text-sm">
+      <PopoverContent
+        align="start"
+        // Opening the menu shouldn't put a focus ring on its first item
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        className="w-56 rounded-none p-1 text-sm"
+      >
         {syncedAt && (
-          <div className="text-xs text-dimmed">
+          <div className="px-3 pt-2 pb-1.5 text-xs text-dimmed">
             {t("steam.syncedAgo", { when: relativeDate(syncedAt) })}
           </div>
         )}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => steam.importLibrary()}
-            disabled={steam.pending}
-          >
-            {steam.pending ? t("steam.importing") : t("steam.syncNow")}
-          </Button>
-          {url && (
-            <Button asChild size="sm" variant="ghost">
-              <a href={url} target="_blank" rel="noreferrer nofollow">
-                {t("steam.open")}
-              </a>
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-dimmed hover:text-destructive"
-            onClick={steam.unlink}
-          >
-            {t("steam.unlink")}
-          </Button>
-        </div>
+        <button
+          type="button"
+          className={ITEM}
+          onClick={() => steam.importLibrary()}
+          disabled={steam.pending}
+        >
+          {steam.pending ? t("steam.importing") : t("steam.syncNow")}
+        </button>
+        {url && (
+          <a href={url} target="_blank" rel="noreferrer nofollow" className={ITEM}>
+            {t("steam.open")}
+          </a>
+        )}
+        <button
+          type="button"
+          className={`${ITEM} text-dimmed hover:text-destructive`}
+          onClick={steam.unlink}
+        >
+          {t("steam.unlink")}
+        </button>
       </PopoverContent>
     </Popover>
   );

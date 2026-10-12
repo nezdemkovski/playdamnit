@@ -129,8 +129,8 @@ components:
         height:
           type: number
           nullable: true
+      description: "A game without a cover comes back as { url: null }, without an id"
       required:
-        - id
         - url
 
     GameGenre:
