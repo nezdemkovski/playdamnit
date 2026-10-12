@@ -207,37 +207,35 @@ export function YearInEvenings({
 /** A custom body replaces the built-in card, so it brings its own background and border */
 function DayTip({ day }: { day: DayRow }) {
   const rows = ACTIONS.filter((a) => day.actions[a].length > 0);
+  // Empty days get no tooltip at all
+  if (rows.length === 0) return null;
   return (
     <div className="w-60 border border-white/30 bg-background px-2.5 py-1.5 font-sans text-xs font-normal">
       <div className="num font-bold">{format(day.date, DateFormat.WeekdayMonthDay)}</div>
-      {rows.length === 0 ? (
-        <div className="mt-1 text-dimmed">{t("profile.evenings.tip.nothing")}</div>
-      ) : (
-        rows.map((action) => {
-          const games = day.actions[action];
-          const rest = games.length - NAMES_SHOWN;
-          return (
-            <div key={action} className="mt-1.5">
-              <div className="font-bold">
-                {action === DayAction.Played
-                  ? t("profile.evenings.tip.played", { time: formatPlaytime(day.minutes) })
-                  : t(`profile.evenings.tip.${action}`, { count: games.length })}
-              </div>
-              {games.slice(0, NAMES_SHOWN).map((g, i) => (
-                <div key={i} className="flex items-baseline gap-3 text-white/70">
-                  <span className="min-w-0 flex-1 truncate">{g.name}</span>
-                  {g.minutes ? (
-                    <span className="num shrink-0 text-[11px]">{formatPlaytime(g.minutes)}</span>
-                  ) : null}
-                </div>
-              ))}
-              {rest > 0 && (
-                <div className="text-dimmed">{t("profile.evenings.tip.more", { count: rest })}</div>
-              )}
+      {rows.map((action) => {
+        const games = day.actions[action];
+        const rest = games.length - NAMES_SHOWN;
+        return (
+          <div key={action} className="mt-1.5">
+            <div className="font-bold">
+              {action === DayAction.Played
+                ? t("profile.evenings.tip.played", { time: formatPlaytime(day.minutes) })
+                : t(`profile.evenings.tip.${action}`, { count: games.length })}
             </div>
-          );
-        })
-      )}
+            {games.slice(0, NAMES_SHOWN).map((g, i) => (
+              <div key={i} className="flex items-baseline gap-3 text-white/70">
+                <span className="min-w-0 flex-1 truncate">{g.name}</span>
+                {g.minutes ? (
+                  <span className="num shrink-0 text-[11px]">{formatPlaytime(g.minutes)}</span>
+                ) : null}
+              </div>
+            ))}
+            {rest > 0 && (
+              <div className="text-dimmed">{t("profile.evenings.tip.more", { count: rest })}</div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

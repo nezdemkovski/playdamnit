@@ -521,7 +521,6 @@
     "stats": {
       "finished": "finished",
       "typical": "typically",
-      "hours": "h played",
       "typicalTip_one": "The only grade given",
       "typicalTip_other": "Middle of {{count}} grades"
     },
@@ -531,7 +530,6 @@
       "less": "Less",
       "more": "More",
       "tip": {
-        "nothing": "Nothing.",
         "played": "Played {{time}}",
         "finished_one": "Finished",
         "finished_other": "Finished {{count}}",
