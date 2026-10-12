@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { getConfig } from "@/config";
 import { useLibraryMutations } from "@/hooks/library";
-import { SteamPanel } from "@/components/steam/steam-panel";
+import { SteamSettings } from "@/components/steam/steam-panel";
 import {
   GetApiUserByUsernameGamesExportFormat,
   useGetApiUserByUsername,
@@ -71,12 +71,7 @@ export function DataSettings({ username }: { username: string }) {
       </section>
       <section className="panel space-y-4 p-5 md:col-span-2">
         <h3 className="font-semibold">{t("steam.title")}</h3>
-        <p className="text-sm text-dimmed">{t("steam.text")}</p>
-        <SteamPanel
-          username={username}
-          steamId={profile.data?.steamId}
-          steamSyncedAt={profile.data?.steamSyncedAt}
-        />
+        <SteamSettings username={username} steamId={profile.data?.steamId} />
       </section>
     </div>
   );

@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { externalGame, game, user, userGames } from "@playdamnit/db/schema";
+import { externalGame, game, user } from "@playdamnit/db/schema";
 import { UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 
 import { getConfig } from "@/config";
@@ -22,9 +22,8 @@ interface OwnedGame {
   playtime_forever: number;
 }
 
-export interface SteamMatch {
+interface SteamMatch {
   gameId: number;
-  name: string;
   minutes: number;
 }
 
@@ -35,7 +34,7 @@ const steamGet = async <T>(path: string, params: Record<string, string>): Promis
   url.search = new URLSearchParams({ key, format: "json", ...params }).toString();
   const response = await fetch(url, { signal: AbortSignal.timeout(STEAM_TIMEOUT_MS) });
   // Steam answers 400 for an id that isn't a profile
-  if (response.status === 400) throw new NotFoundError("No Steam profile with that id");
+  if (response.status === 400) throw new NotFoundError("No such Steam profile.");
   if (!response.ok) throw new ServiceUnavailableError(`Steam answered ${response.status}`);
   return (await response.json()) as T;
 };
@@ -47,13 +46,13 @@ export const resolveSteamId = async (input: string): Promise<string> => {
   const url = PROFILE_URL.exec(raw);
   if (url?.[1].toLowerCase() === "profiles" && STEAM_ID64.test(url[2])) return url[2];
   const vanity = url?.[2] ?? raw;
-  if (!VANITY.test(vanity)) throw new BadRequestError("That doesn't look like a Steam profile");
+  if (!VANITY.test(vanity)) throw new BadRequestError("That isn't a Steam profile link.");
   const result = await steamGet<{ response: { success: number; steamid?: string } }>(
     "/ISteamUser/ResolveVanityURL/v1/",
     { vanityurl: vanity },
   );
   if (result.response.success !== 1 || !result.response.steamid) {
-    throw new NotFoundError("No Steam profile with that name");
+    throw new NotFoundError("No such Steam profile.");
   }
   return result.response.steamid;
 };
@@ -65,9 +64,7 @@ const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
   );
   // A private profile (or private game details) answers with an empty object
   if (!result.response.games) {
-    throw new BadRequestError(
-      "Steam won't show this library. Set Game details to Public in your Steam privacy settings.",
-    );
+    throw new BadRequestError("This Steam library is private. Make game details public in Steam.");
   }
   return result.response.games;
 };
@@ -79,11 +76,7 @@ const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
 const matchToCatalog = async (owned: OwnedGame[]) => {
   const minutesByApp = new Map(owned.map((g) => [String(g.appid), g.playtime_forever]));
   const rows = await postgresDb
-    .selectDistinctOn([externalGame.uid], {
-      uid: externalGame.uid,
-      gameId: game.id,
-      name: game.name,
-    })
+    .selectDistinctOn([externalGame.uid], { uid: externalGame.uid, gameId: game.id })
     .from(externalGame)
     .innerJoin(game, eq(game.id, externalGame.gameId))
     .where(
@@ -105,23 +98,11 @@ const matchToCatalog = async (owned: OwnedGame[]) => {
     const minutes = minutesByApp.get(row.uid ?? "") ?? 0;
     const prev = byGame.get(row.gameId);
     if (!prev || minutes > prev.minutes) {
-      byGame.set(row.gameId, { gameId: row.gameId, name: row.name, minutes });
+      byGame.set(row.gameId, { gameId: row.gameId, minutes });
     }
   }
   return [...byGame.values()];
 };
-
-const libraryIds = async (userId: string, gameIds: number[]) =>
-  new Set(
-    gameIds.length
-      ? (
-          await postgresDb
-            .select({ gameId: userGames.gameId })
-            .from(userGames)
-            .where(and(eq(userGames.userId, userId), inArray(userGames.gameId, gameIds)))
-        ).map((r) => r.gameId)
-      : [],
-  );
 
 /** The profile given, or the Steam account already linked to the user */
 const steamIdFor = async (userId: string, profile?: string) => {
@@ -135,34 +116,6 @@ const steamIdFor = async (userId: string, profile?: string) => {
 };
 
 export abstract class SteamService {
-  /** What an import of this Steam profile (or the linked one) would do, writing nothing */
-  static async preview(userId: string, profile?: string) {
-    const steamId = await steamIdFor(userId, profile);
-    const owned = await ownedGames(steamId);
-    const matches = await matchToCatalog(owned);
-    const inLibrary = await libraryIds(
-      userId,
-      matches.map((m) => m.gameId),
-    );
-    const fresh = matches.filter((m) => !inLibrary.has(m.gameId));
-    return {
-      steamId,
-      owned: owned.length,
-      matched: matches.length,
-      unmatched: owned.length - matches.length,
-      alreadyInLibrary: inLibrary.size,
-      toImport: fresh.length,
-      neverPlayed: fresh.filter((m) => m.minutes === 0).length,
-      played: fresh.filter((m) => m.minutes > 0).length,
-      hoursPlayed: Math.round(matches.reduce((sum, m) => sum + m.minutes, 0) / 60),
-      mostPlayed: matches
-        .filter((m) => m.minutes > 0)
-        .sort((a, b) => b.minutes - a.minutes)
-        .slice(0, 5)
-        .map((m) => ({ gameId: m.gameId, name: m.name, hours: Math.round(m.minutes / 60) })),
-    };
-  }
-
   /**
    * Adds the Steam library to the user's list on PC: never-launched games go to the backlog,
    * played ones to the status the user picked. Games already in the list are left alone, so
@@ -177,7 +130,7 @@ export abstract class SteamService {
       platformId: PlatformId.Pc,
     }));
     if (rows.length === 0) {
-      throw new BadRequestError("None of these Steam games are in the catalog yet");
+      throw new BadRequestError("None of these Steam games are in the catalog.");
     }
     const result = await UserGameService.importUserGames(userId, rows, false, {
       source: UserGameSource.Steam,

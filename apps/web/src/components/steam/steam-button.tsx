@@ -3,44 +3,39 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { SteamPanel } from "./steam-panel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SteamImportForm } from "./steam-panel";
+import { useSteam } from "./use-steam";
 
-/** The owner's Steam control in the profile header: connect, or sync the linked library */
-export function SteamButton({
-  username,
-  steamId,
-  steamSyncedAt,
-}: {
-  username: string;
-  steamId?: string | null;
-  steamSyncedAt?: string | null;
-}) {
+/** The owner's Steam button: syncs right away when linked, asks for the profile otherwise */
+export function SteamButton({ username, steamId }: { username: string; steamId?: string | null }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const steam = useSteam(username);
+
+  if (steamId) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => steam.importLibrary()}
+        disabled={steam.pending}
+      >
+        <RefreshCwIcon className={steam.pending ? "animate-spin" : undefined} /> {t("steam.sync")}
+      </Button>
+    );
+  }
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <RefreshCwIcon /> {steamId ? t("steam.sync") : t("steam.connect")}
+        <RefreshCwIcon /> {t("steam.connect")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-card border-white/5 bg-popover sm:max-w-xl">
+        <DialogContent className="rounded-card border-white/5 bg-popover sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("steam.title")}</DialogTitle>
-            <DialogDescription>{t("steam.text")}</DialogDescription>
           </DialogHeader>
-          <SteamPanel
-            username={username}
-            steamId={steamId}
-            steamSyncedAt={steamSyncedAt}
-            onImported={() => setOpen(false)}
-          />
+          <SteamImportForm username={username} onImported={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>

@@ -13,14 +13,6 @@ const profile = t.String({ minLength: 2, maxLength: 200 });
 export const steamImportRoutes = new Elysia()
   .use(betterAuth)
   .post(
-    "/me/import/steam/preview",
-    { auth: true, body: t.Object({ profile: t.Optional(profile) }) },
-    ({ user, body, request, server }) => {
-      steamLimiter.check(clientKey({ request, server }, user.id));
-      return SteamService.preview(user.id, body.profile);
-    },
-  )
-  .post(
     "/me/import/steam",
     {
       auth: true,

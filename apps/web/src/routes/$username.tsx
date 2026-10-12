@@ -108,11 +108,7 @@ function ProfileLayout() {
             <div className="flex shrink-0 gap-2">
               {user.isOwn ? (
                 <>
-                  <SteamButton
-                    username={username}
-                    steamId={user.steamId}
-                    steamSyncedAt={user.steamSyncedAt}
-                  />
+                  <SteamButton username={username} steamId={user.steamId} />
                   <Button asChild variant="outline" size="sm">
                     <Link to="/$username/settings" params={{ username }}>
                       <SettingsIcon /> {t("profile.editProfile")}

@@ -1587,54 +1587,6 @@ components:
             SteamID64, a steamcommunity.com profile URL or a custom URL name; leave it out to use
             the linked Steam account
 
-    SteamImportPreview:
-      type: object
-      properties:
-        steamId:
-          type: string
-        owned:
-          type: number
-        matched:
-          type: number
-        unmatched:
-          type: number
-        alreadyInLibrary:
-          type: number
-        toImport:
-          type: number
-        neverPlayed:
-          type: number
-        played:
-          type: number
-        hoursPlayed:
-          type: number
-        mostPlayed:
-          type: array
-          items:
-            type: object
-            properties:
-              gameId:
-                type: number
-              name:
-                type: string
-              hours:
-                type: number
-            required:
-              - gameId
-              - name
-              - hours
-      required:
-        - steamId
-        - owned
-        - matched
-        - unmatched
-        - alreadyInLibrary
-        - toImport
-        - neverPlayed
-        - played
-        - hoursPlayed
-        - mostPlayed
-
     GameImportResponse:
       type: object
       properties:
@@ -2535,43 +2487,6 @@ paths:
                     type: boolean
                 required:
                   - ok
-
-  /api/me/import/steam/preview:
-    post:
-      operationId: postApiMeImportSteamPreview
-      tags:
-        - Library
-      summary: Preview a Steam library import
-      description: >-
-        Reads the Steam profile's owned games (a SteamID64, a profile URL or a custom URL name)
-        and matches them to the catalog through IGDB's Steam links. Writes nothing.
-      security:
-        - cookieAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SteamImportRequest"
-      responses:
-        "200":
-          description: What the import would do
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SteamImportPreview"
-        "400":
-          description: Not a Steam profile, or its game details are private
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadRequestErrorResponse"
-        "404":
-          description: No Steam profile with that name or id
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundErrorResponse"
 
   /api/me/import/steam:
     post:
