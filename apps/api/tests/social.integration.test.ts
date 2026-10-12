@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
 import { NotificationType, ReactionEmoji, UserGameStatus } from "@playdamnit/db/enums";
-import { ConnectionKind, GameSort, ReviewSort, UserSort } from "@/utils/enums";
+import { ConnectionKind, GameSort, ReviewSort, SteamConnectResult, UserSort } from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -415,7 +415,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       return Response.json({ response: {} });
     }) as unknown as typeof fetch;
     try {
-      expect(await SteamService.connect("alice", STEAM_ID)).toBe("private");
+      expect(await SteamService.connect("alice", STEAM_ID)).toBe(SteamConnectResult.Private);
     } finally {
       globalThis.fetch = realFetch;
     }
