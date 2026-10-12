@@ -12,7 +12,9 @@ export const getCors = () => {
     logger.system("🔓 CORS disabled for development");
 
     return cors({
-      origin: true,
+      // Any origin, echoed back with Vary: Origin; `true` answers with Vary: *, which keeps
+      // clients (URLCache on a test phone) from reusing any response
+      origin: () => true,
       credentials: true,
     });
   }

@@ -87,6 +87,8 @@ export enum HttpHeader {
   ContentType = "content-type",
   ContentDisposition = "content-disposition",
   CacheControl = "cache-control",
+  ETag = "etag",
+  IfNoneMatch = "if-none-match",
   RetryAfter = "retry-after",
   Origin = "origin",
   Authorization = "Authorization",
@@ -97,6 +99,10 @@ export enum HttpHeader {
 
 export enum CacheControl {
   Immutable = "public, max-age=31536000, immutable",
+  /** Shared lookups (platforms, genres): an hour fresh, a day served stale while refreshing */
+  Catalog = "public, max-age=3600, stale-while-revalidate=86400",
+  /** Everything else: kept by the client only, and checked with the ETag before every reuse */
+  Revalidate = "private, no-cache",
 }
 
 export enum UrlProtocol {
@@ -119,6 +125,7 @@ export enum HealthStatus {
 
 export enum RoutePath {
   Favicon = "/favicon.ico",
+  Catalog = "/api/catalog",
 }
 
 export enum CsvChar {

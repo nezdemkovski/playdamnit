@@ -13,6 +13,7 @@ import { routes } from "@/routes";
 import logger, { LogLevel, initSentry, isSentryEnabled, flushSentry } from "@/utils/enhancedLogger";
 import { auth } from "./lib/auth";
 import { getCors } from "@/utils/getCors";
+import { httpCache } from "@/utils/httpCache";
 import { getConfig } from "@/config";
 import { getBoss, stopBoss } from "@/utils/pgBoss";
 import { registerSteamSync } from "@/workers/steamSync";
@@ -84,6 +85,7 @@ const setupApp = async () => {
   const app = new Elysia({ name: "playdamnit-api" })
     .use(openapi())
     .use(getCors())
+    .use(httpCache)
     .error(({ error, path, request, set }) => {
       // status() responses (e.g. 401 from the auth macro) pass through untouched
       if (error instanceof ElysiaStatus) return error;
