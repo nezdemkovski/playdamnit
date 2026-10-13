@@ -684,6 +684,30 @@ components:
         - results
         - meta
 
+    TasteMatch:
+      allOf:
+        - $ref: "#/components/schemas/PublicUser"
+        - type: object
+          properties:
+            isFollowing:
+              type: boolean
+            shared:
+              type: number
+              description: Games both members graded
+            agreement:
+              type: number
+              description: How close their grades are on those games, 0 to 100
+            games:
+              type: array
+              description: Up to three shared games, the ones both graded highest
+              items:
+                $ref: "#/components/schemas/Game"
+          required:
+            - isFollowing
+            - shared
+            - agreement
+            - games
+
     ConnectionUser:
       allOf:
         - $ref: "#/components/schemas/PublicUser"
@@ -2886,6 +2910,39 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Game"
+                required:
+                  - results
+
+  /api/me/taste-matches:
+    get:
+      operationId: getApiMeTasteMatches
+      tags:
+        - Social
+      summary: Members with the viewer's taste
+      description: Members with a public list who graded at least three of the games the viewer graded, ranked by how close their grades are and how many games they share. Each comes with the shared games both graded highest.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 10
+      responses:
+        "200":
+          description: Matching members, closest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TasteMatch"
                 required:
                   - results
 

@@ -458,6 +458,44 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     await pg.query(`update game set similar_game_ids = '{}' where id = $1`, [GAME]);
   });
 
+  test("taste matches compare grades on shared games, closest first, public lists only", async () => {
+    const { TasteService } = await import("@/modules/taste/service");
+    const TASTE = [930101, 930102, 930103];
+    for (const id of TASTE) {
+      await pg.query(
+        `insert into game (id, name, slug, first_release_date) values ($1, $2, $2, 1600000000)`,
+        [id, `taste-${id}`],
+      );
+    }
+    const grade = (username: string, ratings: number[]) =>
+      Promise.all(
+        TASTE.map((id, i) =>
+          UserGameService.addUserGame(username, id, {
+            status: UserGameStatus.Finished,
+            rating: ratings[i],
+            platformId: 6,
+          }),
+        ),
+      );
+    await grade("alice", [9.5, 8.5, 2.5]);
+    await grade("bob", [9.5, 7.5, 2.5]);
+    await grade("carol", [2.5, 2.5, 9.5]);
+    const matches = await TasteService.matches("alice", 10);
+    // Bob is a point apart on average over four games (Social Quest too), Carol nearly seven
+    // over three (her Social Quest has no grade)
+    expect(matches.results.map((m) => [m.username, m.shared, m.agreement])).toEqual([
+      ["bob", 4, 88],
+      ["carol", 3, 17],
+    ]);
+    expect(matches.results[0].games.map((g) => g.id)).toEqual([930101, 930102, GAME]);
+    // A private list keeps its grades out of anyone's matches
+    await pg.query(`update "user" set list_public = false where id = 'carol'`);
+    expect((await TasteService.matches("alice", 10)).results.map((m) => m.username)).toEqual([
+      "bob",
+    ]);
+    await pg.query(`update "user" set list_public = true where id = 'carol'`);
+  });
+
   test("connecting a proven Steam account moves it off anyone else and survives a private library", async () => {
     const { SteamService } = await import("@/modules/steam/service");
     const STEAM_ID = "76561199000000001";
