@@ -21,9 +21,10 @@ import {
   sendEmail,
   sendVerificationEmailTemplate,
 } from "@/utils/email";
-import { Hostname, Origin } from "@/utils/enums";
+import { Hostname, Origin, SocialProvider } from "@/utils/enums";
 
-const { trustedOrigins, isDev, betterAuthUrl } = getConfig();
+const { trustedOrigins, isDev, betterAuthUrl, appleAppBundleId, appleClientId, appleClientSecret } =
+  getConfig();
 
 // WebAuthn ties passkeys to the site's hostname (rpID) and accepts registrations only from the
 // listed browser origins: the web app's origins plus this API's own
@@ -80,6 +81,20 @@ export const auth = betterAuth({
       },
     }),
   },
+  // Sign in with Apple: the iOS app's ID tokens (audience: its bundle ID) always; the web's
+  // redirect flow only with a Services ID and its secret
+  socialProviders: {
+    apple: {
+      clientId: appleClientId ?? appleAppBundleId,
+      clientSecret: appleClientSecret ?? "",
+      appBundleIdentifier: appleAppBundleId,
+      audience: [appleAppBundleId, ...(appleClientId ? [appleClientId] : [])],
+    },
+  },
+  // Apple verifies the address, so signing in with Apple joins an account with the same email
+  account: {
+    accountLinking: { trustedProviders: [SocialProvider.Apple] },
+  },
   user: {
     // Password-confirmed, immediate; every row that references the user cascades
     deleteUser: { enabled: true },
@@ -127,6 +142,11 @@ export const auth = betterAuth({
     }
 
     if (trustedOrigins.includes(origin)) {
+      return [origin];
+    }
+
+    // The web's Sign in with Apple posts back from Apple
+    if (appleClientId && origin === Origin.Apple) {
       return [origin];
     }
 

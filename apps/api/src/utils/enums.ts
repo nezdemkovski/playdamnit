@@ -182,6 +182,13 @@ export enum Hostname {
 
 export enum Origin {
   LocalhostHttp = "http://localhost",
+  // Apple posts the web sign-in back from here
+  Apple = "https://appleid.apple.com",
+}
+
+/** Better Auth's social provider ids */
+export enum SocialProvider {
+  Apple = "apple",
 }
 
 export enum OpenAiModel {

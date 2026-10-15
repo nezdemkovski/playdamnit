@@ -16,6 +16,12 @@ const betterAuthUrl = process.env.BETTER_AUTH_URL || (isDev ? "http://localhost:
 const igdbWebhookSecret = process.env.IGDB_WEBHOOK_SECRET;
 // Steam Web API key for the library import; without it the import is off
 const steamApiKey = process.env.STEAM_API_KEY;
+// Sign in with Apple. The iOS app signs in natively with an ID token issued for its bundle ID,
+// which needs no secret. The web's redirect flow also needs a Services ID and its client
+// secret (a JWT signed with the Sign in with Apple key); without them only the app offers Apple.
+const appleAppBundleId = process.env.APPLE_APP_BUNDLE_ID || "cloud.nezdemkovski.playdamnit";
+const appleClientId = process.env.APPLE_CLIENT_ID;
+const appleClientSecret = process.env.APPLE_CLIENT_SECRET;
 
 const config = {
   isDev,
@@ -28,6 +34,9 @@ const config = {
   betterAuthUrl,
   igdbWebhookSecret,
   steamApiKey,
+  appleAppBundleId,
+  appleClientId,
+  appleClientSecret,
 };
 
 export const getConfig = () => {
