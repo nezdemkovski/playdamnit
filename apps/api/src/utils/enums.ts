@@ -106,6 +106,13 @@ export enum HttpHeader {
   ContentTypeCanonical = "Content-Type",
   /** IGDB webhooks carry the shared secret here */
   Secret = "x-secret",
+  AcceptEncoding = "accept-encoding",
+  ContentEncoding = "content-encoding",
+  Vary = "vary",
+}
+
+export enum ContentEncoding {
+  Gzip = "gzip",
 }
 
 export enum CacheControl {

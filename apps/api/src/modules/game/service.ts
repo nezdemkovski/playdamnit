@@ -35,6 +35,26 @@ const RELEASE_DAY_COVERS = 4;
 const MIN_RATINGS_FOR_BEST = 50;
 // Unreleased games have no ratings yet; this many IGDB follows before release make one "hot"
 const HOT_HYPES = 10;
+// How long a page's total is reused: the catalog changes overnight, and counting the whole
+// catalog (no filter, or a wide one) costs 30ms+ on every page of a rail that never pages
+const TOTAL_TTL_MS = 5 * 60_000;
+const TOTAL_CACHE_SIZE = 500;
+const totals = new Map<string, { total: number; at: number }>();
+
+/** Counts the matches for these filters, or reuses a count made in the last few minutes */
+const cachedTotal = async (opts: GameFilters, sort: GameSort) => {
+  const { limit: _limit, offset: _offset, ...filters } = opts;
+  const key = JSON.stringify([sort, filters]);
+  const hit = totals.get(key);
+  if (hit && Date.now() - hit.at < TOTAL_TTL_MS) return hit.total;
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(game)
+    .where(and(isNull(game.deletedAt), ...buildFilters({ ...filters, sort }, game)));
+  if (totals.size >= TOTAL_CACHE_SIZE) totals.delete(totals.keys().next().value!);
+  totals.set(key, { total, at: Date.now() });
+  return total;
+};
 
 export interface GameFilters {
   limit?: number;
@@ -303,13 +323,7 @@ export abstract class GameService {
       return GameService.findByMembers(opts, sort, limit, offset);
     }
 
-    const counted = withTotal
-      ? db
-          .select({ total: count() })
-          .from(game)
-          .where(and(isNull(game.deletedAt), ...buildFilters(opts, game)))
-      : null;
-    const [games, [{ total }]] = await Promise.all([
+    const [games, total] = await Promise.all([
       db.query.game.findMany({
         limit,
         offset,
@@ -321,12 +335,12 @@ export abstract class GameService {
         columns: GAME_CARD_COLUMNS,
         with: GAME_CARD_WITH,
       }),
-      counted ?? Promise.resolve([{ total: -1 }]),
+      withTotal ? cachedTotal(opts, sort) : Promise.resolve(null),
     ]);
 
     return {
       results: games.map(transformGameResponse),
-      meta: { total: counted ? total : games.length, limit, offset },
+      meta: { total: total ?? games.length, limit, offset },
     };
   }
 

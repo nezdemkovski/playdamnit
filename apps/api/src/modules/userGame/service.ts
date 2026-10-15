@@ -230,6 +230,20 @@ const libraryOrder = (t: typeof userGames, sort: LibrarySort): SQL[] => {
 };
 
 /**
+ * The rows of one page, picked by id before anything is joined: ordered and limited in the outer
+ * query, Postgres builds the game card of every matching entry first and only then keeps a page
+ * of them (a 600-game library paid 85ms for 50 rows). `where` and `order` use the plain table,
+ * the outer query's alias never reaches the subquery.
+ */
+const pageOf = (
+  t: typeof userGames,
+  where: SQL,
+  order: SQL[],
+  page: { limit: number; offset: number },
+) =>
+  sql`${t.id} in (select ${userGames.id} from ${userGames} where ${where} order by ${sql.join(order, sql`, `)} limit ${page.limit} offset ${page.offset})`;
+
+/**
  * UserGame service - handles all business logic for user game library operations
  */
 export abstract class UserGameService {
@@ -256,8 +270,6 @@ export abstract class UserGameService {
       status?: UserGameStatus;
       q?: string;
       sort?: LibrarySort;
-      /** Only graded entries (true) or only ungraded ones (false): the grading deck's queue */
-      graded?: boolean;
     } = {},
   ) {
     const userData = await requireUser(username);
@@ -270,18 +282,24 @@ export abstract class UserGameService {
       [
         eq(t.userId, userData.id),
         opts.status ? eq(t.status, opts.status) : undefined,
-        opts.graded === undefined ? undefined : opts.graded ? isGraded(t) : sql`not ${isGraded(t)}`,
         q
           ? sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and coalesce(${game.searchNames}, ${game.name}) ilike ${`%${escapeLike(q)}%`})`
           : undefined,
       ].filter((f) => f !== undefined);
 
+    const sort = opts.sort ?? LibrarySort.Added;
     const [entries, [{ total }]] = await Promise.all([
       postgresDb.query.userGames.findMany({
-        where: { RAW: (t) => and(...filters(t))! },
-        orderBy: (t) => libraryOrder(t, opts.sort ?? LibrarySort.Added),
-        limit: opts.limit,
-        offset: opts.offset,
+        where: {
+          RAW: (t) =>
+            opts.limit === undefined
+              ? and(...filters(t))!
+              : pageOf(t, and(...filters(userGames))!, libraryOrder(userGames, sort), {
+                  limit: opts.limit,
+                  offset: opts.offset ?? 0,
+                }),
+        },
+        orderBy: (t) => libraryOrder(t, sort),
         with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
       }),
       postgresDb
@@ -305,13 +323,30 @@ export abstract class UserGameService {
    * profile or the home page works out from a library (tiers, badges, the year, the verdict),
    * at a fraction of the full list's size.
    */
-  static async getLibraryIndex(username: string, viewerId: string | null) {
+  static async getLibraryIndex(
+    username: string,
+    viewerId: string | null,
+    opts: {
+      /** Only graded entries (true) or only the ungraded (false): the grading deck's queue */
+      graded?: boolean;
+    } = {},
+  ) {
     const userData = await requireUser(username);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
     const entries = await postgresDb.query.userGames.findMany({
-      where: { userId: userData.id },
+      where: {
+        RAW: (t) =>
+          and(
+            eq(t.userId, userData.id),
+            opts.graded === undefined
+              ? undefined
+              : opts.graded
+                ? isGraded(t)
+                : sql`not ${isGraded(t)}`,
+          )!,
+      },
       orderBy: { addedAt: "desc" },
       columns: { review: false, userId: false, gameId: false },
       extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },

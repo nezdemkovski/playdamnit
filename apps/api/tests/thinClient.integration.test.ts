@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
 import { UserGameStatus } from "@playdamnit/db/enums";
-import { IdleKind, UsernameProblem } from "@/utils/enums";
+import { IdleKind, LibrarySort, UsernameProblem } from "@/utils/enums";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 
@@ -144,11 +144,23 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
 
   test("the grading queue: ungraded only, newest first", async () => {
     const [g1, g2, g3, g4, g5] = GAMES;
-    const ungraded = await UserGameService.getUserGames("dana", { graded: false });
+    const ungraded = await UserGameService.getLibraryIndex("dana", null, { graded: false });
     expect(ungraded.results.map((e) => e.id)).toEqual([NO_COVER, g5, g2, g4]);
-    expect(ungraded.meta.total).toBe(4);
-    const graded = await UserGameService.getUserGames("dana", { graded: true });
+    const graded = await UserGameService.getLibraryIndex("dana", null, { graded: true });
     expect(graded.results.map((e) => e.id).toSorted()).toEqual([g1, g3].toSorted());
+  });
+
+  test("a library page is ordered and counted as before", async () => {
+    const [, g2, g3, , g5] = GAMES;
+    const page = await UserGameService.getUserGames("dana", { limit: 2, offset: 1 });
+    expect(page.results.map((e) => e.id)).toEqual([g5, g3]);
+    expect(page.meta.total).toBe(6);
+    const named = await UserGameService.getUserGames("dana", {
+      limit: 3,
+      sort: LibrarySort.Name,
+      status: UserGameStatus.Playing,
+    });
+    expect(named.results.map((e) => e.id)).toEqual([g2, NO_COVER]);
   });
 
   test("preferred platforms, most used first", async () => {

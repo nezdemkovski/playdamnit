@@ -39,7 +39,7 @@ const apiError = (error: unknown, fallback: string) =>
  * Lookups, summaries, the profile header and the tier board all work from this.
  */
 export const useLibraryIndex = (username: string | null | undefined) =>
-  useGetApiUserByUsernameGamesIndex(username ?? "", {
+  useGetApiUserByUsernameGamesIndex(username ?? "", undefined, {
     query: { enabled: !!username },
   });
 
