@@ -36,7 +36,6 @@ import { useListMutations } from "@/hooks/social";
 import { releaseYear } from "@/lib/format";
 import { AddGamePicker } from "@/components/lists/add-game-picker";
 import { IgdbSize } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/lists/$id")({
   component: ListPage,
@@ -251,7 +250,7 @@ function ListPage() {
         <ol className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {data.games.map((game, i) => (
             <li key={game.id}>
-              <GameCard game={game} grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)} />
+              <GameCard game={game} grade={byGameId.get(game.id)?.userGameData.grade} />
               <div className="mt-1.5 flex gap-1.5 text-xs">
                 <span className="font-bold tabular-nums text-dimmed">{i + 1}</span>
                 <span className="line-clamp-2 font-semibold">{game.name}</span>

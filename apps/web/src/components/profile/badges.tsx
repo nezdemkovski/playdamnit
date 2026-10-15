@@ -1,4 +1,4 @@
-import { StatusEnum, type LibraryIndexItem } from "@playdamnit/api-client";
+import { BadgeId, type ProfileBadge } from "@playdamnit/api-client";
 import {
   AwardIcon,
   BookOpenIcon,
@@ -14,7 +14,6 @@ import { cn } from "cn";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { t } from "@/i18n";
-import { BadgeId } from "@/lib/enums";
 
 interface Badge {
   id: BadgeId;
@@ -24,40 +23,28 @@ interface Badge {
   earned: boolean;
 }
 
-/** Badges computed from the library (no server state) */
-export const computeBadges = (entries: LibraryIndexItem[], reviews: number): Badge[] => {
-  const finished = entries.filter((e) => e.userGameData.status === StatusEnum.Finished).length;
-  const rated = entries.filter((e) => e.userGameData.rating).length;
-  const mastered = entries.filter((e) => e.userGameData.mastered).length;
-  const year = new Date().getFullYear();
-  const thisYear = entries.filter(
-    (e) => e.userGameData.endedAt && new Date(e.userGameData.endedAt).getFullYear() === year,
-  ).length;
-  const make = (id: Exclude<BadgeId, BadgeId.Year>, icon: LucideIcon, earned: boolean): Badge => ({
-    id,
-    label: t(`badges.${id}.label`),
-    description: t(`badges.${id}.description`),
-    icon,
-    earned,
-  });
-  return [
-    make(BadgeId.First, Gamepad2Icon, entries.length >= 1),
-    make(BadgeId.Collector, BookOpenIcon, entries.length >= 50),
-    make(BadgeId.Hoarder, SparklesIcon, entries.length >= 200),
-    make(BadgeId.Finisher, FlagIcon, finished >= 10),
-    make(BadgeId.Closer, AwardIcon, finished >= 50),
-    make(BadgeId.Critic, StarIcon, rated >= 25),
-    make(BadgeId.Writer, PenLineIcon, reviews >= 10),
-    make(BadgeId.Completionist, TrophyIcon, mastered >= 5),
-    {
-      id: BadgeId.Year,
-      label: t("badges.year.label", { year }),
-      description: t("badges.year.description", { year }),
-      icon: FlagIcon,
-      earned: thisYear >= 12,
-    },
-  ];
+const ICONS: Record<BadgeId, LucideIcon> = {
+  [BadgeId.First]: Gamepad2Icon,
+  [BadgeId.Collector]: BookOpenIcon,
+  [BadgeId.Hoarder]: SparklesIcon,
+  [BadgeId.Finisher]: FlagIcon,
+  [BadgeId.Closer]: AwardIcon,
+  [BadgeId.Critic]: StarIcon,
+  [BadgeId.Writer]: PenLineIcon,
+  [BadgeId.Completionist]: TrophyIcon,
+  [BadgeId.Year]: FlagIcon,
 };
+
+/** The API's badges with their icon and text; `year` is the one the year badge counts */
+export const describeBadges = (badges: ProfileBadge[], year: number): Badge[] =>
+  badges.map(({ id, earned }) => ({
+    id,
+    earned,
+    icon: ICONS[id],
+    label: id === BadgeId.Year ? t("badges.year.label", { year }) : t(`badges.${id}.label`),
+    description:
+      id === BadgeId.Year ? t("badges.year.description", { year }) : t(`badges.${id}.description`),
+  }));
 
 /** Badges as a row of small tiles for the profile header: earned ones lit, the rest dim */
 export function BadgeStrip({ badges }: { badges: Badge[] }) {

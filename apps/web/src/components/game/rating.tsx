@@ -1,7 +1,8 @@
+import { Grade } from "@playdamnit/api-client";
 import { cn } from "cn";
 
 import { Badge } from "@/components/ui/badge";
-import { Grade, PillSize } from "@/lib/enums";
+import { PillSize } from "@/lib/enums";
 import { gradeMeta } from "@/lib/grade";
 import { statusMeta, type LibraryStatus } from "@/lib/statuses";
 

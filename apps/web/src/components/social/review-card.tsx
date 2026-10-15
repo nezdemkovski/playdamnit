@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 import { GameCover } from "@/components/game/game-cover";
 import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { PillSize } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -53,11 +52,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
             className="relative w-16 shrink-0 sm:w-20"
           >
             <GameCover url={review.game.cover?.url} name={review.game.name} />
-            <GradeBadge
-              grade={gradeOf(review.rating)}
-              onArt
-              className="absolute -top-2.5 -right-2.5 block"
-            />
+            <GradeBadge grade={review.grade} onArt className="absolute -top-2.5 -right-2.5 block" />
           </Link>
         )}
         <div className="min-w-0 flex-1">
@@ -103,9 +98,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {!(withGame && review.game) && (
-              <GradeBadge grade={gradeOf(review.rating)} size={PillSize.Md} />
-            )}
+            {!(withGame && review.game) && <GradeBadge grade={review.grade} size={PillSize.Md} />}
             <StatusPill status={review.status} />
             {review.mastered && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-semibold text-warning">

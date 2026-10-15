@@ -1,9 +1,8 @@
-import type { LibraryIndexItem } from "@playdamnit/api-client";
+import { Grade, type LibraryIndexItem } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
 import { igdbImage, igdbSrcSet } from "@/lib/image";
-import { Grade, IgdbSize, ImageLoading } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
+import { IgdbSize, ImageLoading } from "@/lib/enums";
 
 const SHELF = 14;
 
@@ -26,7 +25,7 @@ export const hallOfFame = (entries: LibraryIndexItem[]): LibraryIndexItem[] => {
 export function HallOfFame({ entries }: { entries: LibraryIndexItem[] }) {
   const { t } = useTranslation();
   const shelf = hallOfFame(entries);
-  const isS = shelf.length > 0 && gradeOf(shelf[0].userGameData.rating) === Grade.S;
+  const isS = shelf.length > 0 && shelf[0].userGameData.grade === Grade.S;
   return (
     <div className="relative h-28 overflow-hidden bg-card sm:h-36" aria-hidden>
       <div className="flex h-full">

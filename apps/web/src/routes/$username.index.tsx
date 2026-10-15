@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfileContext } from "@/hooks/profile";
 import { formatPlaytime } from "@/lib/format";
-import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/$username/")({
   component: ProfileOverview,
@@ -52,7 +51,7 @@ function ProfileOverview() {
           title={t("profile.overview.tiers")}
           icon={Rows3Icon}
           count={t("profile.tiers.count", {
-            graded: entries.filter((e) => gradeOf(e.userGameData.rating)).length,
+            graded: entries.filter((e) => e.userGameData.grade).length,
             total: entries.length,
           })}
           action={
@@ -81,7 +80,7 @@ function ProfileOverview() {
         >
           <GameRail>
             {playing.map((g) => (
-              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
+              <GameCard key={g.id} game={g} grade={g.userGameData.grade} />
             ))}
           </GameRail>
         </Section>
@@ -94,7 +93,7 @@ function ProfileOverview() {
               <GameCard
                 key={g.id}
                 game={g}
-                grade={gradeOf(g.userGameData.rating)}
+                grade={g.userGameData.grade}
                 tag={formatPlaytime(g.userGameData.steamMinutes)}
               />
             ))}
@@ -120,7 +119,7 @@ function ProfileOverview() {
         >
           <GameRail>
             {recent.map((g) => (
-              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
+              <GameCard key={g.id} game={g} grade={g.userGameData.grade} />
             ))}
           </GameRail>
         </Section>

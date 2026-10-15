@@ -16,7 +16,7 @@ import { cn } from "cn";
 import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
-import { BadgeStrip, computeBadges } from "@/components/profile/badges";
+import { BadgeStrip, describeBadges } from "@/components/profile/badges";
 import { HallOfFame } from "@/components/profile/hall-of-fame";
 import { ProfileStatStrip } from "@/components/profile/profile-stats";
 import { YearInEvenings } from "@/components/profile/year-in-evenings";
@@ -59,12 +59,12 @@ function ProfileLayout() {
   const { t } = useTranslation();
   const { username } = Route.useParams();
   const profile = useGetApiUserByUsername(username);
-  // Badges come from the library; a private one simply shows none
+  // The library itself is still needed below (hall of fame, the year); a private one is empty
   const library = useLibraryIndex(username);
+  const stats = profile.data?.stats;
   const badges = useMemo(
-    () =>
-      library.data ? computeBadges(library.data.results, profile.data?.counts.reviews ?? 0) : null,
-    [library.data, profile.data?.counts.reviews],
+    () => (profile.data?.badges && stats ? describeBadges(profile.data.badges, stats.year) : null),
+    [profile.data?.badges, stats],
   );
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const base = `/${username}`;
@@ -212,8 +212,8 @@ function ProfileLayout() {
               <b className="num">{user.counts.following}</b>{" "}
               <span className="text-dimmed">{t("profile.counts.following")}</span>
             </Link>
-            {library.data && library.data.results.length > 0 && (
-              <ProfileStatStrip entries={library.data.results} own={user.isOwn} />
+            {stats && stats.total > 0 && (
+              <ProfileStatStrip stats={stats} entries={library.data?.results} own={user.isOwn} />
             )}
             {badges && (
               <div className="sm:ml-auto">

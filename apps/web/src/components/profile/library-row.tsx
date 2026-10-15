@@ -11,7 +11,6 @@ import { GradeBadge, StatusPill } from "@/components/game/rating";
 import { Button } from "@/components/ui/button";
 import { PillSize } from "@/lib/enums";
 import { formatPlaytime, gameTypeName, releaseYear } from "@/lib/format";
-import { gradeOf } from "@/lib/grade";
 import { idleDays, idleLine } from "@/lib/voice";
 
 interface LibraryRowProps {
@@ -29,7 +28,7 @@ export function LibraryRow({ rank, entry, editable }: LibraryRowProps) {
   const data = entry.userGameData;
   const status = data.status;
   const idle = idleDays(entry);
-  const grade = gradeOf(data.rating);
+  const grade = data.grade;
   const barWidth =
     status === StatusEnum.Finished
       ? 100

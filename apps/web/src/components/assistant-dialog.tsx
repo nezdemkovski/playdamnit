@@ -22,7 +22,6 @@ import { useMyLibrary } from "@/hooks/library";
 import type { ChatUIMessage } from "@/lib/chat";
 import { ChatRole } from "@playdamnit/api-client";
 import { ChatPartType, ChatStatus, ToolState } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 
 interface AssistantDialogProps {
   open: boolean;
@@ -125,7 +124,7 @@ export function AssistantDialog({ open, onOpenChange }: AssistantDialogProps) {
                           <GameCard
                             key={game.id}
                             game={game}
-                            grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
+                            grade={byGameId.get(game.id)?.userGameData.grade}
                           />
                         ))}
                       </GameRail>

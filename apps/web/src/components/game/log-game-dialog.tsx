@@ -1,4 +1,9 @@
-import { StatusEnum, type Game, type UserGameData } from "@playdamnit/api-client";
+import {
+  Grade as GradeEnum,
+  StatusEnum,
+  type Game,
+  type UserGameData,
+} from "@playdamnit/api-client";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDownIcon, Trash2Icon } from "lucide-react";
 import { cn } from "cn";
@@ -42,15 +47,15 @@ import { useSession } from "@/hooks/auth";
 import { usePlayPlatforms } from "@/hooks/platforms";
 import { useLibraryMutations, useMyEntry } from "@/hooks/library";
 import { GradeBadge } from "./rating";
-import { Grade as GradeEnum, PillSize } from "@/lib/enums";
-import { GRADES, gradeMeta, gradeOf, ratingOf } from "@/lib/grade";
+import { PillSize } from "@/lib/enums";
+import { GRADES, gradeMeta } from "@/lib/grade";
 import { STATUSES, statusMeta, type LibraryStatus } from "@/lib/statuses";
 import { GameCover } from "./game-cover";
 
 const MAX_REVIEW = 5000;
 
 /** What the caller knows of the viewer's entry: an index item's or a full one */
-export type KnownEntry = Pick<UserGameData, "status" | "rating">;
+export type KnownEntry = Pick<UserGameData, "status" | "grade">;
 
 interface LogGameDialogProps {
   game: Pick<Game, "id" | "name" | "cover" | "platforms" | "firstReleaseDate">;
@@ -100,7 +105,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     }
     if (!ready || filled.current) return;
     filled.current = true;
-    setGrade(gradeOf(current?.rating));
+    setGrade(current?.grade ?? null);
     setMoment(0);
     setStatus(current?.status ?? StatusEnum.WantToPlay);
     setPlatformId(String(current?.platformId ?? game.platforms[0]?.id ?? ""));
@@ -128,7 +133,7 @@ export function LogGameDialog({ game, entry, open, onOpenChange }: LogGameDialog
     const ended = showEnded && endedAt ? endedAt : null;
     const common = {
       status,
-      rating: ratingOf(grade),
+      grade,
       platformId: platform,
       mastered,
       spoilers,

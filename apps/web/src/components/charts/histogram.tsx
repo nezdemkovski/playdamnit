@@ -1,3 +1,4 @@
+import { Grade } from "@playdamnit/api-client";
 import { barY, defineChart } from "@tanstack/charts";
 import { Chart } from "@tanstack/charts/react";
 import { scaleBand } from "@tanstack/charts/scales/band";
@@ -7,7 +8,7 @@ import { cn } from "cn";
 import { useMemo } from "react";
 
 import { t } from "@/i18n";
-import { Grade, HistogramNoun } from "@/lib/enums";
+import { HistogramNoun } from "@/lib/enums";
 import { GRADES } from "@/lib/grade";
 
 interface HistogramProps {

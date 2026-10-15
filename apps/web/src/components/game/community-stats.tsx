@@ -1,11 +1,11 @@
-import type { GameCommunity } from "@playdamnit/api-client";
+import type { GameCommunity, Grade } from "@playdamnit/api-client";
 import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
 import { Histogram } from "@/components/charts/histogram";
 import { GradeBadge } from "@/components/game/rating";
 import { HistogramNoun, PillSize } from "@/lib/enums";
-import { gradeBuckets, gradeOf } from "@/lib/grade";
+import { GRADES } from "@/lib/grade";
 import { STATUSES } from "@/lib/statuses";
 
 /** What members did with the game: average, histogram and status counts */
@@ -15,8 +15,8 @@ export function CommunityStats({
   className,
 }: {
   community: GameCommunity;
-  /** The viewer's own rating, painted red in the histogram */
-  mine?: number | null;
+  /** The viewer's own grade, painted red in the histogram */
+  mine?: Grade | null;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ export function CommunityStats({
           <div className="eyebrow">{t("community.rating")}</div>
           <div className="mt-1">
             {community.ratingAverage ? (
-              <GradeBadge grade={gradeOf(community.ratingAverage)} size={PillSize.Lg} />
+              <GradeBadge grade={community.grade} size={PillSize.Lg} />
             ) : (
               <span className="num text-3xl font-extrabold text-dimmed">–</span>
             )}
@@ -38,8 +38,8 @@ export function CommunityStats({
         </div>
         <div className="min-w-0 flex-1">
           <Histogram
-            counts={gradeBuckets(community.histogram)}
-            highlight={gradeOf(mine)}
+            counts={GRADES.map((g) => community.gradeCounts[g.value])}
+            highlight={mine}
             height={56}
             ariaLabel={t("community.histogramLabel")}
             noun={HistogramNoun.Ratings}

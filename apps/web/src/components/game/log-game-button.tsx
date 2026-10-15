@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { LogGameDialog, type KnownEntry } from "./log-game-dialog";
 import { GradeBadge, StatusPill } from "./rating";
 import { PillSize } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 import type { ComponentProps } from "react";
 
 type ButtonProps = ComponentProps<typeof Button>;
@@ -32,7 +31,7 @@ export function LogGameButton({
     <>
       {entry ? (
         <Button variant="secondary" size={size} onClick={() => setOpen(true)} className="gap-2">
-          <GradeBadge grade={gradeOf(entry.rating)} size={PillSize.Sm} />
+          <GradeBadge grade={entry.grade} size={PillSize.Sm} />
           <StatusPill status={entry.status} />
           <PencilIcon className="size-3.5 text-dimmed" />
         </Button>

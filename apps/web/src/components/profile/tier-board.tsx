@@ -1,4 +1,4 @@
-import type { LibraryIndexItem } from "@playdamnit/api-client";
+import { Grade, type LibraryIndexItem } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 import { InboxIcon, SearchXIcon } from "lucide-react";
@@ -8,8 +8,8 @@ import { useTranslation } from "react-i18next";
 import { GameCover } from "@/components/game/game-cover";
 import { Input } from "@/components/ui/input";
 import { useLibraryMutations } from "@/hooks/library";
-import { DragDataType, Grade } from "@/lib/enums";
-import { GRADES, gradeOf, ratingOf } from "@/lib/grade";
+import { DragDataType } from "@/lib/enums";
+import { GRADES } from "@/lib/grade";
 
 interface TierBoardProps {
   entries: LibraryIndexItem[];
@@ -30,19 +30,18 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const selected = arranging ? entries.find((e) => e.id === selectedId) : undefined;
-  const ungraded = entries.filter((e) => !gradeOf(e.userGameData.rating));
+  const ungraded = entries.filter((e) => !e.userGameData.grade);
   const pool = ungraded.filter((e) =>
     e.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
 
   const move = async (id: number | null, grade: Grade | null) => {
     const entry = entries.find((e) => e.id === id);
-    if (!arranging || !entry || moving.current || gradeOf(entry.userGameData.rating) === grade)
-      return;
+    if (!arranging || !entry || moving.current || entry.userGameData.grade === grade) return;
     moving.current = true;
     setSelectedId(id);
     try {
-      await mutations.update(entry.id, { rating: ratingOf(grade) });
+      await mutations.update(entry.id, { grade });
       setSelectedId(null);
     } catch {
       // Keep the selection for retry. The mutation hook shows the error.
@@ -151,7 +150,7 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
       )}
       <div className="space-y-px border border-border bg-border">
         {GRADES.map((meta) => {
-          const games = entries.filter((e) => gradeOf(e.userGameData.rating) === meta.value);
+          const games = entries.filter((e) => e.userGameData.grade === meta.value);
           return (
             <section
               key={meta.value}
@@ -209,7 +208,7 @@ export function TierBoard({ entries, arranging = false }: TierBoardProps) {
               aria-label={t("profile.tiers.filterPool")}
               className="h-9 w-48 text-sm sm:w-64"
             />
-            {selected && gradeOf(selected.userGameData.rating) && (
+            {selected && selected.userGameData.grade && (
               <button
                 type="button"
                 disabled={mutations.isPending}

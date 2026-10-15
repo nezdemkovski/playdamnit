@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useMyLibrary } from "@/hooks/library";
-import { gradeOf } from "@/lib/grade";
 
 const PAGE = 50;
 
@@ -95,11 +94,7 @@ function SearchPage() {
       ) : (
         <div className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {data?.results.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
-            />
+            <GameCard key={game.id} game={game} grade={byGameId.get(game.id)?.userGameData.grade} />
           ))}
         </div>
       )}

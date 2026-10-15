@@ -33,7 +33,6 @@ import { usePaged } from "@/hooks/paged";
 import { STATUSES, type LibraryStatus } from "@/lib/statuses";
 import { LibraryRow } from "./library-row";
 import { AllOption, LibraryView, StorageKey } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 
 const SORTS = Object.values(LibrarySortEnum);
 const PAGE = 50;
@@ -198,7 +197,7 @@ export function LibraryList({ username, entries, editable }: LibraryListProps) {
       ) : view === LibraryView.Grid ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {list.items.map((entry) => (
-            <GameCard key={entry.id} game={entry} grade={gradeOf(entry.userGameData.rating)} />
+            <GameCard key={entry.id} game={entry} grade={entry.userGameData.grade} />
           ))}
         </div>
       ) : (

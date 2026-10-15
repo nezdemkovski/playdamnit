@@ -33,7 +33,6 @@ import { useMyLibrary } from "@/hooks/library";
 import { relativeDate } from "@/lib/format";
 import { DateFormat, IgdbSize } from "@/lib/enums";
 import { ChartTab } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -90,7 +89,7 @@ function Home() {
         <Section title={t("home.sections.nowPlaying")} icon={Gamepad2Icon} count={playing.length}>
           <GameRail>
             {playing.map((g) => (
-              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
+              <GameCard key={g.id} game={g} grade={g.userGameData.grade} />
             ))}
           </GameRail>
         </Section>
@@ -148,7 +147,7 @@ function Home() {
                   )}
                 </div>
                 {item.mastered && <TrophyIcon className="size-4 text-warning" />}
-                <GradeBadge grade={gradeOf(item.rating)} />
+                <GradeBadge grade={item.grade} />
                 <StatusPill status={item.status} />
                 <span className="hidden w-20 text-right text-xs text-dimmed sm:block">
                   {relativeDate(item.at)}
@@ -188,7 +187,7 @@ function Home() {
           <GameRail>
             {week.map((g) => (
               <div key={g.id}>
-                <GameCard game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
+                <GameCard game={g} grade={byGameId.get(g.id)?.userGameData.grade} />
                 <div className="mt-1.5 text-xs text-dimmed">
                   {g.firstReleaseDate
                     ? format(new Date(g.firstReleaseDate * 1000), DateFormat.MonthDay)
@@ -241,7 +240,7 @@ function Home() {
         <Section title={t("home.sections.recentlyAdded")} icon={LibraryIcon}>
           <GameRail>
             {latest.map((g) => (
-              <GameCard key={g.id} game={g} grade={gradeOf(g.userGameData.rating)} />
+              <GameCard key={g.id} game={g} grade={g.userGameData.grade} />
             ))}
           </GameRail>
         </Section>
@@ -271,7 +270,7 @@ function Rail({
   return (
     <GameRail>
       {games.map((g) => (
-        <GameCard key={g.id} game={g} grade={gradeOf(byGameId.get(g.id)?.userGameData.rating)} />
+        <GameCard key={g.id} game={g} grade={byGameId.get(g.id)?.userGameData.grade} />
       ))}
     </GameRail>
   );

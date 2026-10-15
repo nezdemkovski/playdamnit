@@ -31,7 +31,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMyLibrary } from "@/hooks/library";
 import { compactNumber, gameTypeName, releaseYear } from "@/lib/format";
 import { ChartTab, IgdbSize } from "@/lib/enums";
-import { gradeOf } from "@/lib/grade";
 
 const TABS = [
   { value: ChartTab.Popular, icon: FlameIcon, sort: GetApiGamesSort.Popular },
@@ -235,7 +234,7 @@ function ChartRow({
   /** The viewer's library entry for this game, if any */
   entry: LibraryIndexEntry | null;
 }) {
-  const grade = gradeOf(entry?.rating);
+  const grade = entry?.grade;
   return (
     <li className="panel flex items-center gap-3 p-2 pr-4 transition-colors hover:bg-white/[0.05]">
       <span className="w-8 text-center text-sm font-bold tabular-nums text-dimmed">{rank}</span>

@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMyLibrary } from "@/hooks/library";
 import { usePaged } from "@/hooks/paged";
 import { useProfileContext } from "@/hooks/profile";
-import { gradeOf } from "@/lib/grade";
 
 const PAGE = 60;
 
@@ -39,11 +38,7 @@ function ProfileLikes() {
     <>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
         {likes.items.map((game) => (
-          <GameCard
-            key={game.id}
-            game={game}
-            grade={gradeOf(byGameId.get(game.id)?.userGameData.rating)}
-          />
+          <GameCard key={game.id} game={game} grade={byGameId.get(game.id)?.userGameData.grade} />
         ))}
       </div>
       <div className="mt-3">

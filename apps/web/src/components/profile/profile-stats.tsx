@@ -1,44 +1,33 @@
-import type { LibraryIndexItem } from "@playdamnit/api-client";
-import { useMemo } from "react";
+import type { LibraryIndexItem, ProfileStats } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
 import { GradeBadge } from "@/components/game/rating";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { gradeOf } from "@/lib/grade";
-import { lastFinishLine, summarize } from "@/lib/voice";
+import { lastFinishLine } from "@/lib/voice";
 
 /**
  * The profile's one fact and one taste signal, inline with the follower counts: how much of
- * the library is finished (the guilt) and the typical grade (how generous). The owner gets
- * one line of voice on hover.
+ * the library is finished (the guilt) and the typical grade (how generous), both from the API.
+ * The owner gets one line of voice on hover.
  */
 export function ProfileStatStrip({
+  stats,
   entries,
   own = false,
 }: {
-  entries: LibraryIndexItem[];
+  stats: ProfileStats;
+  /** The owner's library, for the voice line */
+  entries?: LibraryIndexItem[];
   own?: boolean;
 }) {
   const { t } = useTranslation();
-  const s = useMemo(() => summarize(entries), [entries]);
-  // The median, not the mean: it is always a grade the person actually gave, and a mix of
-  // S and F does not average out to a C nobody got
-  const graded = useMemo(
-    () =>
-      entries
-        .map((e) => e.userGameData.rating)
-        .filter((r): r is number => !!r)
-        .sort((a, b) => b - a),
-    [entries],
-  );
-  const typicalGrade = graded.length ? gradeOf(graded[Math.floor((graded.length - 1) / 2)]) : null;
 
   const finished = (
     <span>
-      <b>{s.finished}</b>
+      <b>{stats.finished}</b>
       <span className="text-dimmed">
         {" "}
-        / {s.total} {t("profile.stats.finished")}
+        / {stats.total} {t("profile.stats.finished")}
       </span>
     </span>
   );
@@ -46,7 +35,7 @@ export function ProfileStatStrip({
   return (
     <>
       {/* The owner gets the voice line on hover; visitors just get the fraction */}
-      {own ? (
+      {own && entries ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="cursor-default">{finished}</span>
@@ -56,15 +45,15 @@ export function ProfileStatStrip({
       ) : (
         finished
       )}
-      {typicalGrade && (
+      {stats.typicalGrade && (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="flex cursor-default items-center gap-1.5">
               <span className="text-dimmed">{t("profile.stats.typical")}</span>
-              <GradeBadge grade={typicalGrade} className="block size-6" />
+              <GradeBadge grade={stats.typicalGrade} className="block size-6" />
             </span>
           </TooltipTrigger>
-          <TooltipContent>{t("profile.stats.typicalTip", { count: graded.length })}</TooltipContent>
+          <TooltipContent>{t("profile.stats.typicalTip", { count: stats.graded })}</TooltipContent>
         </Tooltip>
       )}
     </>

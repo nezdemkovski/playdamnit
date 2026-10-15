@@ -1,4 +1,4 @@
-import type { Game } from "@playdamnit/api-client";
+import { type Grade, type Game } from "@playdamnit/api-client";
 import { Link } from "@tanstack/react-router";
 import { cn } from "cn";
 
@@ -6,7 +6,7 @@ import { Rail } from "@/components/rail";
 
 import { GameCover } from "./game-cover";
 import { GradeBadge } from "./rating";
-import type { Grade } from "@/lib/enums";
+
 import { releaseYear } from "@/lib/format";
 
 /** A catalog card, or a library index item, whose cover is the URL itself */

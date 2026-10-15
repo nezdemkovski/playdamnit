@@ -116,28 +116,6 @@ export enum PillSize {
   Xl = "xl",
 }
 
-/** The verdict a member gives a game, S down to F (stored as a number by the API) */
-export enum Grade {
-  S = "S",
-  A = "A",
-  B = "B",
-  C = "C",
-  D = "D",
-  F = "F",
-}
-
-export enum BadgeId {
-  First = "first",
-  Collector = "collector",
-  Hoarder = "hoarder",
-  Finisher = "finisher",
-  Closer = "closer",
-  Critic = "critic",
-  Writer = "writer",
-  Completionist = "completionist",
-  Year = "year",
-}
-
 /** The AI SDK's chat protocol values the assistant dialog reacts to */
 export enum ChatStatus {
   Submitted = "submitted",

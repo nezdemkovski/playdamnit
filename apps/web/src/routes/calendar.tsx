@@ -38,7 +38,6 @@ import { useMyLibrary } from "@/hooks/library";
 import { format } from "@/i18n/date";
 import { DateFormat, FlagValue, IgdbSize, PillSize } from "@/lib/enums";
 import { compactNumber, gameTypeName } from "@/lib/format";
-import { gradeOf } from "@/lib/grade";
 
 // The API counts every day and sends the covers of its most popular games
 const COVERS_PER_DAY = 3;
@@ -474,7 +473,7 @@ function DayRow({
       <div className="flex items-center gap-2">
         {entry && (
           <>
-            <GradeBadge grade={gradeOf(entry.rating)} size={PillSize.Md} />
+            <GradeBadge grade={entry.grade} size={PillSize.Md} />
             <StatusPill status={entry.status} />
           </>
         )}
