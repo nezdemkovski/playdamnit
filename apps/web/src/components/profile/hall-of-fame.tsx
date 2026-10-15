@@ -1,7 +1,7 @@
 import type { LibraryIndexItem } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
-import { igdbImage } from "@/lib/image";
+import { igdbImage, igdbSrcSet } from "@/lib/image";
 import { Grade, IgdbSize, ImageLoading } from "@/lib/enums";
 import { gradeOf } from "@/lib/grade";
 
@@ -34,6 +34,7 @@ export function HallOfFame({ entries }: { entries: LibraryIndexItem[] }) {
           <img
             key={`${e.id}-${i}`}
             src={igdbImage(e.cover, IgdbSize.CoverBig) ?? undefined}
+            srcSet={igdbSrcSet(e.cover, IgdbSize.CoverBig)}
             alt=""
             loading={ImageLoading.Lazy}
             className="h-full w-auto shrink-0 object-cover opacity-45 saturate-[.6]"

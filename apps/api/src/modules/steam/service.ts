@@ -81,13 +81,13 @@ const ownedGames = async (steamId: string): Promise<OwnedGame[]> => {
 /** The profile's display name and URL (public even when the game details are private) */
 const playerSummary = async (steamId: string) => {
   const result = await steamGet<{
-    response: { players: { personaname?: string; profileurl?: string; avatarmedium?: string }[] };
+    response: { players: { personaname?: string; profileurl?: string; avatarfull?: string }[] };
   }>("/ISteamUser/GetPlayerSummaries/v2/", { steamids: steamId });
   const player = result.response.players[0];
   return {
     name: player?.personaname ?? null,
     url: player?.profileurl ?? null,
-    avatar: player?.avatarmedium ?? null,
+    avatar: player?.avatarfull ?? null,
   };
 };
 

@@ -513,7 +513,7 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
               {
                 personaname: "alice_on_steam",
                 profileurl: "https://s/a",
-                avatarmedium: "https://s/a.jpg",
+                avatarfull: "https://s/a.jpg",
               },
             ],
           },

@@ -2,7 +2,7 @@ import { Gamepad2Icon } from "lucide-react";
 import { cn } from "cn";
 
 import { IgdbSize, ImageLoading } from "@/lib/enums";
-import { igdbImage } from "@/lib/image";
+import { igdbImage, igdbSrcSet } from "@/lib/image";
 
 interface GameCoverProps {
   url: string | null | undefined;
@@ -26,6 +26,7 @@ export function GameCover({
       {src ? (
         <img
           src={src}
+          srcSet={igdbSrcSet(url, size)}
           alt={name}
           loading={loading}
           decoding="async"

@@ -39,7 +39,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useSession } from "@/hooks/auth";
 import { useMyEntry, useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
-import { igdbImage, youtubeThumbnail } from "@/lib/image";
+import { igdbImage, igdbSrcSet, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, MediaSlideType, PillSize } from "@/lib/enums";
 import { MEMBERS_VERDICT_MIN, gradeOf, gradeOfPercent } from "@/lib/grade";
 
@@ -133,7 +133,7 @@ function GameDetail({ game }: { game: Game }) {
       videoId: video.videoId,
     })),
     ...covers.map((c) => ({
-      src: igdbImage(c.url, IgdbSize.P720) ?? "",
+      src: igdbImage(c.url, IgdbSize.P1080) ?? "",
       thumbnail: igdbImage(c.url, IgdbSize.CoverSmall) ?? undefined,
       title: c.name ?? undefined,
     })),
@@ -415,6 +415,7 @@ function GameDetail({ game }: { game: Game }) {
               >
                 <img
                   src={igdbImage(shot.url, IgdbSize.ScreenshotBig) ?? undefined}
+                  srcSet={igdbSrcSet(shot.url, IgdbSize.ScreenshotBig)}
                   alt=""
                   className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   loading="lazy"
