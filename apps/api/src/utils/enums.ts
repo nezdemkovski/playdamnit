@@ -258,3 +258,26 @@ export enum SteamConnectResult {
   Private = "private",
   Failed = "failed",
 }
+
+/** The verdict on a game, S down to F: a band of the 0–10 rating (see `utils/grade.ts`) */
+export enum Grade {
+  S = "S",
+  A = "A",
+  B = "B",
+  C = "C",
+  D = "D",
+  F = "F",
+}
+
+/** Profile badges, earned from the library (see `UserService.findByUsername`) */
+export enum BadgeId {
+  First = "first",
+  Collector = "collector",
+  Hoarder = "hoarder",
+  Finisher = "finisher",
+  Closer = "closer",
+  Critic = "critic",
+  Writer = "writer",
+  Completionist = "completionist",
+  Year = "year",
+}

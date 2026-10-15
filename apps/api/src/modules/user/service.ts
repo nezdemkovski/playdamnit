@@ -10,9 +10,17 @@ import {
   userFollows,
   userGames,
 } from "@playdamnit/db/schema";
-import { NotificationType } from "@playdamnit/db/enums";
+import { NotificationType, UserGameStatus } from "@playdamnit/db/enums";
 import { BadRequestError, NotFoundError } from "@/utils/errors";
-import { ConnectionKind, JournalKind, MimeType, UrlProtocol, UserSort } from "@/utils/enums";
+import {
+  BadgeId,
+  ConnectionKind,
+  JournalKind,
+  MimeType,
+  UrlProtocol,
+  UserSort,
+} from "@/utils/enums";
+import { emptyGradeCounts, GRADE_BANDS, gradeIndexSql, gradeOf } from "@/utils/grade";
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import {
   canSeeList,
@@ -48,33 +56,84 @@ export abstract class UserService {
     });
     if (!data) throw new NotFoundError("User not found");
 
-    const [[games], [followers], [following], [reviews], [lists], follows, followsYou] =
-      await Promise.all([
-        postgresDb.select({ n: count() }).from(userGames).where(eq(userGames.userId, data.id)),
-        postgresDb
-          .select({ n: count() })
-          .from(userFollows)
-          .where(eq(userFollows.followingId, data.id)),
-        postgresDb
-          .select({ n: count() })
-          .from(userFollows)
-          .where(eq(userFollows.followerId, data.id)),
-        postgresDb
-          .select({ n: count() })
-          .from(userGames)
-          .where(and(eq(userGames.userId, data.id), sql`${userGames.review} is not null`)),
-        postgresDb
-          .select({ n: count() })
-          .from(gameList)
-          .where(
-            and(
-              eq(gameList.userId, data.id),
-              data.id === viewerId ? undefined : eq(gameList.isPublic, true),
+    // "This year" is the UTC calendar year (ended_at is kept in UTC), the same for every client
+    const year = new Date().getUTCFullYear();
+    const [[library], [followers], [following], [lists], follows, followsYou] = await Promise.all([
+      // The library in one pass: the counts everyone sees and the stats behind the badges
+      postgresDb
+        .select({
+          total: count(),
+          reviews: sql<number>`count(*) filter (where ${userGames.review} is not null)`,
+          finished: sql<number>`count(*) filter (where ${userGames.status} = ${UserGameStatus.Finished})`,
+          finishedThisYear: sql<number>`count(*) filter (where ${userGames.status} = ${UserGameStatus.Finished} and extract(year from ${userGames.endedAt}) = ${year})`,
+          graded: sql<number>`count(*) filter (where ${userGames.rating} > 0)`,
+          mastered: sql<number>`count(*) filter (where ${userGames.mastered})`,
+          // The median, not the mean: always a grade the person actually gave, and a mix of S
+          // and F does not average out to a C nobody got. Of an even count, the higher one.
+          median: sql<
+            string | null
+          >`percentile_disc(0.5) within group (order by ${userGames.rating} desc) filter (where ${userGames.rating} > 0)`,
+          // One count per grade band, S first
+          bands: sql<string[]>`array[${sql.join(
+            GRADE_BANDS.map(
+              (_, i) => sql`count(*) filter (where ${gradeIndexSql(userGames.rating)} = ${i})`,
             ),
+            sql`, `,
+          )}]`,
+        })
+        .from(userGames)
+        .where(eq(userGames.userId, data.id)),
+      postgresDb
+        .select({ n: count() })
+        .from(userFollows)
+        .where(eq(userFollows.followingId, data.id)),
+      postgresDb
+        .select({ n: count() })
+        .from(userFollows)
+        .where(eq(userFollows.followerId, data.id)),
+      postgresDb
+        .select({ n: count() })
+        .from(gameList)
+        .where(
+          and(
+            eq(gameList.userId, data.id),
+            data.id === viewerId ? undefined : eq(gameList.isPublic, true),
           ),
-        isFollowing(viewerId, data.id),
-        viewerId ? isFollowing(data.id, viewerId) : Promise.resolve(false),
-      ]);
+        ),
+      isFollowing(viewerId, data.id),
+      viewerId ? isFollowing(data.id, viewerId) : Promise.resolve(false),
+    ]);
+
+    const total = Number(library.total);
+    const reviews = Number(library.reviews);
+    const gradeCounts = emptyGradeCounts();
+    GRADE_BANDS.forEach((band, i) => (gradeCounts[band.grade] = Number(library.bands[i])));
+    const stats = {
+      total,
+      finished: Number(library.finished),
+      graded: Number(library.graded),
+      mastered: Number(library.mastered),
+      year,
+      finishedThisYear: Number(library.finishedThisYear),
+      typicalGrade: gradeOf(library.median),
+      gradeCounts,
+    };
+    // Same rules on every client: thresholds on the numbers above
+    const badges = (
+      [
+        [BadgeId.First, total >= 1],
+        [BadgeId.Collector, total >= 50],
+        [BadgeId.Hoarder, total >= 200],
+        [BadgeId.Finisher, stats.finished >= 10],
+        [BadgeId.Closer, stats.finished >= 50],
+        [BadgeId.Critic, stats.graded >= 25],
+        [BadgeId.Writer, reviews >= 10],
+        [BadgeId.Completionist, stats.mastered >= 5],
+        [BadgeId.Year, stats.finishedThisYear >= 12],
+      ] as const
+    ).map(([id, earned]) => ({ id, earned }));
+    // A private library keeps its numbers to its owner
+    const showLibrary = canSeeList(data, viewerId);
 
     return {
       id: data.id,
@@ -86,12 +145,14 @@ export abstract class UserService {
       listPublic: data.listPublic,
       createdAt: data.createdAt,
       counts: {
-        games: Number(games.n),
+        games: total,
         followers: Number(followers.n),
         following: Number(following.n),
-        reviews: Number(reviews.n),
+        reviews,
         lists: Number(lists.n),
       },
+      stats: showLibrary ? stats : null,
+      badges: showLibrary ? badges : null,
       isFollowing: follows,
       followsYou,
       isOwn: data.id === viewerId,
@@ -351,6 +412,7 @@ export abstract class UserService {
         game: transformGameResponse(row.game),
         status: row.status,
         rating: row.rating !== null ? Number(row.rating) : null,
+        grade: gradeOf(row.rating),
         mastered: row.mastered,
         hasReview: row.review !== null,
         at: row.updatedAt,
@@ -404,6 +466,7 @@ export abstract class UserService {
           note: null,
           status: entry.status,
           rating: entry.rating !== null ? Number(entry.rating) : null,
+          grade: gradeOf(entry.rating),
           mastered: entry.mastered,
           game: transformGameResponse(entry.game),
         })),

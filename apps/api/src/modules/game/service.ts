@@ -23,6 +23,7 @@ import {
 } from "@/utils/gameTransformers";
 import { NotFoundError } from "@/utils/errors";
 import { GameSort } from "@/utils/enums";
+import { emptyGradeCounts, gradeOf } from "@/utils/grade";
 import { getImageUrl, IgdbImageSize } from "@/utils/image";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
@@ -194,7 +195,13 @@ const communityStats = async (gameId: number) => {
     if (row.mastered) mastered += Number(row.n);
   }
   const histogram = Array.from({ length: 10 }, () => 0);
-  for (const row of histogramRows) histogram[Number(row.bucket) - 1] = Number(row.n);
+  // Bands start on whole numbers, so each whole-number bucket falls in exactly one grade
+  const gradeCounts = emptyGradeCounts();
+  for (const row of histogramRows) {
+    histogram[Number(row.bucket) - 1] = Number(row.n);
+    gradeCounts[gradeOf(row.bucket)!] += Number(row.n);
+  }
+  const ratingAverage = ratings.avg ? Math.round(Number(ratings.avg) * 10) / 10 : null;
 
   const [reviewCount] = await db
     .select({ n: count() })
@@ -205,9 +212,12 @@ const communityStats = async (gameId: number) => {
     total,
     statuses,
     mastered,
-    ratingAverage: ratings.avg ? Math.round(Number(ratings.avg) * 10) / 10 : null,
+    ratingAverage,
+    /** The members' grade: the average's */
+    grade: gradeOf(ratingAverage),
     ratingCount: Number(ratings.n),
     histogram,
+    gradeCounts,
     reviews: Number(reviewCount.n),
     likes: Number(likes.n),
     lists: Number(lists.n),

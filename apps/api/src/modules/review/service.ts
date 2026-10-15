@@ -7,6 +7,7 @@ import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/util
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { notify, PUBLIC_USER_COLUMNS, visibleToViewer } from "@/utils/social";
 import { ReviewSort } from "@/utils/enums";
+import { gradeOf } from "@/utils/grade";
 
 interface ListOptions {
   gameId?: number;
@@ -96,6 +97,7 @@ export abstract class ReviewService {
         gameId: row.gameId,
         user: row.user,
         rating: row.rating !== null ? Number(row.rating) : null,
+        grade: gradeOf(row.rating),
         status: row.status,
         mastered: row.mastered,
         spoilers: row.spoilers,

@@ -10,7 +10,8 @@ import {
   GAME_CARD_WITH,
   transformGameResponse,
 } from "@/utils/gameTransformers";
-import { LibrarySort } from "@/utils/enums";
+import { type Grade, LibrarySort } from "@/utils/enums";
+import { gradeOf, ratingOfGrade } from "@/utils/grade";
 import { escapeLike } from "@/utils/searchGames";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
@@ -24,6 +25,8 @@ const INSERT_CHUNK_SIZE = 500;
 interface UserGameInput {
   status: UserGameStatus;
   rating?: number | null;
+  /** A picked grade, stored as its band's middle; instead of `rating` */
+  grade?: Grade | null;
   review?: string | null;
   platformId?: number | null;
   endedAt?: string | null;
@@ -92,6 +95,15 @@ const isUniqueViolation = (error: unknown): boolean => {
   return cause !== undefined && cause !== error && isUniqueViolation(cause);
 };
 
+/** The rating a write stores: a picked grade becomes its band's middle; undefined leaves it */
+const resolveRating = (input: Partial<UserGameInput>): number | null | undefined => {
+  if (input.grade !== undefined) {
+    if (input.rating !== undefined) throw new BadRequestError("Send a rating or a grade, not both");
+    return ratingOfGrade(input.grade);
+  }
+  return input.rating;
+};
+
 type EntryRow = typeof userGames.$inferSelect & {
   game: Parameters<typeof transformGameResponse>[0] | null;
 };
@@ -103,6 +115,7 @@ const toLibraryEntry = (entry: EntryRow & { game: NonNullable<EntryRow["game"]> 
     id: entry.id,
     status: entry.status,
     rating: entry.rating !== null ? Number(entry.rating) : null,
+    grade: gradeOf(entry.rating),
     review: entry.review,
     platformId: entry.platformId,
     addedAt: entry.addedAt,
@@ -259,6 +272,7 @@ export abstract class UserGameService {
                   id: entry.id,
                   status: entry.status,
                   rating: entry.rating !== null ? Number(entry.rating) : null,
+                  grade: gradeOf(entry.rating),
                   hasReview,
                   platformId: entry.platformId,
                   addedAt: entry.addedAt,
@@ -299,6 +313,7 @@ export abstract class UserGameService {
     }
 
     await assertPlatformExists(input.platformId);
+    const rating = resolveRating(input);
 
     try {
       const [inserted] = await postgresDb
@@ -307,7 +322,7 @@ export abstract class UserGameService {
           userId,
           gameId,
           status: input.status,
-          rating: input.rating?.toString() ?? null,
+          rating: rating?.toString() ?? null,
           review: input.review ?? null,
           mastered: input.mastered ?? false,
           spoilers: input.spoilers ?? false,
@@ -331,7 +346,11 @@ export abstract class UserGameService {
       ]);
       return {
         message: "Game added successfully",
-        game: { ...inserted, rating: inserted.rating !== null ? Number(inserted.rating) : null },
+        game: {
+          ...inserted,
+          rating: inserted.rating !== null ? Number(inserted.rating) : null,
+          grade: gradeOf(inserted.rating),
+        },
         entry,
         community,
       };
@@ -353,13 +372,14 @@ export abstract class UserGameService {
 
     await assertPlatformExists(input.platformId);
 
+    const rating = resolveRating(input);
     const endedAt = parseEndedAt(input.endedAt);
 
     const [updated] = await postgresDb
       .update(userGames)
       .set({
         ...(input.status !== undefined && { status: input.status }),
-        ...(input.rating !== undefined && { rating: input.rating?.toString() ?? null }),
+        ...(rating !== undefined && { rating: rating?.toString() ?? null }),
         ...(input.review !== undefined && { review: input.review }),
         ...(input.mastered !== undefined && { mastered: input.mastered }),
         ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
@@ -380,7 +400,11 @@ export abstract class UserGameService {
     ]);
     return {
       message: "Game updated successfully",
-      game: { ...updated, rating: updated.rating !== null ? Number(updated.rating) : null },
+      game: {
+        ...updated,
+        rating: updated.rating !== null ? Number(updated.rating) : null,
+        grade: gradeOf(updated.rating),
+      },
       entry,
       community,
     };

@@ -197,6 +197,11 @@ components:
         totalRating:
           type: number
           nullable: true
+        grade:
+          description: The catalog score's grade; null without a score
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         updatedAt:
           type: string
           format: date-time
@@ -495,6 +500,11 @@ components:
         ratingAverage:
           type: number
           nullable: true
+        grade:
+          description: The members' grade (of the average); null before anyone grades it
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         ratingCount:
           type: number
         histogram:
@@ -502,6 +512,8 @@ components:
           description: Ratings bucketed by whole number (floor), 1..10
           items:
             type: number
+        gradeCounts:
+          $ref: "#/components/schemas/GradeCounts"
         reviews:
           type: number
         likes:
@@ -514,8 +526,10 @@ components:
         - statuses
         - mastered
         - ratingAverage
+        - grade
         - ratingCount
         - histogram
+        - gradeCounts
         - reviews
         - likes
         - lists
@@ -552,6 +566,11 @@ components:
         rating:
           type: number
           nullable: true
+        grade:
+          description: The rating's grade; null when not graded
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         status:
           $ref: "#/components/schemas/StatusEnum"
         mastered:
@@ -601,6 +620,7 @@ components:
         - gameId
         - user
         - rating
+        - grade
         - status
         - mastered
         - spoilers
@@ -818,6 +838,11 @@ components:
         rating:
           type: number
           nullable: true
+        grade:
+          description: The rating's grade; null when not graded
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         mastered:
           type: boolean
         hasReview:
@@ -833,6 +858,7 @@ components:
         - game
         - status
         - rating
+        - grade
         - mastered
         - hasReview
         - at
@@ -983,6 +1009,11 @@ components:
         rating:
           type: number
           nullable: true
+        grade:
+          description: The rating's grade; null when not graded
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         mastered:
           type: boolean
         game:
@@ -1027,10 +1058,13 @@ components:
               score:
                 type: number
                 description: The catalog's score, 0–100
+              grade:
+                $ref: "#/components/schemas/Grade"
             required:
               - id
               - cover
               - score
+              - grade
         seed:
           type: string
         nextPage:
@@ -1259,6 +1293,74 @@ components:
         - want_to_play
         - backlog
 
+    Grade:
+      type: string
+      description: "The verdict on a game, a band of the 0–10 rating: S ≥ 9, A ≥ 8, B ≥ 7, C ≥ 6, D ≥ 4, F above 0 (the catalog's 0–100 score ×10 the same way)"
+      enum: [S, A, B, C, D, F]
+
+    GradeCounts:
+      type: object
+      description: How many ratings fall in each grade
+      properties:
+        S:
+          type: number
+        A:
+          type: number
+        B:
+          type: number
+        C:
+          type: number
+        D:
+          type: number
+        F:
+          type: number
+      required: [S, A, B, C, D, F]
+
+    BadgeId:
+      type: string
+      enum: [first, collector, hoarder, finisher, closer, critic, writer, completionist, year]
+      x-enumNames:
+        [First, Collector, Hoarder, Finisher, Closer, Critic, Writer, Completionist, Year]
+
+    ProfileBadge:
+      type: object
+      description: "Earned at: first 1 game, collector 50, hoarder 200; finisher 10 finished, closer 50; critic 25 graded; writer 10 reviews; completionist 5 mastered; year 12 finished this year"
+      properties:
+        id:
+          $ref: "#/components/schemas/BadgeId"
+        earned:
+          type: boolean
+      required: [id, earned]
+
+    ProfileStats:
+      type: object
+      properties:
+        total:
+          type: number
+          description: Games in the library
+        finished:
+          type: number
+        graded:
+          type: number
+          description: Entries with a rating above 0
+        mastered:
+          type: number
+        year:
+          type: number
+          description: The current UTC year, the one `finishedThisYear` and the year badge count
+        finishedThisYear:
+          type: number
+          description: Finished with an end date in `year` (UTC)
+        typicalGrade:
+          description: The median of the given grades (the higher middle one of an even count); null with none
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
+        gradeCounts:
+          $ref: "#/components/schemas/GradeCounts"
+      required:
+        [total, finished, graded, mastered, year, finishedThisYear, typicalGrade, gradeCounts]
+
     UserGameData:
       type: object
       properties:
@@ -1270,6 +1372,11 @@ components:
         rating:
           type: number
           nullable: true
+        grade:
+          description: The rating's grade; null when not graded
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         review:
           type: string
           nullable: true
@@ -1309,6 +1416,7 @@ components:
         - id
         - status
         - rating
+        - grade
         - platformId
         - addedAt
         - mastered
@@ -1343,6 +1451,11 @@ components:
             rating:
               type: number
               nullable: true
+            grade:
+              description: The rating's grade; null when not graded
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/Grade"
             review:
               type: string
               nullable: true
@@ -1359,6 +1472,7 @@ components:
             - gameId
             - status
             - rating
+            - grade
             - review
             - platformId
             - source
@@ -1425,6 +1539,11 @@ components:
         rating:
           type: number
           nullable: true
+        grade:
+          description: The rating's grade; null when not graded
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         hasReview:
           type: boolean
         platformId:
@@ -1456,6 +1575,7 @@ components:
         - id
         - status
         - rating
+        - grade
         - hasReview
         - platformId
         - addedAt
@@ -1559,6 +1679,17 @@ components:
             - following
             - reviews
             - lists
+        stats:
+          description: What the library adds up to; null when the list is private to the viewer
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ProfileStats"
+        badges:
+          type: array
+          nullable: true
+          description: Every badge in display order with whether it is earned; null when the list is private to the viewer
+          items:
+            $ref: "#/components/schemas/ProfileBadge"
         isFollowing:
           type: boolean
         followsYou:
@@ -1598,6 +1729,8 @@ components:
         - listPublic
         - createdAt
         - counts
+        - stats
+        - badges
         - isFollowing
         - followsYou
         - isOwn
@@ -1613,6 +1746,12 @@ components:
           type: number
           minimum: 0
           maximum: 10
+          description: The 0–10 rating; send this or `grade`, not both
+        grade:
+          description: A picked grade, stored as its band's middle; send this or `rating`, not both
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         review:
           type: string
           minLength: 3
@@ -1633,7 +1772,6 @@ components:
       required:
         - gameId
         - status
-        - rating
         - platformId
 
     UserGameUpdateRequest:
@@ -1646,6 +1784,12 @@ components:
           minimum: 0
           maximum: 10
           nullable: true
+          description: The 0–10 rating; send this or `grade`, not both
+        grade:
+          description: A picked grade, stored as its band's middle (null clears it); send this or `rating`, not both
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
         review:
           type: string
           nullable: true

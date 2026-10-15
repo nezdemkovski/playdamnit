@@ -4,25 +4,24 @@ import { sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
 import { cover, game } from "@playdamnit/db/schema";
+import type { Grade } from "@/utils/enums";
+import { GRADE_BANDS, gradeIndexSql } from "@/utils/grade";
 import { getImageUrl, IgdbImageSize } from "@/utils/image";
 
-/**
- * Tier floors on the catalog's 0–100 score, S first. Mirrors the grade bands of the web app
- * (`apps/web/src/lib/grade.ts`) and the iOS app.
- */
-const TIER_FLOORS = [90, 80, 70, 60, 40, 0];
 // A game people know: rated by enough IGDB players, or flagged popular
 const MIN_RATINGS = 40;
 // Games each page takes from every tier; a page deals them all
 const PER_TIER = 20;
-// The ends of the scale come up a little less often than the middle
-const TIER_WEIGHTS = [0.7, 1, 1, 1, 1, 0.7];
+// The ends of the scale come up a little less often than the middle, one weight per grade band
+const TIER_WEIGHTS = GRADE_BANDS.map((_, i) => (i === 0 || i === GRADE_BANDS.length - 1 ? 0.7 : 1));
 
 export interface ShowcaseGame {
   id: number;
   cover: string;
   /** The catalog's score, 0–100 */
   score: number;
+  /** The score's grade */
+  grade: Grade;
 }
 
 export interface ShowcasePage {
@@ -43,10 +42,8 @@ export const showcase = async (
   seed: string = randomBytes(6).toString("hex"),
   page = 0,
 ): Promise<ShowcasePage> => {
-  const tier = sql`case ${sql.join(
-    TIER_FLOORS.map((floor, i) => sql`when ${game.totalRating} >= ${floor} then ${i}`),
-    sql` `,
-  )} end`;
+  // The grade band of the score, S first
+  const tier = gradeIndexSql(sql`${game.totalRating} / 10`);
   const { rows } = await db.execute<{
     id: number;
     hash: string;
@@ -63,13 +60,13 @@ export const showcase = async (
       join ${cover} on ${cover.gameId} = ${game.id}
       where ${game.deletedAt} is null
         and ${game.versionParentId} is null
-        and ${game.totalRating} is not null
+        and ${game.totalRating} > 0
         and (${game.totalRatingCount} >= ${MIN_RATINGS} or ${game.isPopular})
     ) sampled
     where pick > ${page * PER_TIER} and pick <= ${(page + 1) * PER_TIER + 1}
   `);
 
-  const tiers = TIER_FLOORS.map(() => [] as ShowcaseGame[]);
+  const tiers = GRADE_BANDS.map(() => [] as ShowcaseGame[]);
   // One row past the page in a tier says there is more after it
   const more = rows.some((r) => Number(r.pick) > (page + 1) * PER_TIER);
   for (const r of rows) {
@@ -78,6 +75,7 @@ export const showcase = async (
       id: Number(r.id),
       cover: getImageUrl(r.source, r.hash, IgdbImageSize.COVER_BIG),
       score: Number(r.score),
+      grade: GRADE_BANDS[Number(r.tier)].grade,
     });
   }
   const dealt: ShowcaseGame[] = [];

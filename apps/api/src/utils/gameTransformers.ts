@@ -1,5 +1,6 @@
 import { getImageUrl, IgdbImageSize } from "@/utils/image";
 import { CompanyRole } from "@playdamnit/db/enums";
+import { gradeOfScore } from "@/utils/grade";
 
 // Relations loaded for list views (search, catalog, library). Heavy relations are only loaded
 // for the detail view.
@@ -72,6 +73,7 @@ interface Named {
 
 interface GameCard {
   id: number;
+  totalRating?: number | null;
   cover?: Image | null;
   platforms?: unknown[];
   genres?: unknown[];
@@ -162,6 +164,8 @@ export const transformGameResponse = <T extends GameCard>(game: T) => {
 
   return {
     ...rest,
+    // The catalog score's grade, so clients never band the number themselves
+    grade: gradeOfScore(rest.totalRating),
     deleted: !!deletedAt,
     platforms: platforms ?? [],
     genres: genres ?? [],

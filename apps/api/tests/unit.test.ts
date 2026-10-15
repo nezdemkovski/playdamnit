@@ -183,3 +183,33 @@ describe("sign in through Steam", () => {
     }
   });
 });
+
+describe("grade bands", () => {
+  test("band a 0–10 rating and a 0–100 score the same way", async () => {
+    const { gradeOf, gradeOfScore, ratingOfGrade, GRADE_BANDS } = await import("@/utils/grade");
+    const { Grade } = await import("@/utils/enums");
+    expect([10, 9, 8.99, 8, 7, 6, 5.9, 4, 3.9, 0.5].map(gradeOf)).toEqual([
+      Grade.S,
+      Grade.S,
+      Grade.A,
+      Grade.A,
+      Grade.B,
+      Grade.C,
+      Grade.D,
+      Grade.D,
+      Grade.F,
+      Grade.F,
+    ]);
+    expect([0, null, undefined].map(gradeOf)).toEqual([null, null, null]);
+    expect(gradeOf("7.50")).toBe(Grade.B);
+    expect([93, 77, 39, 0, null].map(gradeOfScore)).toEqual([
+      Grade.S,
+      Grade.B,
+      Grade.F,
+      null,
+      null,
+    ]);
+    for (const band of GRADE_BANDS) expect(gradeOf(ratingOfGrade(band.grade))).toBe(band.grade);
+    expect(ratingOfGrade(null)).toBeNull();
+  });
+});

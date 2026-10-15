@@ -4,6 +4,7 @@ import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
 import {
   endedAtSchema,
+  gradeSchema,
   libraryGameParams,
   platformIdSchema,
   ratingSchema,
@@ -19,6 +20,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
     body: t.Object({
       status: t.Optional(statusSchema),
       rating: t.Optional(t.Nullable(ratingSchema)),
+      grade: t.Optional(t.Nullable(gradeSchema)),
       review: t.Optional(t.Nullable(reviewSchema)),
       platformId: t.Optional(t.Nullable(platformIdSchema)),
       endedAt: t.Optional(t.Nullable(endedAtSchema)),

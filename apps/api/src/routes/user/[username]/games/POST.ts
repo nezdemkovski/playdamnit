@@ -4,6 +4,7 @@ import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
 import {
   endedAtSchema,
+  gradeSchema,
   libraryParams,
   platformIdSchema,
   ratingSchema,
@@ -21,7 +22,8 @@ export const postUserGame = new Elysia().use(betterAuth).post(
         error: "Game ID must be a valid number",
       }),
       status: statusSchema,
-      rating: ratingSchema,
+      rating: t.Optional(ratingSchema),
+      grade: t.Optional(t.Nullable(gradeSchema)),
       review: t.Optional(reviewSchema),
       platformId: platformIdSchema,
       endedAt: t.Optional(endedAtSchema),

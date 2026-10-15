@@ -1,6 +1,7 @@
 import { t } from "elysia";
 
 import { UserGameStatus } from "@playdamnit/db/enums";
+import { Grade } from "@/utils/enums";
 
 export const MAX_REVIEW_LENGTH = 5000;
 
@@ -17,6 +18,10 @@ export const ratingSchema = t.Number({
   minimum: 0,
   maximum: 10,
   error: "Rating must be between 0 and 10",
+});
+
+export const gradeSchema = t.Enum(Grade, {
+  error: `Grade must be one of: ${Object.values(Grade).join(", ")}`,
 });
 
 export const reviewSchema = t.String({

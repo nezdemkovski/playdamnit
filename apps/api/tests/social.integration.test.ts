@@ -5,8 +5,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Client } from "pg";
 import { NotificationType, ReactionEmoji, UserGameStatus } from "@playdamnit/db/enums";
 import {
+  BadgeId,
   ConnectionKind,
   GameSort,
+  Grade,
   LibrarySort,
   ReviewSort,
   SteamConnectResult,
@@ -99,6 +101,8 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(detail.community.ratingAverage).toBe(7.5);
     expect(detail.community.histogram[8]).toBe(1);
     expect(detail.community.histogram[5]).toBe(1);
+    expect(detail.community.grade).toBe(Grade.B);
+    expect(detail.community.gradeCounts).toEqual({ S: 1, A: 0, B: 0, C: 1, D: 0, F: 0 });
     expect(detail.community.reviews).toBe(1);
     expect(detail.community.likes).toBe(1);
     expect(detail.viewer.liked).toBe(true);
@@ -328,6 +332,58 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ).toHaveLength(1);
   });
 
+  test("the profile carries library stats and badges, hidden with a private list", async () => {
+    const year = new Date().getUTCFullYear();
+    await UserGameService.addUserGame("carol", OTHER_GAME, {
+      status: UserGameStatus.Finished,
+      grade: Grade.A,
+      platformId: 6,
+      endedAt: `${year}-01-02`,
+      mastered: true,
+    });
+    const carol = await UserService.findByUsername("carol", "bob");
+    expect(carol.stats).toEqual({
+      total: 2,
+      finished: 1,
+      graded: 1,
+      mastered: 1,
+      year,
+      finishedThisYear: 1,
+      typicalGrade: Grade.A,
+      gradeCounts: { S: 0, A: 1, B: 0, C: 0, D: 0, F: 0 },
+    });
+    expect(carol.badges?.map((b) => b.id)).toEqual(Object.values(BadgeId));
+    expect(carol.badges?.filter((b) => b.earned).map((b) => b.id)).toEqual([BadgeId.First]);
+
+    // Of an even count the typical grade is the higher of the two middle ones
+    await UserGameService.updateUserGame("carol", GAME, { grade: Grade.D });
+    expect((await UserService.findByUsername("carol")).stats?.typicalGrade).toBe(Grade.A);
+    await UserGameService.updateUserGame("carol", GAME, { grade: null });
+    expect((await UserService.findByUsername("carol")).stats?.graded).toBe(1);
+
+    await UserService.updateProfile("carol", { listPublic: false });
+    const hidden = await UserService.findByUsername("carol", "bob");
+    expect(hidden.stats).toBeNull();
+    expect(hidden.badges).toBeNull();
+    expect((await UserService.findByUsername("carol", "carol")).stats?.total).toBe(2);
+    await UserService.updateProfile("carol", { listPublic: true });
+    await UserGameService.deleteUserGame("carol", OTHER_GAME);
+  });
+
+  test("a grade is written as its band's middle and comes back next to the rating", async () => {
+    const added = await UserGameService.updateUserGame("bob", GAME, { grade: Grade.S });
+    expect(added.game.rating).toBe(9.5);
+    expect(added.game.grade).toBe(Grade.S);
+    expect(added.entry?.userGameData.grade).toBe(Grade.S);
+    await expect(
+      UserGameService.updateUserGame("bob", GAME, { grade: Grade.A, rating: 8 }),
+    ).rejects.toThrow(/not both/);
+    const back = await UserGameService.updateUserGame("bob", GAME, { rating: 6 });
+    expect(back.entry?.userGameData.grade).toBe(Grade.C);
+    const index = await UserGameService.getLibraryIndex("bob", null);
+    expect(index.results.find((e) => e.id === GAME)?.userGameData.grade).toBe(Grade.C);
+  });
+
   test("a library pages with a status, a search and a sort, and has a light index", async () => {
     const all = await UserGameService.getUserGames("alice", { viewerId: "alice" });
     const index = await UserGameService.getLibraryIndex("alice", "alice");
@@ -426,8 +482,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(first.games.map((g) => g.id).sort()).toEqual([GAME, OTHER_GAME].sort());
     expect(first.games.find((g) => g.id === GAME)).toMatchObject({
       score: 95,
+      grade: Grade.S,
       cover: expect.stringContaining("co1234"),
     });
+    expect(first.games.find((g) => g.id === OTHER_GAME)?.grade).toBe(Grade.F);
     // Two games fit one page: there is no next one, and the page after it is empty
     expect(first.nextPage).toBeNull();
     expect((await showcase(first.seed, 1)).games).toEqual([]);
