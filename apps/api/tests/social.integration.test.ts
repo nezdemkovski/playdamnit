@@ -417,10 +417,24 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
   test("the release calendar counts per UTC day and can keep only popular games", async () => {
     // Both seeded games release at 1600000000 = 2020-09-13 12:26:40 UTC
     const range = { releasedFrom: 1598918400, releasedTo: 1601510399 }; // September 2020
-    expect((await GameService.releaseDays(range)).days).toEqual([{ date: "2020-09-13", count: 2 }]);
+    // A day carries the covers of its most popular games
+    expect((await GameService.releaseDays(range)).days).toEqual([
+      {
+        date: "2020-09-13",
+        count: 2,
+        covers: [
+          "https://images.igdb.com/igdb/image/upload/t_cover_big/co1234.jpg",
+          "https://images.igdb.com/igdb/image/upload/t_cover_big/co1234.jpg",
+        ],
+      },
+    ]);
     await pg.query(`update game set is_popular = true where id = $1`, [GAME]);
     expect((await GameService.releaseDays({ ...range, popular: true })).days).toEqual([
-      { date: "2020-09-13", count: 1 },
+      {
+        date: "2020-09-13",
+        count: 1,
+        covers: ["https://images.igdb.com/igdb/image/upload/t_cover_big/co1234.jpg"],
+      },
     ]);
     const popular = await GameService.findGames({
       ...range,
@@ -432,7 +446,11 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     // Follows before release make an unrated game hot too
     await pg.query(`update game set hypes = 25 where id = $1`, [OTHER_GAME]);
     expect((await GameService.releaseDays({ ...range, popular: true })).days).toEqual([
-      { date: "2020-09-13", count: 1 },
+      {
+        date: "2020-09-13",
+        count: 1,
+        covers: ["https://images.igdb.com/igdb/image/upload/t_cover_big/co1234.jpg"],
+      },
     ]);
     await pg.query(`update game set hypes = null where id = $1`, [OTHER_GAME]);
   });

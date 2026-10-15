@@ -23,9 +23,12 @@ import {
 } from "@/utils/gameTransformers";
 import { NotFoundError } from "@/utils/errors";
 import { GameSort } from "@/utils/enums";
+import { getImageUrl, IgdbImageSize } from "@/utils/image";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
 const SIMILAR_GAMES_LIMIT = 12;
+// Covers per day on the release calendar
+const RELEASE_DAY_COVERS = 4;
 // "Best" needs enough IGDB votes to mean anything
 const MIN_RATINGS_FOR_BEST = 50;
 // Unreleased games have no ratings yet; this many IGDB follows before release make one "hot"
@@ -373,23 +376,39 @@ export abstract class GameService {
 
   /**
    * How many games release on each UTC day of a range (the release calendar's counts), with
-   * the same filters as the list. Days without releases are left out.
+   * the same filters as the list, and the covers of the day's most popular games. Days without
+   * releases are left out.
    */
   static async releaseDays(opts: GameFilters) {
-    const day = sql<string>`to_char(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC', 'YYYY-MM-DD')`;
-    const rows = await db
-      .select({ date: day, count: count() })
-      .from(game)
-      .where(
-        and(
-          isNull(game.deletedAt),
-          sql`${game.firstReleaseDate} is not null`,
-          ...buildFilters(opts, game),
-        ),
+    const day = sql`to_char(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC', 'YYYY-MM-DD')`;
+    // Games with a cover first, so a day with any cover shows it
+    const order = [sql`${cover.hash} is null`, ...orderFor(GameSort.Popular)(game)];
+    const rows = await db.execute<{
+      date: string;
+      count: number;
+      covers: { hash: string; source: string }[] | null;
+    }>(sql`
+      with ranked as (
+        select ${day} as date, ${cover.hash} as hash, ${cover.source} as source,
+          row_number() over (partition by ${day} order by ${sql.join(order, sql`, `)}) as rank
+        from ${game}
+        left join ${cover} on ${cover.gameId} = ${game.id}
+        where ${and(isNull(game.deletedAt), sql`${game.firstReleaseDate} is not null`, ...buildFilters(opts, game))}
       )
-      .groupBy(sql`1`)
-      .orderBy(sql`1`);
-    return { days: rows.map((r) => ({ date: r.date, count: Number(r.count) })) };
+      select date, count(*)::int as count,
+        json_agg(json_build_object('hash', hash, 'source', source) order by rank)
+          filter (where rank <= ${RELEASE_DAY_COVERS} and hash is not null) as covers
+      from ranked
+      group by date
+      order by date
+    `);
+    return {
+      days: rows.rows.map((r) => ({
+        date: r.date,
+        count: Number(r.count),
+        covers: (r.covers ?? []).map((c) => getImageUrl(c.source, c.hash, IgdbImageSize.COVER_BIG)),
+      })),
+    };
   }
 
   /** Cards for a set of ids, in the order given (library imports, lists, similar games) */

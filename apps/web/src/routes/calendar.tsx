@@ -40,8 +40,7 @@ import { DateFormat, FlagValue, IgdbSize, PillSize } from "@/lib/enums";
 import { compactNumber, gameTypeName } from "@/lib/format";
 import { gradeOf } from "@/lib/grade";
 
-// The month's most popular releases give the grid its covers; every day is counted
-const COVER_POOL = 100;
+// The API counts every day and sends the covers of its most popular games
 const COVERS_PER_DAY = 3;
 // A day's list in the dialog grows by this much, up to the API's page size
 const DAY_PAGE = 40;
@@ -87,16 +86,6 @@ function CalendarPage() {
   const popular = search.hot ? FlagValue.One : undefined;
   const [openDay, setOpenDay] = useState<string | null>(null);
 
-  const top = useGetApiGames(
-    {
-      sort: GetApiGamesSort.Popular,
-      releasedFrom: from,
-      releasedTo: to,
-      limit: COVER_POOL,
-      popular,
-    },
-    { query: { placeholderData: (prev) => prev, enabled: !search.mine } },
-  );
   const days = useGetApiGamesReleaseDays(
     { releasedFrom: from, releasedTo: to, popular },
     { query: { placeholderData: (prev) => prev, enabled: !search.mine } },
@@ -122,22 +111,25 @@ function CalendarPage() {
   );
 
   const { coversByDay, countByDay, total } = useMemo(() => {
-    const covers = new Map<string, Game[]>();
+    const covers = new Map<string, string[]>();
     const counts = new Map<string, number>();
-    const pool: Game[] = search.mine ? mine : (top.data?.results ?? []);
-    for (const g of pool) {
-      const key = dayOf(g.firstReleaseDate);
-      if (key) covers.set(key, [...(covers.get(key) ?? []), g]);
-    }
     if (search.mine) {
-      for (const [key, list] of covers) counts.set(key, list.length);
+      for (const g of mine) {
+        const key = dayOf(g.firstReleaseDate);
+        if (!key) continue;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+        if (g.cover?.url) covers.set(key, [...(covers.get(key) ?? []), g.cover.url]);
+      }
     } else {
-      for (const d of days.data?.days ?? []) counts.set(d.date, d.count);
+      for (const d of days.data?.days ?? []) {
+        counts.set(d.date, d.count);
+        covers.set(d.date, d.covers);
+      }
     }
     let sum = 0;
     for (const n of counts.values()) sum += n;
     return { coversByDay: covers, countByDay: counts, total: sum };
-  }, [search.mine, mine, top.data, days.data]);
+  }, [search.mine, mine, days.data]);
 
   // Weeks covering the month, Monday first
   const weeks = useMemo(() => {
@@ -154,9 +146,7 @@ function CalendarPage() {
     navigate({
       search: { ...search, month: format(addMonths(start, delta), DateFormat.IsoMonth) },
     });
-  const loading = search.mine
-    ? mineIds.length > 0 && mineCards.isPending
-    : days.isPending || top.isPending;
+  const loading = search.mine ? mineIds.length > 0 && mineCards.isPending : days.isPending;
 
   return (
     <>
@@ -282,7 +272,7 @@ function DayCell({
   day: Date;
   inMonth: boolean;
   count: number;
-  covers: Game[];
+  covers: string[];
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -324,8 +314,8 @@ function DayCell({
       </div>
       {has && (
         <div className="hidden grid-cols-3 gap-1 sm:grid">
-          {shown.map((g) => (
-            <GameCover key={g.id} url={g.cover?.url} name={g.name} size={IgdbSize.CoverSmall} />
+          {shown.map((url) => (
+            <GameCover key={url} url={url} name="" size={IgdbSize.CoverSmall} />
           ))}
           {rest > 0 && shown.length < COVERS_PER_DAY && (
             <span className="num flex aspect-[3/4] items-center justify-center border border-border text-[11px] font-extrabold text-dimmed group-hover:border-foreground/40 group-hover:text-foreground">

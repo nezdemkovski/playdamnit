@@ -1024,9 +1024,15 @@ components:
                 description: UTC day, YYYY-MM-DD
               count:
                 type: number
+              covers:
+                type: array
+                description: Cover URLs (cover_big) of the day's most popular games, up to 4, most popular first
+                items:
+                  type: string
             required:
               - date
               - count
+              - covers
       required:
         - days
 
@@ -2013,7 +2019,7 @@ paths:
       tags:
         - Games
       summary: Releases per day
-      description: How many games release on each UTC day of the range. Days without releases are left out.
+      description: How many games release on each UTC day of the range, with the covers of its most popular games. Days without releases are left out.
       responses:
         "200":
           description: Counts per day
