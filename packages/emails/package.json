@@ -1,0 +1,26 @@
+{
+  "name": "@playdamnit/emails",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The account emails (React Email): confirm the address, change it, reset the password",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "email dev --dir src/emails --port 3040",
+    "export": "email export --dir src/emails --outDir out --pretty",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-email": "^6.11.2"
+  },
+  "devDependencies": {
+    "@playdamnit/tsconfig": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "@types/react": "^19.2.0",
+    "typescript": "^7.0.2"
+  }
+}

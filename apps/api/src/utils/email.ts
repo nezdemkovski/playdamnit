@@ -1,8 +1,9 @@
+import type { RenderedEmail } from "@playdamnit/emails";
 import { Resend } from "resend";
 
 import { getConfig } from "@/config";
 
-const { resendApiKey, isDev } = getConfig();
+const { resendApiKey, emailFrom, isDev } = getConfig();
 
 // The Resend constructor throws without a key, so only create it when one is configured
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -11,51 +12,14 @@ const resend = resendApiKey ? new Resend(resendApiKey) : null;
 // reset is off (see src/lib/auth.ts). In development emails are only logged anyway.
 export const emailEnabled = !!resend || isDev;
 
-export const resetPasswordEmailTemplate = (url: string) => `
-    <h1>Reset Your Password</h1>
-    <p>Hello,</p>
-    <p>We received a request to reset your password for your playdamnit account. Click the button below to reset it:</p>
-    <a href="${url}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 16px 0;">Reset Password</a>
-    <p>If you didn't request this, you can safely ignore this email.</p>
-    <p>This link will expire in 1 hour.</p>
-    <p>Best regards,<br>The playdamnit Team</p>
-    <p style="color: #666; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser: ${url}</p>
-`;
-
-export const sendVerificationEmailTemplate = (url: string) => `
-    <h1>Welcome to playdamnit.com!</h1>
-    <p>Hello,</p>
-    <p>Thanks for signing up! Please verify your email address by clicking the button below:</p>
-    <a href="${url}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 16px 0;">Verify Email</a>
-    <p>If you didn't create an account with us, you can safely ignore this email.</p>
-    <p>This link will expire in 24 hours.</p>
-    <p>Best regards,<br>The playdamnit Team</p>
-    <p style="color: #666; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser: ${url}</p>
-`;
-
-export const changeEmailTemplate = (newEmail: string, url: string) => `
-    <h1>Confirm your new email</h1>
-    <p>Hello,</p>
-    <p>You asked to change the email of your playdamnit account to <b>${newEmail}</b>. Click the button below to confirm:</p>
-    <a href="${url}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 16px 0;">Confirm change</a>
-    <p>If you didn't request this, you can safely ignore this email.</p>
-    <p style="color: #666; font-size: 12px;">If the button doesn't work, copy and paste this link into your browser: ${url}</p>
-`;
-
-export const sendEmail = async ({
-  to,
-  subject,
-  html,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-}) => {
+// The templates live in @playdamnit/emails (React Email); `bun run --cwd packages/emails dev`
+// previews them
+export const sendEmail = async ({ to, subject, html, text }: { to: string } & RenderedEmail) => {
   if (isDev) {
     console.log("==== Development Mode Email ====");
     console.log("To:", to);
     console.log("Subject:", subject);
-    console.log("HTML:", html);
+    console.log("Text:", text);
     console.log("==============================");
   }
 
@@ -65,9 +29,10 @@ export const sendEmail = async ({
   }
 
   return resend.emails.send({
-    from: isDev ? "onboarding@resend.dev" : "playdamnit.com <hello@playdamnit.com>",
+    from: isDev ? "onboarding@resend.dev" : emailFrom,
     to: isDev ? "delivered@resend.dev" : to,
     subject,
     html,
+    text,
   });
 };

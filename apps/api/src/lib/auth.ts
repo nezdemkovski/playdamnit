@@ -15,13 +15,9 @@ import {
 } from "@/db/postgres";
 import { getConfig } from "@/config";
 import { isValidUsername, USERNAME_MAX, USERNAME_MIN } from "@/modules/user/username";
-import {
-  changeEmailTemplate,
-  emailEnabled,
-  resetPasswordEmailTemplate,
-  sendEmail,
-  sendVerificationEmailTemplate,
-} from "@/utils/email";
+import { changeEmail, resetPassword, verifyEmail } from "@playdamnit/emails";
+
+import { emailEnabled, sendEmail } from "@/utils/email";
 import { Hostname, Origin, SocialProvider } from "@/utils/enums";
 
 const { trustedOrigins, isDev, betterAuthUrl, appleAppBundleId, appleClientId, appleClientSecret } =
@@ -38,6 +34,18 @@ const passkeyOrigins = [
     ...(isDev ? DEV_WEB_ORIGINS : []),
   ]),
 ];
+
+// Links and the logo in the emails point at the site, which serves the API under /api
+const siteUrl = betterAuthUrl ? new URL(betterAuthUrl).origin : undefined;
+
+// What a verification token (a JWT Better Auth signs) is for; read only to pick the email
+const tokenClaims = (token: string): { requestType?: string } => {
+  try {
+    return JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString());
+  } catch {
+    return {};
+  }
+};
 
 const SESSION_COOKIE_CACHE_SECONDS = 5 * 60;
 
@@ -61,23 +69,24 @@ export const auth = betterAuth({
     requireEmailVerification: emailEnabled,
     ...(emailEnabled && {
       sendResetPassword: async ({ user, url }) => {
-        await sendEmail({
-          to: user.email,
-          subject: "Reset Your Password - playdamnit.com",
-          html: resetPasswordEmailTemplate(url),
-        });
+        await sendEmail({ to: user.email, ...(await resetPassword({ url, siteUrl })) });
       },
     }),
   },
   emailVerification: {
     sendOnSignUp: emailEnabled,
+    // Signing in before the address is confirmed sends a fresh link (the first may have expired)
+    sendOnSignIn: emailEnabled,
     autoSignInAfterVerification: true,
     ...(emailEnabled && {
-      sendVerificationEmail: async ({ user, url }) => {
+      // The same hook sends the last link of an email change (to the new address); its token says so
+      sendVerificationEmail: async ({ user, url, token }) => {
+        const changing = tokenClaims(token).requestType === "change-email-verification";
         await sendEmail({
           to: user.email,
-          subject: "Verify Your Email - playdamnit.com",
-          html: sendVerificationEmailTemplate(url),
+          ...(await (changing
+            ? changeEmail({ url, newEmail: user.email, step: "new", siteUrl })
+            : verifyEmail({ url, siteUrl }))),
         });
       },
     }),
@@ -117,8 +126,7 @@ export const auth = betterAuth({
         }) => {
           await sendEmail({
             to: user.email,
-            subject: "Confirm your new email - playdamnit.com",
-            html: changeEmailTemplate(newEmail, url),
+            ...(await changeEmail({ url, newEmail, step: "current", siteUrl })),
           });
         },
       }),

@@ -1,0 +1,4 @@
+{
+  "extends": "@playdamnit/tsconfig/bun.json",
+  "include": ["src"]
+}

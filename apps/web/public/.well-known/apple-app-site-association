@@ -8,6 +8,7 @@
         "appIDs": ["DBVKAAM5R6.cloud.nezdemkovski.playdamnit"],
         "components": [
           { "/": "/", "exclude": true },
+          { "/": "/api/auth/verify-email" },
           { "/": "/api/*", "exclude": true },
           { "/": "/assets/*", "exclude": true },
           { "/": "/.well-known/*", "exclude": true },

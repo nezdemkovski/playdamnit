@@ -9,6 +9,8 @@ const trustedOrigins =
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const openaiModel = process.env.OPENAI_MODEL || OpenAiModel.Gpt4o;
 const resendApiKey = process.env.RESEND_API_KEY;
+// The sender of the account emails; its domain must be verified in Resend
+const emailFrom = process.env.EMAIL_FROM || "Play, damn it! <noreply@nezdemkovski.cloud>";
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 // Public URL of this API; Better Auth derives callback links and the passkey relying party from it
 const betterAuthUrl = process.env.BETTER_AUTH_URL || (isDev ? "http://localhost:3030" : undefined);
@@ -30,6 +32,7 @@ const config = {
   openaiApiKey,
   openaiModel,
   resendApiKey,
+  emailFrom,
   betterAuthSecret,
   betterAuthUrl,
   igdbWebhookSecret,
