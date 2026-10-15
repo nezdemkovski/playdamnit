@@ -414,6 +414,29 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect((await SteamService.activity("bob")).days).toEqual([]);
   });
 
+  test("the showcase deals well-known games with their scores, each once", async () => {
+    await pg.query(`update game set total_rating = 95, total_rating_count = 500 where id = $1`, [
+      GAME,
+    ]);
+    await pg.query(`update game set total_rating = 35, total_rating_count = 500 where id = $1`, [
+      OTHER_GAME,
+    ]);
+    const { showcase } = await import("@/modules/game/showcase");
+    const first = await showcase();
+    expect(first.games.map((g) => g.id).sort()).toEqual([GAME, OTHER_GAME].sort());
+    expect(first.games.find((g) => g.id === GAME)).toMatchObject({
+      score: 95,
+      cover: expect.stringContaining("co1234"),
+    });
+    // Two games fit one page: there is no next one, and the page after it is empty
+    expect(first.nextPage).toBeNull();
+    expect((await showcase(first.seed, 1)).games).toEqual([]);
+    await pg.query(
+      `update game set total_rating = null, total_rating_count = 100 where id in ($1, $2)`,
+      [GAME, OTHER_GAME],
+    );
+  });
+
   test("the release calendar counts per UTC day and can keep only popular games", async () => {
     // Both seeded games release at 1600000000 = 2020-09-13 12:26:40 UTC
     const range = { releasedFrom: 1598918400, releasedTo: 1601510399 }; // September 2020

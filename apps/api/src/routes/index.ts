@@ -19,6 +19,7 @@ import { gameLikeRoutes } from "./games/[id]/like";
 import { getGameListMembership } from "./games/[id]/lists/GET";
 import { getGamesSearch } from "./games/search/GET";
 import { getGameReleaseDays } from "./games/release-days/GET";
+import { getGameShowcase } from "./games/showcase/GET";
 import { getUserGames } from "./user/[username]/games/GET";
 import { getUserGamesIndex } from "./user/[username]/games/index/GET";
 import { getUserGame } from "./user/[username]/games/[id]/GET";
@@ -52,6 +53,7 @@ export const routes = new Elysia()
   .use(getGames)
   .use(getGamesSearch)
   .use(getGameReleaseDays)
+  .use(getGameShowcase)
   .use(getGameById)
   .use(getGameReviews)
   .use(gameLikeRoutes)

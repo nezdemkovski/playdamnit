@@ -1011,6 +1011,37 @@ components:
         - results
         - private
 
+    ShowcaseResponse:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+              cover:
+                type: string
+                description: Cover URL (cover_big)
+              score:
+                type: number
+                description: The catalog's score, 0–100
+            required:
+              - id
+              - cover
+              - score
+        seed:
+          type: string
+        nextPage:
+          type: number
+          nullable: true
+          description: The next page of this seed; null once every game has been dealt
+      required:
+        - games
+        - seed
+        - nextPage
+
     ReleaseDaysResponse:
       type: object
       properties:
@@ -1987,6 +2018,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/games/showcase:
+    get:
+      parameters:
+        - name: seed
+          in: query
+          required: false
+          description: The order to go on with, from a previous page; without it a new order starts
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          description: The page of that order, from `nextPage`; 0 when left out
+          schema:
+            type: number
+      operationId: getApiGamesShowcase
+      tags:
+        - Games
+      summary: Welcome showcase
+      description: Well-known games with their catalog score, dealt at random over the whole S-to-F scale. Pages of one seed never repeat a game. The app's welcome screen grades them on a tier board.
+      responses:
+        "200":
+          description: Games to show
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowcaseResponse"
 
   /api/games/release-days:
     get:
