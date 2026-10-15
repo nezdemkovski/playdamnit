@@ -51,6 +51,8 @@ export interface GameFilters {
   ids?: number[];
   /** Only hot games: popular by ratings, or anticipated by follows before release */
   popular?: boolean;
+  /** Only games in this member's library */
+  ownerId?: string;
   sort?: GameSort;
 }
 
@@ -104,6 +106,11 @@ const buildFilters = (opts: GameFilters, t: GameRef): SQL[] => {
   if (opts.types?.length) filters.push(sql`${t.gameType} in ${opts.types}`);
   if (opts.ids?.length) filters.push(sql`${t.id} in ${opts.ids}`);
   if (opts.popular) filters.push(sql`(${t.isPopular} or ${t.hypes} >= ${HOT_HYPES})`);
+  if (opts.ownerId) {
+    filters.push(
+      sql`exists (select 1 from ${userGames} where ${userGames.gameId} = ${t.id} and ${userGames.userId} = ${opts.ownerId})`,
+    );
+  }
   if (sort === GameSort.Recent) {
     filters.push(sql`${t.firstReleaseDate} <= extract(epoch from now())::bigint`, hasCover(t));
   }

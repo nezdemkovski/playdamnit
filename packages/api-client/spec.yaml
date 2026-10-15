@@ -1119,6 +1119,74 @@ components:
         - seed
         - nextPage
 
+    ActivityGame:
+      type: object
+      properties:
+        name:
+          type: string
+        minutes:
+          type: integer
+          nullable: true
+          description: Steam minutes that day, only for played games
+      required:
+        - name
+        - minutes
+    ActivityGroup:
+      type: object
+      description: One action of a day
+      properties:
+        count:
+          type: integer
+          description: Every game the action touched that day
+        games:
+          type: array
+          description: The first four (latest first; played ones by most minutes)
+          items:
+            $ref: "#/components/schemas/ActivityGame"
+      required:
+        - count
+        - games
+    ActivityDay:
+      type: object
+      properties:
+        date:
+          type: string
+          description: YYYY-MM-DD in the requested zone
+        level:
+          type: integer
+          minimum: 1
+          maximum: 4
+        minutes:
+          type: integer
+          description: Steam minutes played that day
+        added:
+          $ref: "#/components/schemas/ActivityGroup"
+        finished:
+          $ref: "#/components/schemas/ActivityGroup"
+        dropped:
+          $ref: "#/components/schemas/ActivityGroup"
+        updated:
+          $ref: "#/components/schemas/ActivityGroup"
+        played:
+          $ref: "#/components/schemas/ActivityGroup"
+      required:
+        - date
+        - level
+        - minutes
+        - added
+        - finished
+        - dropped
+        - updated
+        - played
+    ActivityResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDay"
+      required:
+        - days
     ReleaseDaysResponse:
       type: object
       properties:
@@ -2173,6 +2241,12 @@ paths:
           description: '"1" or "true" keeps only hot games: 100+ IGDB ratings, or 10+ follows before release'
           schema:
             type: string
+        - name: mine
+          in: query
+          required: false
+          description: '"1" or "true" keeps only games in the signed-in viewer''s library (401 without a session)'
+          schema:
+            type: string
         - name: sort
           in: query
           required: false
@@ -2261,6 +2335,12 @@ paths:
           description: '"1" or "true" counts only hot games: 100+ IGDB ratings, or 10+ follows before release'
           schema:
             type: string
+        - name: mine
+          in: query
+          required: false
+          description: '"1" or "true" counts only games in the signed-in viewer''s library (401 without a session)'
+          schema:
+            type: string
       operationId: getApiGamesReleaseDays
       tags:
         - Games
@@ -2273,6 +2353,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReleaseDaysResponse"
+        "401":
+          description: mine was asked for without a session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
 
   /api/games/{id}:
     get:
@@ -3198,13 +3284,66 @@ paths:
                 required:
                   - results
 
+  /api/user/{username}/activity:
+    get:
+      operationId: getApiUserByUsernameActivity
+      tags:
+        - Library
+      summary: The activity map
+      description: >-
+        Every day of the last `days` (counted in `tz`) on which the member added, finished,
+        dropped or edited a game or played one on Steam, with the first few games of each action
+        and a level 1-4 to colour the cell by (quartiles of the active days' scores). Days with
+        nothing are left out, so clients draw them empty. Private lists are owner-only.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          required: false
+          description: Days back from today, today included
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 366
+            default: 364
+        - name: tz
+          in: query
+          required: false
+          description: IANA time zone the days are counted in (the viewer's own); unknown zones count in UTC
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The active days, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityResponse"
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
   /api/user/{username}/steam-activity:
     get:
+      deprecated: true
       operationId: getApiUserByUsernameSteamActivity
       tags:
         - Library
       summary: Steam playtime per day
-      description: Minutes played per UTC day over the last year with the games played, from Steam syncs. Private lists are owner-only.
+      description: Minutes played per UTC day over the last year with the games played, from Steam syncs. Private lists are owner-only. Kept for app builds older than /activity, which includes this.
       parameters:
         - name: username
           in: path

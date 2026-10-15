@@ -5,10 +5,9 @@ import { scaleOrdinal } from "@tanstack/charts/scales/ordinal";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { portal } from "@tanstack/charts/tooltip/portal";
 import {
-  StatusEnum,
-  useGetApiUserByUsernameSteamActivity,
-  type GetApiUserByUsernameSteamActivity200DaysItem,
-  type LibraryIndexItem,
+  useGetApiUserByUsernameActivity,
+  type ActivityDay,
+  type ActivityGroup,
 } from "@playdamnit/api-client";
 import { differenceInCalendarDays, startOfWeek, subDays } from "date-fns";
 import { cn } from "cn";
@@ -20,11 +19,12 @@ import { DateFormat, DayAction, Weekday } from "@/lib/enums";
 import { formatPlaytime } from "@/lib/format";
 
 const DAYS = 364;
-const EMPTY: GetApiUserByUsernameSteamActivity200DaysItem[] = [];
+const EMPTY: ActivityDay[] = [];
+const NO_GAMES: ActivityGroup = { count: 0, games: [] };
+// Days are counted in the viewer's own zone, like the grid
+const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const WEEKDAYS = Object.values(Weekday);
 const ACTIONS = Object.values(DayAction);
-// Games listed per action in the tooltip before "+N more"
-const NAMES_SHOWN = 4;
 
 // GitHub-style: one hue, four steps of intensity over the empty cell
 const LEVEL_COLORS = [
@@ -36,95 +36,41 @@ const LEVEL_COLORS = [
 ];
 const LEVELS = LEVEL_COLORS.map((_, i) => i);
 
-interface DayGame {
-  name: string;
-  /** Steam minutes, only for played games */
-  minutes?: number;
-}
-
 interface DayRow {
   key: string;
   date: Date;
   week: number;
   weekday: string;
+  /** 0 for an empty day, else the API's 1-4 */
   level: number;
   minutes: number;
-  actions: Record<DayAction, DayGame[]>;
+  actions: Record<DayAction, ActivityGroup>;
 }
 
-const dayKey = (iso: string | null | undefined) =>
-  iso ? format(new Date(iso), DateFormat.IsoDay) : null;
-
-const emptyActions = () =>
-  Object.fromEntries(ACTIONS.map((a) => [a, [] as DayGame[]])) as Record<DayAction, DayGame[]>;
-
-/** Everything done on a day counts once; Steam play counts once per started hour per game */
-const scoreOf = (day: { actions: Record<DayAction, DayGame[]> }, played: number[]) =>
-  ACTIONS.filter((a) => a !== DayAction.Played).reduce((n, a) => n + day.actions[a].length, 0) +
-  played.reduce((n, minutes) => n + Math.max(1, Math.ceil(minutes / 60)), 0);
-
-const useYear = (
-  entries: LibraryIndexItem[],
-  played: GetApiUserByUsernameSteamActivity200DaysItem[],
-) =>
+/** The grid of the last 52 weeks; the API's active days fill it, the rest stay empty */
+const useYear = (active: ActivityDay[]) =>
   useMemo(() => {
     const today = new Date();
-    const first = subDays(today, DAYS - 1);
-    const gridStart = startOfWeek(first, { weekStartsOn: 1 });
-    const byDay = new Map<string, Record<DayAction, DayGame[]>>();
-    const log = (key: string | null, action: DayAction, name: string, minutes?: number) => {
-      if (!key) return;
-      const actions = byDay.get(key) ?? emptyActions();
-      actions[action].push({ name, minutes });
-      byDay.set(key, actions);
-    };
-    for (const e of entries) {
-      const d = e.userGameData;
-      const added = dayKey(d.addedAt);
-      const ended =
-        d.status === StatusEnum.Finished || d.status === StatusEnum.Dropped
-          ? dayKey(d.endedAt)
-          : null;
-      const updated = dayKey(d.updatedAt);
-      log(added, DayAction.Added, e.name);
-      if (ended)
-        log(
-          ended,
-          d.status === StatusEnum.Finished ? DayAction.Finished : DayAction.Dropped,
-          e.name,
-        );
-      // The last edit, unless it was the add or the finish itself
-      if (updated !== added && updated !== ended) log(updated, DayAction.Updated, e.name);
-    }
-    const playedByDay = new Map(played.map((p) => [p.date, p]));
-    for (const p of played)
-      for (const g of p.games) log(p.date, DayAction.Played, g.name, g.minutes);
-
+    const gridStart = startOfWeek(subDays(today, DAYS - 1), { weekStartsOn: 1 });
+    const byDay = new Map(active.map((d) => [d.date, d]));
     const days: DayRow[] = [];
-    const scores: number[] = [];
     for (let i = 0; i < DAYS; i++) {
       const date = subDays(today, DAYS - 1 - i);
       const key = format(date, DateFormat.IsoDay);
-      const actions = byDay.get(key) ?? emptyActions();
-      const steam = playedByDay.get(key);
-      const score = scoreOf({ actions }, steam?.games.map((g) => g.minutes) ?? []);
-      scores.push(score);
+      const day = byDay.get(key);
       days.push({
         key,
         date,
         week: Math.floor(differenceInCalendarDays(date, gridStart) / 7),
         weekday: WEEKDAYS[(date.getDay() + 6) % 7],
-        level: score,
-        minutes: steam?.minutes ?? 0,
-        actions,
+        level: day?.level ?? 0,
+        minutes: day?.minutes ?? 0,
+        actions: Object.fromEntries(ACTIONS.map((a) => [a, day?.[a] ?? NO_GAMES])) as Record<
+          DayAction,
+          ActivityGroup
+        >,
       });
     }
-    // Levels by quartiles of the active days, like GitHub: a busy year and a quiet one both
-    // use the whole ramp
-    const active = scores.filter(Boolean).sort((a, b) => a - b);
-    const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
-    for (const day of days)
-      day.level = day.level === 0 ? 0 : 1 + cut.filter((c) => day.level > c).length;
     // Month names over the column where each month starts, GitHub-style; one squeezed into
     // the first two columns would collide with the next
     const weeks = days[days.length - 1].week + 1;
@@ -132,23 +78,15 @@ const useYear = (
       .filter((d) => d.date.getDate() === 1 && d.week >= 2)
       .map((d) => ({ key: d.key, week: d.week, label: format(d.date, DateFormat.MonthShort) }));
     return { days, weeks, months };
-  }, [entries, played]);
+  }, [active]);
 
 /**
  * The profile header's year: one cell per day for the last 52 weeks, GitHub-style: the more happened, the redder. The
  * tooltip lists the day's actions with the games. TanStack Charts.
  */
-export function YearInEvenings({
-  username,
-  entries,
-  className,
-}: {
-  username: string;
-  entries: LibraryIndexItem[];
-  className?: string;
-}) {
-  const activity = useGetApiUserByUsernameSteamActivity(username);
-  const { days, weeks, months } = useYear(entries, activity.data?.days ?? EMPTY);
+export function YearInEvenings({ username, className }: { username: string; className?: string }) {
+  const activity = useGetApiUserByUsernameActivity(username, { days: DAYS, tz: ZONE });
+  const { days, weeks, months } = useYear(activity.data?.days ?? EMPTY);
 
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -229,23 +167,23 @@ export function YearInEvenings({
 
 /** A custom body replaces the built-in card, so it brings its own background and border */
 function DayTip({ day }: { day: DayRow }) {
-  const rows = ACTIONS.filter((a) => day.actions[a].length > 0);
+  const rows = ACTIONS.filter((a) => day.actions[a].count > 0);
   // Empty days get no tooltip at all
   if (rows.length === 0) return null;
   return (
     <div className="w-60 border border-white/30 bg-background px-2.5 py-1.5 font-sans text-xs font-normal">
       <div className="num font-bold">{format(day.date, DateFormat.WeekdayMonthDay)}</div>
       {rows.map((action) => {
-        const games = day.actions[action];
-        const rest = games.length - NAMES_SHOWN;
+        const { count, games } = day.actions[action];
+        const rest = count - games.length;
         return (
           <div key={action} className="mt-1.5">
             <div className="font-bold">
               {action === DayAction.Played
                 ? t("profile.evenings.tip.played", { time: formatPlaytime(day.minutes) })
-                : t(`profile.evenings.tip.${action}`, { count: games.length })}
+                : t(`profile.evenings.tip.${action}`, { count })}
             </div>
-            {games.slice(0, NAMES_SHOWN).map((g, i) => (
+            {games.map((g, i) => (
               <div key={i} className="flex items-baseline gap-3 text-white/70">
                 <span className="min-w-0 flex-1 truncate">{g.name}</span>
                 {g.minutes ? (

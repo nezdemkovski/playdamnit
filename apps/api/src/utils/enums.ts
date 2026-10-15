@@ -281,3 +281,12 @@ export enum BadgeId {
   Completionist = "completionist",
   Year = "year",
 }
+
+/** What a member did on a day of the activity map */
+export enum ActivityAction {
+  Added = "added",
+  Finished = "finished",
+  Dropped = "dropped",
+  Updated = "updated",
+  Played = "played",
+}

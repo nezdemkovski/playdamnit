@@ -1,4 +1,6 @@
 import { Elysia, t } from "elysia";
+
+import { sessionUserId, UNAUTHORIZED } from "@/lib/betterAuth";
 import { GameService, MAX_GAMES_PAGE_SIZE } from "@/modules/game/service";
 import { GameSort, isFlagSet } from "@/utils/enums";
 
@@ -24,14 +26,21 @@ export const getGames = new Elysia().get(
       types: t.Optional(t.String({ maxLength: 100 })),
       ids: t.Optional(t.String({ maxLength: 1000 })),
       popular: t.Optional(t.String({ maxLength: 5 })),
+      // Only the signed-in viewer's library (the release calendar's "my list only")
+      mine: t.Optional(t.String({ maxLength: 5 })),
       sort: t.Optional(t.Enum(GameSort)),
     }),
   },
-  ({ query }) =>
-    GameService.findGames({
-      ...query,
+  async ({ query, request, status }) => {
+    const ownerId = isFlagSet(query.mine) ? await sessionUserId(request.headers) : undefined;
+    if (ownerId === null) return status(401, UNAUTHORIZED);
+    const { mine: _mine, ...filters } = query;
+    return GameService.findGames({
+      ...filters,
       types: idList(query.types),
       ids: idList(query.ids)?.slice(0, MAX_GAMES_PAGE_SIZE),
       popular: isFlagSet(query.popular),
-    }),
+      ownerId,
+    });
+  },
 );

@@ -1,6 +1,9 @@
 import { Elysia } from "elysia";
 import { auth } from "./auth";
 
+// The body the API contract describes for a missing session, so clients can read it like any other error
+export const UNAUTHORIZED = { error: "Unauthorized", message: "Authentication required" } as const;
+
 // Auth endpoints are served by the /api/auth/* route in src/index.ts. Mounting the
 // handler here as well made it swallow every unknown /api/* path with an empty 404.
 export const betterAuth = new Elysia({ name: "better-auth" }).macro({
@@ -10,9 +13,7 @@ export const betterAuth = new Elysia({ name: "better-auth" }).macro({
         headers,
       });
 
-      // The body the API contract describes, so clients can read it like any other error
-      if (!session)
-        return status(401, { error: "Unauthorized", message: "Authentication required" });
+      if (!session) return status(401, UNAUTHORIZED);
 
       return {
         user: session.user,
@@ -28,3 +29,10 @@ export const betterAuth = new Elysia({ name: "better-auth" }).macro({
     },
   },
 });
+
+/**
+ * The signed-in member's id, looked up only when a public route needs it (a `mine=1` filter),
+ * so the catalog's anonymous traffic never pays for the session lookup
+ */
+export const sessionUserId = async (headers: Headers) =>
+  (await auth.api.getSession({ headers }))?.user.id ?? null;

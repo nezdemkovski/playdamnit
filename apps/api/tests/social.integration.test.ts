@@ -577,6 +577,94 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     await pg.query(`update game set hypes = null where id = $1`, [OTHER_GAME]);
   });
 
+  test("a member's calendar counts and lists only their own games", async () => {
+    await pg.query(
+      `insert into "user" (id, name, email, email_verified, created_at, updated_at, username)
+       values ('dave', 'DAVE', 'dave@example.com', true, now(), now(), 'dave')`,
+    );
+    await UserGameService.addUserGame("dave", OTHER_GAME, { status: UserGameStatus.Backlog });
+    const range = { releasedFrom: 1598918400, releasedTo: 1601510399 }; // September 2020
+    expect((await GameService.releaseDays({ ...range, ownerId: "dave" })).days).toEqual([
+      {
+        date: "2020-09-13",
+        count: 1,
+        covers: ["https://images.igdb.com/igdb/image/upload/t_cover_big/co1234.jpg"],
+      },
+    ]);
+    const day = await GameService.findGames({
+      releasedFrom: 1599955200,
+      releasedTo: 1599955200 + 86_399,
+      ownerId: "dave",
+      sort: GameSort.Popular,
+    });
+    expect(day.results.map((g) => g.id)).toEqual([OTHER_GAME]);
+    expect(day.meta.total).toBe(1);
+    expect((await GameService.releaseDays({ ...range, ownerId: "nobody" })).days).toEqual([]);
+  });
+
+  test("the activity map scores the member's days and sets levels by quartiles", async () => {
+    const dayAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+    // Today: OTHER_GAME finished (the add and the finish count, the edit was the finish)
+    await UserGameService.updateUserGame("dave", OTHER_GAME, {
+      status: UserGameStatus.Finished,
+      endedAt: dayAgo(0),
+    });
+    // Ten days ago added, edited two days ago, and 130 Steam minutes that day (3 started hours)
+    await pg.query(
+      `insert into user_games (user_id, game_id, status, added_at, updated_at)
+       values ('dave', $1, 'playing', now() - interval '10 days', now() - interval '2 days')`,
+      [GAME],
+    );
+    await pg.query(
+      `insert into steam_playtime (user_id, game_id, day, minutes) values
+         ('dave', $1, current_date - 2, 130), ('dave', $1, current_date - 400, 60)`,
+      [GAME],
+    );
+    const group = (count: number, games: [string, number | null][] = []) => ({
+      count,
+      games: games.map(([name, minutes]) => ({ name, minutes })),
+    });
+    const none = group(0);
+    const { days } = await UserService.activity("dave", null, { tz: "Nowhere/Atlantis" });
+    expect(days).toEqual([
+      {
+        date: dayAgo(10),
+        level: 1,
+        minutes: 0,
+        added: group(1, [["Social Quest", null]]),
+        finished: none,
+        dropped: none,
+        updated: none,
+        played: none,
+      },
+      {
+        date: dayAgo(2),
+        level: 4,
+        minutes: 130,
+        added: none,
+        finished: none,
+        dropped: none,
+        updated: group(1, [["Social Quest", null]]),
+        played: group(1, [["Social Quest", 130]]),
+      },
+      {
+        date: dayAgo(0),
+        level: 2,
+        minutes: 0,
+        added: group(1, [["Social Quest II", null]]),
+        finished: group(1, [["Social Quest II", null]]),
+        dropped: none,
+        updated: none,
+        played: none,
+      },
+    ]);
+    // A shorter window keeps only the last days
+    expect((await UserService.activity("dave", null, { days: 3 })).days).toHaveLength(2);
+    await pg.query(`update "user" set list_public = false where id = 'dave'`);
+    expect(UserService.activity("dave", null, {})).rejects.toThrow("This list is private");
+    expect((await UserService.activity("dave", "dave", {})).days).toHaveLength(3);
+  });
+
   test("recommendations follow liked games to their similar games, never to owned ones", async () => {
     const { RecommendationService } = await import("@/modules/recommendation/service");
     const ids = async (userId: string) =>

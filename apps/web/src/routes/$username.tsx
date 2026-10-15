@@ -187,7 +187,7 @@ function ProfileLayout() {
               )}
             </div>
             {library.data && library.data.results.length > 0 && (
-              <YearInEvenings username={username} entries={library.data.results} />
+              <YearInEvenings username={username} />
             )}
           </div>
 

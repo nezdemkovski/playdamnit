@@ -2,17 +2,20 @@ import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
 import {
+  game,
   gameList,
   notification,
   playthrough,
+  steamPlaytime,
   user,
   userAvatar,
   userFollows,
   userGames,
 } from "@playdamnit/db/schema";
 import { NotificationType, UserGameStatus } from "@playdamnit/db/enums";
-import { BadRequestError, NotFoundError } from "@/utils/errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import {
+  ActivityAction,
   BadgeId,
   ConnectionKind,
   JournalKind,
@@ -44,6 +47,49 @@ const followersCount = sql<number>`(select count(*) from user_follows uf where u
 /** The avatar URL the API serves, versioned so caches drop the old picture */
 const avatarPath = (username: string, version: Date) =>
   `/api/user/${encodeURIComponent(username)}/avatar?v=${version.getTime()}`;
+
+/** Days the activity map covers by default: 52 weeks */
+export const ACTIVITY_DAYS = 364;
+
+// Games named per action of a day; the rest is only counted
+const ACTIVITY_NAMES = 4;
+
+/** One action of a day: how many games, and the first few (Steam minutes for played ones) */
+type ActivityGroup = { count: number; games: { name: string; minutes: number | null }[] };
+
+type ActivityRow = {
+  date: string;
+  score: number;
+  minutes: number;
+  added: ActivityGroup;
+  finished: ActivityGroup;
+  dropped: ActivityGroup;
+  updated: ActivityGroup;
+  played: ActivityGroup;
+};
+
+/** An IANA zone the runtime knows, else UTC: days are the member's own, not the server's */
+const safeZone = (tz: string | undefined) => {
+  if (!tz) return "UTC";
+  try {
+    return new Intl.DateTimeFormat("en", { timeZone: tz }).resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+};
+
+/**
+ * Levels 1-4 by the quartiles of the active days' scores, like GitHub: a busy year and a quiet
+ * one both use the whole ramp
+ */
+const withLevels = <T extends { score: number }>(days: T[]) => {
+  const active = days.map((d) => d.score).toSorted((a, b) => a - b);
+  const cut = [0.25, 0.5, 0.75].map((q) => active[Math.floor((active.length - 1) * q)] ?? 0);
+  return days.map(({ score, ...day }) => ({
+    ...day,
+    level: 1 + cut.filter((c) => score > c).length,
+  }));
+};
 
 /**
  * User service - profiles, following, community search, notifications, avatars
@@ -419,6 +465,83 @@ export abstract class UserService {
         isNew: row.updatedAt.getTime() - row.addedAt.getTime() < 1000,
       })),
     };
+  }
+
+  /**
+   * The activity map: every day of the last `days` (in the member's zone) on which they added,
+   * finished, dropped or edited a game or played it on Steam, with the games and a level 1-4.
+   * An edit counts unless it was the add or the finish itself; every action counts once and
+   * Steam play once per started hour per game. One query; days with nothing are left out.
+   */
+  static async activity(
+    username: string,
+    viewerId: string | null,
+    opts: { days?: number; tz?: string },
+  ) {
+    const owner = await requireUser(username);
+    if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
+    const tz = safeZone(opts.tz);
+    const span = opts.days ?? ACTIVITY_DAYS;
+    // Moments become days in the member's zone; the end date is a calendar date already
+    const local = (column: unknown) =>
+      sql`((${column} at time zone 'UTC') at time zone ${tz})::date`;
+    const rows = await postgresDb.execute<ActivityRow>(sql`
+      with bounds as (
+        select (now() at time zone ${tz})::date as today
+      ),
+      entries as (
+        select ${game.name} as name, ${userGames.updatedAt} as at,
+          ${local(userGames.addedAt)} as added,
+          case ${userGames.status}
+            when ${UserGameStatus.Finished} then ${ActivityAction.Finished}::text
+            when ${UserGameStatus.Dropped} then ${ActivityAction.Dropped}::text
+          end as ending,
+          ${userGames.endedAt}::date as ended,
+          ${local(userGames.updatedAt)} as updated
+        from ${userGames}
+        join ${game} on ${game.id} = ${userGames.gameId}
+        where ${userGames.userId} = ${owner.id}
+      ),
+      events as (
+        select added as day, ${ActivityAction.Added}::text as action, name, null::int as minutes, at
+        from entries
+        union all
+        select ended, ending, name, null, at from entries where ending is not null and ended is not null
+        union all
+        select updated, ${ActivityAction.Updated}::text, name, null, at from entries
+          where updated <> added and (ending is null or updated is distinct from ended)
+        union all
+        select ${steamPlaytime.day}, ${ActivityAction.Played}::text, ${game.name}, ${steamPlaytime.minutes}, null
+        from ${steamPlaytime}
+        join ${game} on ${game.id} = ${steamPlaytime.gameId}
+        where ${steamPlaytime.userId} = ${owner.id}
+          and ${steamPlaytime.day} > (select today from bounds) - ${span}::int
+      )
+      select to_char(day, 'YYYY-MM-DD') as date,
+        (count(*) filter (where action <> ${ActivityAction.Played})
+          + coalesce(sum(greatest(1, ceil(minutes / 60.0))), 0))::int as score,
+        coalesce(sum(minutes), 0)::int as minutes,
+        json_build_object('count', count(*) filter (where action = ${ActivityAction.Added}), 'games',
+          coalesce((array_agg(json_build_object('name', name, 'minutes', minutes) order by at desc)
+            filter (where action = ${ActivityAction.Added}))[1:${ACTIVITY_NAMES}], '{}')) as added,
+        json_build_object('count', count(*) filter (where action = ${ActivityAction.Finished}), 'games',
+          coalesce((array_agg(json_build_object('name', name, 'minutes', minutes) order by at desc)
+            filter (where action = ${ActivityAction.Finished}))[1:${ACTIVITY_NAMES}], '{}')) as finished,
+        json_build_object('count', count(*) filter (where action = ${ActivityAction.Dropped}), 'games',
+          coalesce((array_agg(json_build_object('name', name, 'minutes', minutes) order by at desc)
+            filter (where action = ${ActivityAction.Dropped}))[1:${ACTIVITY_NAMES}], '{}')) as dropped,
+        json_build_object('count', count(*) filter (where action = ${ActivityAction.Updated}), 'games',
+          coalesce((array_agg(json_build_object('name', name, 'minutes', minutes) order by at desc)
+            filter (where action = ${ActivityAction.Updated}))[1:${ACTIVITY_NAMES}], '{}')) as updated,
+        json_build_object('count', count(*) filter (where action = ${ActivityAction.Played}), 'games',
+          coalesce((array_agg(json_build_object('name', name, 'minutes', minutes) order by minutes desc)
+            filter (where action = ${ActivityAction.Played}))[1:${ACTIVITY_NAMES}], '{}')) as played
+      from events, bounds
+      where day > today - ${span}::int and day <= today
+      group by day
+      order by day
+    `);
+    return { days: withLevels(rows.rows.map((r) => ({ ...r, score: Number(r.score) }))) };
   }
 
   /** Journal: playthroughs plus finished/dropped entries without one, newest first */

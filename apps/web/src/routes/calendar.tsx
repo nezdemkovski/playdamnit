@@ -44,8 +44,6 @@ const COVERS_PER_DAY = 3;
 // A day's list in the dialog grows by this much, up to the API's page size
 const DAY_PAGE = 40;
 const DAY_MAX = 100;
-// "My list only" loads a month of the library's games in one page of the API
-const MINE_MAX = 100;
 const WEEK_STARTS_ON = 1;
 const DAY_SECONDS = 86_400;
 
@@ -71,64 +69,36 @@ const monthBounds = (month: string) => {
   return { from: utcStart(start), to: utcStart(end) - 1, start };
 };
 
-const dayOf = (epoch: number | null | undefined) =>
-  epoch ? new Date(epoch * 1000).toISOString().slice(0, 10) : null;
-
 /** Release calendar: a month grid with every day's real count and its biggest covers */
 function CalendarPage() {
   const { t } = useTranslation();
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/calendar" });
-  const { user } = useSession();
-  const { byGameId, entries } = useMyLibrary();
+  const { user, isLoading: sessionLoading } = useSession();
+  const { byGameId } = useMyLibrary();
   const { from, to, start } = monthBounds(search.month);
   const popular = search.hot ? FlagValue.One : undefined;
+  // "My list only" asks the API for the viewer's library; a signed-out visitor sees everything
+  const mine = search.mine && user ? FlagValue.One : undefined;
   const [openDay, setOpenDay] = useState<string | null>(null);
 
   const days = useGetApiGamesReleaseDays(
-    { releasedFrom: from, releasedTo: to, popular },
-    { query: { placeholderData: (prev) => prev, enabled: !search.mine } },
-  );
-
-  // "My list only" picks the library's games that release this month from the light index,
-  // then loads just those as cards
-  const mineIds = useMemo(
-    () =>
-      entries
-        .filter((e) => e.firstReleaseDate && e.firstReleaseDate >= from && e.firstReleaseDate <= to)
-        .map((e) => e.id)
-        .slice(0, MINE_MAX),
-    [entries, from, to],
-  );
-  const mineCards = useGetApiGames(
-    { ids: mineIds.join(","), limit: mineIds.length, popular, sort: GetApiGamesSort.Popular },
-    { query: { placeholderData: (prev) => prev, enabled: search.mine && mineIds.length > 0 } },
-  );
-  const mine = useMemo(
-    () => (mineIds.length ? (mineCards.data?.results ?? []) : []),
-    [mineIds, mineCards.data],
+    { releasedFrom: from, releasedTo: to, popular, mine },
+    // "My list only" waits for the session rather than counting the whole catalog first
+    { query: { placeholderData: (prev) => prev, enabled: !(search.mine && sessionLoading) } },
   );
 
   const { coversByDay, countByDay, total } = useMemo(() => {
     const covers = new Map<string, string[]>();
     const counts = new Map<string, number>();
-    if (search.mine) {
-      for (const g of mine) {
-        const key = dayOf(g.firstReleaseDate);
-        if (!key) continue;
-        counts.set(key, (counts.get(key) ?? 0) + 1);
-        if (g.cover?.url) covers.set(key, [...(covers.get(key) ?? []), g.cover.url]);
-      }
-    } else {
-      for (const d of days.data?.days ?? []) {
-        counts.set(d.date, d.count);
-        covers.set(d.date, d.covers);
-      }
-    }
     let sum = 0;
-    for (const n of counts.values()) sum += n;
+    for (const d of days.data?.days ?? []) {
+      counts.set(d.date, d.count);
+      covers.set(d.date, d.covers);
+      sum += d.count;
+    }
     return { coversByDay: covers, countByDay: counts, total: sum };
-  }, [search.mine, mine, days.data]);
+  }, [days.data]);
 
   // Weeks covering the month, Monday first
   const weeks = useMemo(() => {
@@ -145,7 +115,7 @@ function CalendarPage() {
     navigate({
       search: { ...search, month: format(addMonths(start, delta), DateFormat.IsoMonth) },
     });
-  const loading = search.mine ? mineIds.length > 0 && mineCards.isPending : days.isPending;
+  const loading = days.isPending;
 
   return (
     <>
@@ -250,8 +220,7 @@ function CalendarPage() {
       <DayDialog
         day={openDay}
         hot={search.hot}
-        mine={search.mine}
-        mineGames={mine}
+        mine={!!mine}
         count={openDay ? (countByDay.get(openDay) ?? 0) : 0}
         byGameId={byGameId}
         onClose={() => setOpenDay(null)}
@@ -333,7 +302,6 @@ function DayDialog({
   day,
   hot,
   mine,
-  mineGames,
   count,
   byGameId,
   onClose,
@@ -341,7 +309,6 @@ function DayDialog({
   day: string | null;
   hot: boolean;
   mine: boolean;
-  mineGames: Game[];
   count: number;
   byGameId: Map<number, { userGameData: LibraryIndexEntry }>;
   onClose: () => void;
@@ -357,13 +324,12 @@ function DayDialog({
       releasedTo: from + DAY_SECONDS - 1,
       limit,
       popular: hot ? FlagValue.One : undefined,
+      mine: mine ? FlagValue.One : undefined,
     },
-    { query: { enabled: !!day && !mine, placeholderData: (prev) => prev } },
+    { query: { enabled: !!day, placeholderData: (prev) => prev } },
   );
-  const games = mine
-    ? mineGames.filter((g) => dayOf(g.firstReleaseDate) === day)
-    : (query.data?.results ?? []);
-  const canGrow = !mine && games.length < count && limit < DAY_MAX;
+  const games = query.data?.results ?? [];
+  const canGrow = games.length < count && limit < DAY_MAX;
 
   return (
     <Dialog
@@ -385,7 +351,7 @@ function DayDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-5">
-          {!mine && query.isPending ? (
+          {query.isPending ? (
             <div className="space-y-2 py-4">
               {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-16" />
@@ -414,7 +380,7 @@ function DayDialog({
               </Button>
             </div>
           )}
-          {!mine && !canGrow && games.length < count && (
+          {!canGrow && games.length < count && (
             <p className="eyebrow py-4 text-center">
               {t("calendar.capped", { shown: games.length, total: count })}
             </p>
