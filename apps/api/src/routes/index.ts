@@ -10,6 +10,7 @@ import { getUserActivity } from "./user/[username]/activity";
 import { getUser } from "./user/[username]/GET";
 import { userSocialRoutes } from "./user/[username]/social";
 import { getUsers } from "./users/GET";
+import { getUsernameCheck } from "./users/username-check/GET";
 
 import { getCatalogLookups } from "./catalog/GET";
 import { getHome } from "./home/GET";
@@ -23,6 +24,7 @@ import { getGameReleaseDays } from "./games/release-days/GET";
 import { getGameShowcase } from "./games/showcase/GET";
 import { getUserGames } from "./user/[username]/games/GET";
 import { getUserGamesIndex } from "./user/[username]/games/index/GET";
+import { getUserOverview } from "./user/[username]/overview/GET";
 import { getUserGame } from "./user/[username]/games/[id]/GET";
 import { postUserGame } from "./user/[username]/games/POST";
 import { deleteUserGame } from "./user/[username]/games/[id]/DELETE";
@@ -49,6 +51,7 @@ export const routes = new Elysia()
   .use(getUser)
   .use(userSocialRoutes)
   .use(getUsers)
+  .use(getUsernameCheck)
 
   .use(getCatalogLookups)
   .use(getHome)
@@ -63,6 +66,7 @@ export const routes = new Elysia()
 
   .use(getUserGames)
   .use(getUserGamesIndex)
+  .use(getUserOverview)
   .use(getUserGame)
   .use(postUserGame)
   .use(patchUserGame)

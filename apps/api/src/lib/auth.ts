@@ -14,6 +14,7 @@ import {
   apikey,
 } from "@/db/postgres";
 import { getConfig } from "@/config";
+import { isValidUsername, USERNAME_MAX, USERNAME_MIN } from "@/modules/user/username";
 import {
   changeEmailTemplate,
   emailEnabled,
@@ -122,7 +123,11 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    username(),
+    username({
+      minUsernameLength: USERNAME_MIN,
+      maxUsernameLength: USERNAME_MAX,
+      usernameValidator: isValidUsername,
+    }),
     passkey({ rpID, rpName: "PlayDamnIt", origin: passkeyOrigins }),
     admin(),
     apiKey(),

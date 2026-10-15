@@ -1523,6 +1523,8 @@ components:
           description: When Steam last saw the game launched
         updatedAt:
           type: string
+        idle:
+          $ref: "#/components/schemas/EntryIdle"
       required:
         - id
         - status
@@ -1534,6 +1536,7 @@ components:
         - spoilers
         - allowReactions
         - updatedAt
+        - idle
 
     UserGamePatchResponse:
       type: object
@@ -1682,6 +1685,8 @@ components:
           nullable: true
         updatedAt:
           type: string
+        idle:
+          $ref: "#/components/schemas/EntryIdle"
       required:
         - id
         - status
@@ -1693,6 +1698,92 @@ components:
         - endedAt
         - mastered
         - updatedAt
+        - idle
+
+    IdleKindEnum:
+      type: string
+      description: Which idle line an entry gets; clients only translate it
+      enum: [finished, dropped, playingFine, playingStale, onHold, online, today, untouched, wanted]
+      x-enumNames:
+        [Finished, Dropped, PlayingFine, PlayingStale, OnHold, Online, Today, Untouched, Wanted]
+
+    EntryIdle:
+      type: object
+      description: >
+        How long an entry has sat untouched (Steam's last launch, else the last edit, else the
+        add) and which line says so
+      properties:
+        kind:
+          $ref: "#/components/schemas/IdleKindEnum"
+        days:
+          type: integer
+      required:
+        - kind
+        - days
+
+    ProfileOverviewResponse:
+      type: object
+      properties:
+        private:
+          type: boolean
+        playing:
+          type: array
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        mostPlayed:
+          type: array
+          description: By Steam playtime
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        recent:
+          type: array
+          description: Finished or dropped, latest first
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        shelf:
+          type: array
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        hallOfFame:
+          type: boolean
+          description: The shelf opens with an S
+      required:
+        - private
+        - playing
+        - mostPlayed
+        - recent
+        - shelf
+        - hallOfFame
+
+    UsernameProblemEnum:
+      type: string
+      enum: [tooShort, tooLong, characters, taken]
+      x-enumNames: [TooShort, TooLong, Characters, Taken]
+
+    UsernameCheckResponse:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The name checked, trimmed
+        valid:
+          type: boolean
+        available:
+          type: boolean
+        reason:
+          allOf:
+            - $ref: "#/components/schemas/UsernameProblemEnum"
+          nullable: true
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - username
+        - valid
+        - available
+        - reason
+        - suggestions
 
     LibraryIndexResponse:
       type: object
@@ -1738,6 +1829,13 @@ components:
             type: string
         listPublic:
           type: boolean
+        preferredPlatformIds:
+          type: array
+          description: >
+            The platforms the member logs games on, most used first; a new entry goes on the
+            first of these the game is on
+          items:
+            type: number
       required:
         - id
         - image
@@ -1747,6 +1845,7 @@ components:
         - bio
         - links
         - listPublic
+        - preferredPlatformIds
 
     PublicUserResponse:
       type: object
@@ -2501,6 +2600,14 @@ paths:
           description: Order of the list (default added, newest first)
           schema:
             $ref: "#/components/schemas/LibrarySortEnum"
+        - name: graded
+          in: query
+          required: false
+          description: 1 for graded entries only, 0 for the ungraded only (the grading deck)
+          schema:
+            type: string
+            enum: ["1", "0"]
+            x-enumNames: [Graded, Ungraded]
       operationId: getApiUserByUsernameGames
       tags:
         - User
@@ -2629,6 +2736,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
+  /api/user/{username}/overview:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      operationId: getApiUserByUsernameOverview
+      tags:
+        - User
+      summary: A profile's overview rails
+      description: >
+        Now playing, most played on Steam, recently finished or dropped (a dozen each) and the
+        cover shelf (best graded first, then the ungraded by when they were added; up to 20,
+        clients repeat them to fill the width). A private list comes back empty with
+        `private: true`.
+      responses:
+        "200":
+          description: Overview rails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileOverviewResponse"
         "404":
           description: User not found
           content:
@@ -3483,6 +3621,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CommunityUserListResponse"
+
+  /api/users/username-check:
+    get:
+      operationId: getApiUsersUsernameCheck
+      tags:
+        - User
+      summary: Whether a username can be had
+      description: >
+        The rule (3–30 letters, digits, dots or underscores), whether the name is free (the
+        signed-in member's own name counts as free) and, when it is taken, up to three free
+        names made from it. One call, made as the name is typed.
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The verdict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsernameCheckResponse"
+        "429":
+          description: Too many checks
 
   /api/user/{username}/follow:
     post:

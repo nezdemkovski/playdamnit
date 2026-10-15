@@ -1,4 +1,7 @@
-import { StatusEnum, useGetApiUserByUsernameReviews } from "@playdamnit/api-client";
+import {
+  useGetApiUserByUsernameOverview,
+  useGetApiUserByUsernameReviews,
+} from "@playdamnit/api-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Gamepad2Icon, HourglassIcon, MessageSquareTextIcon, Rows3Icon } from "lucide-react";
 import { useState } from "react";
@@ -28,21 +31,16 @@ function ProfileOverview() {
     { limit: 3 },
     { query: { enabled: !isPrivate } },
   );
+  const overview = useGetApiUserByUsernameOverview(username, {
+    query: { enabled: !isPrivate },
+  });
   const isOwn = !!profile.data?.isOwn;
   const [arranging, setArranging] = useState(false);
 
   if (isPrivate) return <PrivateNotice />;
   if (library.isPending) return <Skeleton className="h-40 rounded-card" />;
 
-  const playing = entries.filter((e) => e.userGameData.status === StatusEnum.Playing).slice(0, 12);
-  const mostPlayed = entries
-    .filter((e) => e.userGameData.steamMinutes)
-    .sort((a, b) => (b.userGameData.steamMinutes ?? 0) - (a.userGameData.steamMinutes ?? 0))
-    .slice(0, 12);
-  const recent = [...entries]
-    .filter((e) => e.userGameData.endedAt)
-    .sort((a, b) => (b.userGameData.endedAt ?? "").localeCompare(a.userGameData.endedAt ?? ""))
-    .slice(0, 12);
+  const { playing = [], mostPlayed = [], recent = [] } = overview.data ?? {};
 
   return (
     <>

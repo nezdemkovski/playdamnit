@@ -6,6 +6,7 @@ import {
   getGetApiUserByUsernameGamesIndexQueryKey,
   getGetApiUserByUsernameGamesQueryKey,
   getGetApiUserByUsernameQueryKey,
+  getGetApiUserByUsernameOverviewQueryKey,
   useDeleteApiUserByUsernameGamesById,
   useGetApiUserByUsernameGamesById,
   useGetApiUserByUsernameGamesIndex,
@@ -73,6 +74,7 @@ export const invalidateLibrary = (queryClient: QueryClient, username: string) =>
   });
   // The profile's stats and badges add the library up
   queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
+  queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameOverviewQueryKey(username) });
 };
 
 /** A full entry as the index serves it: the review reduced to whether there is one */
@@ -140,6 +142,7 @@ export const useLibraryMutations = () => {
     else queryClient.invalidateQueries({ queryKey: entryKey, refetchType: "none" });
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameGamesQueryKey(username) });
     queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(username) });
+    queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameOverviewQueryKey(username) });
     queryClient.setQueriesData<Game>({ queryKey: getGetApiGamesByIdQueryKey(gameId) }, (old) =>
       old ? { ...old, community } : old,
     );

@@ -1,4 +1,9 @@
-import { StatusEnum, type LibraryIndexEntry, type LibraryIndexItem } from "@playdamnit/api-client";
+import {
+  IdleKindEnum,
+  StatusEnum,
+  type LibraryIndexEntry,
+  type LibraryIndexItem,
+} from "@playdamnit/api-client";
 
 import { t } from "@/i18n";
 import { LibraryAction } from "@/lib/enums";
@@ -15,17 +20,11 @@ export const daysSince = (iso: string | null | undefined): number =>
 
 /** What the idle lines read of an entry; an index item and a full entry both have it */
 interface Idle {
-  userGameData: Pick<LibraryIndexEntry, "status" | "addedAt" | "updatedAt" | "steamLastPlayedAt">;
+  userGameData: Pick<LibraryIndexEntry, "status" | "idle">;
 }
 
-/** Days an entry has sat untouched (status change or add) */
-// Steam's last launch is the truth when there is one; otherwise the last edit here
-export const idleDays = (entry: Idle): number =>
-  daysSince(
-    entry.userGameData.steamLastPlayedAt ??
-      entry.userGameData.updatedAt ??
-      entry.userGameData.addedAt,
-  );
+/** Days an entry has sat untouched, as the API counts them */
+export const idleDays = (entry: Idle): number => entry.userGameData.idle.days;
 
 export interface LibrarySummary {
   total: number;
@@ -109,16 +108,29 @@ export const lastFinishLine = (entries: LibraryIndexItem[]): string => {
     : t("voice.lastFinish.old", { count: d });
 };
 
+/** The grey line under a library row: the API picks the fact, this only words it */
 export const idleLine = (entry: Idle): string => {
-  const d = idleDays(entry);
-  const status = entry.userGameData.status;
-  if (status === StatusEnum.Finished) return t("voice.idle.finished");
-  if (status === StatusEnum.Dropped) return t("voice.idle.dropped");
-  if (status === StatusEnum.Playing)
-    return d > 30 ? t("voice.idle.playingStale", { count: d }) : t("voice.idle.playingFine");
-  if (status === StatusEnum.OnHold) return t("voice.idle.onHold", { count: d });
-  if (status === StatusEnum.Online) return t("voice.idle.online");
-  return d === 0 ? t("voice.idle.today") : t("voice.idle.never", { count: d });
+  const { kind, days: count } = entry.userGameData.idle;
+  switch (kind) {
+    case IdleKindEnum.Finished:
+      return t("voice.idle.finished");
+    case IdleKindEnum.Dropped:
+      return t("voice.idle.dropped");
+    case IdleKindEnum.PlayingFine:
+      return t("voice.idle.playingFine");
+    case IdleKindEnum.PlayingStale:
+      return t("voice.idle.playingStale", { count });
+    case IdleKindEnum.OnHold:
+      return t("voice.idle.onHold", { count });
+    case IdleKindEnum.Online:
+      return t("voice.idle.online");
+    case IdleKindEnum.Today:
+      return t("voice.idle.today");
+    case IdleKindEnum.Untouched:
+      return t("voice.idle.untouched", { count });
+    case IdleKindEnum.Wanted:
+      return t("voice.idle.wanted", { count });
+  }
 };
 
 /** Toasts after a library write */

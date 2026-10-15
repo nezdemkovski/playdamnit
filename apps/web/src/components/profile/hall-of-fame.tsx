@@ -1,4 +1,4 @@
-import { Grade, type LibraryIndexItem } from "@playdamnit/api-client";
+import { useGetApiUserByUsernameOverview } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
 import { igdbImage, igdbSrcSet } from "@/lib/image";
@@ -7,25 +7,16 @@ import { IgdbSize, ImageLoading } from "@/lib/enums";
 const SHELF = 14;
 
 /**
- * The covers that define a player, best first: the S tier, then the rest by grade, then the
- * ungraded by when they were added. A small library repeats so the shelf is always full.
+ * A dimmed shelf of covers across the top of the profile header, as the API ranks them (the
+ * best graded first). A small library repeats so the shelf is always full.
  */
-export const hallOfFame = (entries: LibraryIndexItem[]): LibraryIndexItem[] => {
-  const withCover = entries.filter((e) => e.cover);
-  if (!withCover.length) return [];
-  const ranked = [...withCover].sort(
-    (a, b) =>
-      (b.userGameData.rating ?? 0) - (a.userGameData.rating ?? 0) ||
-      (b.userGameData.addedAt ?? "").localeCompare(a.userGameData.addedAt ?? ""),
-  );
-  return Array.from({ length: SHELF }, (_, i) => ranked[i % ranked.length]);
-};
-
-/** A dimmed shelf of covers across the top of the profile header */
-export function HallOfFame({ entries }: { entries: LibraryIndexItem[] }) {
+export function HallOfFame({ username }: { username: string }) {
   const { t } = useTranslation();
-  const shelf = hallOfFame(entries);
-  const isS = shelf.length > 0 && shelf[0].userGameData.grade === Grade.S;
+  const overview = useGetApiUserByUsernameOverview(username);
+  const ranked = overview.data?.shelf ?? [];
+  const shelf = ranked.length
+    ? Array.from({ length: SHELF }, (_, i) => ranked[i % ranked.length])
+    : [];
   return (
     <div className="relative h-28 overflow-hidden bg-card sm:h-36" aria-hidden>
       <div className="flex h-full">
@@ -43,7 +34,7 @@ export function HallOfFame({ entries }: { entries: LibraryIndexItem[] }) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       {shelf.length > 0 && (
         <span className="eyebrow absolute top-3 right-4 text-foreground/70">
-          {isS ? t("profile.hallOfFame") : t("profile.shelf")}
+          {overview.data?.hallOfFame ? t("profile.hallOfFame") : t("profile.shelf")}
         </span>
       )}
     </div>

@@ -99,7 +99,7 @@ function ProfileLayout() {
   return (
     <>
       <header className="panel overflow-hidden">
-        <HallOfFame entries={library.data?.results ?? []} />
+        <HallOfFame username={username} />
         <div className="relative -mt-14 px-5 pb-5 sm:-mt-16 sm:px-6 sm:pb-6">
           <div className="flex items-end justify-between gap-4">
             <UserAvatar

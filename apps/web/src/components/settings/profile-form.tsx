@@ -2,6 +2,7 @@ import { ImageUpIcon, Trash2Icon } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { UsernameField, useUsernameCheck } from "@/components/auth/username-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   const [bio, setBio] = useState(user.bio ?? "");
   const [links, setLinks] = useState<string[]>(user.links?.length ? user.links : [""]);
   const [listPublic, setListPublic] = useState(user.listPublic ?? true);
+  const usernameCheck = useUsernameCheck(username, user.username);
 
   const cleanLinks = links.map((l) => l.trim()).filter(Boolean);
   const changedAuth = name !== (user.name ?? "") || username !== (user.username ?? "");
@@ -137,12 +139,11 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
       <div className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="username">{t("settings.profile.username")}</Label>
-          <Input
+          <UsernameField
             id="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            pattern="^[a-zA-Z0-9_.]{3,30}$"
-            required
+            onChange={setUsername}
+            check={usernameCheck}
           />
           <p className="text-xs text-dimmed">{t("settings.profile.usernameHint")}</p>
         </div>
@@ -208,7 +209,12 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
         </div>
         <Button
           type="submit"
-          disabled={(!changedAuth && !changedProfile) || update.isPending || social.isPending}
+          disabled={
+            (!changedAuth && !changedProfile) ||
+            update.isPending ||
+            social.isPending ||
+            usernameCheck.blocked
+          }
         >
           {t("settings.profile.save")}
         </Button>

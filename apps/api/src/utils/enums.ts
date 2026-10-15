@@ -290,3 +290,27 @@ export enum ActivityAction {
   Updated = "updated",
   Played = "played",
 }
+
+/** Why a username can't be had */
+export enum UsernameProblem {
+  TooShort = "tooShort",
+  TooLong = "tooLong",
+  Characters = "characters",
+  Taken = "taken",
+}
+
+/**
+ * Which idle line a library entry gets: the clients turn the kind and its days into a sentence
+ * ("212 days untouched", "in progress"), the API decides which one applies
+ */
+export enum IdleKind {
+  Finished = "finished",
+  Dropped = "dropped",
+  PlayingFine = "playingFine",
+  PlayingStale = "playingStale",
+  OnHold = "onHold",
+  Online = "online",
+  Today = "today",
+  Untouched = "untouched",
+  Wanted = "wanted",
+}

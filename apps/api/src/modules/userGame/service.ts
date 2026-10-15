@@ -1,7 +1,7 @@
 import { and, count, eq, inArray, sql, type SQL } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
-import { game, platform, playthrough, userGames } from "@playdamnit/db/schema";
+import { cover, game, platform, playthrough, userGames } from "@playdamnit/db/schema";
 import { PgErrorCode, UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import {
@@ -15,12 +15,18 @@ import { gradeOf, ratingOfGrade } from "@/utils/grade";
 import { escapeLike } from "@/utils/searchGames";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
+import { idleOf } from "./idle";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 import { GameService } from "@/modules/game/service";
 
 const MAX_IMPORT_GAMES = 1000;
 const IMPORT_FETCH_TIMEOUT_MS = 30_000;
 const INSERT_CHUNK_SIZE = 500;
+const OVERVIEW_RAIL = 12;
+/** Enough covers for the widest window; clients repeat them to fill a narrower one */
+const OVERVIEW_SHELF = 20;
+/** The lowest rating that reads as an S */
+const S_GRADE_MIN = 9;
 
 interface UserGameInput {
   status: UserGameStatus;
@@ -127,8 +133,59 @@ const toLibraryEntry = (entry: EntryRow & { game: NonNullable<EntryRow["game"]> 
     steamMinutes: entry.steamMinutes,
     steamLastPlayedAt: entry.steamLastPlayedAt,
     updatedAt: entry.updatedAt,
+    idle: idleOf(entry),
   },
 });
+
+const INDEX_GAME_WITH = {
+  game: { columns: { id: true, name: true, firstReleaseDate: true }, with: { cover: true } },
+} as const;
+
+type IndexRow = Omit<typeof userGames.$inferSelect, "review" | "userId" | "gameId"> & {
+  hasReview: boolean;
+  game: {
+    id: number;
+    name: string;
+    firstReleaseDate: number | null;
+    cover: Parameters<typeof coverUrl>[0];
+  } | null;
+};
+
+/** A library row on the light index card: no review text, the game as id, name, date, cover */
+const toIndexItems = (entries: IndexRow[]) =>
+  entries.flatMap(({ game: g, hasReview, ...entry }) =>
+    g
+      ? [
+          {
+            id: g.id,
+            name: g.name,
+            firstReleaseDate: g.firstReleaseDate,
+            cover: coverUrl(g.cover),
+            userGameData: {
+              id: entry.id,
+              status: entry.status,
+              rating: entry.rating !== null ? Number(entry.rating) : null,
+              grade: gradeOf(entry.rating),
+              hasReview,
+              platformId: entry.platformId,
+              addedAt: entry.addedAt,
+              endedAt: entry.endedAt,
+              source: entry.source,
+              mastered: entry.mastered,
+              spoilers: entry.spoilers,
+              allowReactions: entry.allowReactions,
+              steamMinutes: entry.steamMinutes,
+              steamLastPlayedAt: entry.steamLastPlayedAt,
+              updatedAt: entry.updatedAt,
+              idle: idleOf(entry),
+            },
+          },
+        ]
+      : [],
+  );
+
+/** A rating counts as a grade above zero; zero is what clearing a grade writes */
+const isGraded = (t: typeof userGames) => sql`coalesce(${t.rating}, 0) > 0`;
 
 /** One member's entry for a game as the list serves it, or null when the game is not in it */
 const libraryEntry = async (userId: string, gameId: number) => {
@@ -199,6 +256,8 @@ export abstract class UserGameService {
       status?: UserGameStatus;
       q?: string;
       sort?: LibrarySort;
+      /** Only graded entries (true) or only ungraded ones (false): the grading deck's queue */
+      graded?: boolean;
     } = {},
   ) {
     const userData = await requireUser(username);
@@ -211,6 +270,7 @@ export abstract class UserGameService {
       [
         eq(t.userId, userData.id),
         opts.status ? eq(t.status, opts.status) : undefined,
+        opts.graded === undefined ? undefined : opts.graded ? isGraded(t) : sql`not ${isGraded(t)}`,
         q
           ? sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and coalesce(${game.searchNames}, ${game.name}) ilike ${`%${escapeLike(q)}%`})`
           : undefined,
@@ -255,40 +315,69 @@ export abstract class UserGameService {
       orderBy: { addedAt: "desc" },
       columns: { review: false, userId: false, gameId: false },
       extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },
-      with: {
-        game: { columns: { id: true, name: true, firstReleaseDate: true }, with: { cover: true } },
-      },
+      with: INDEX_GAME_WITH,
     });
-    return {
-      results: entries.flatMap(({ game: g, hasReview, ...entry }) =>
-        g
-          ? [
-              {
-                id: g.id,
-                name: g.name,
-                firstReleaseDate: g.firstReleaseDate,
-                cover: coverUrl(g.cover),
-                userGameData: {
-                  id: entry.id,
-                  status: entry.status,
-                  rating: entry.rating !== null ? Number(entry.rating) : null,
-                  grade: gradeOf(entry.rating),
-                  hasReview,
-                  platformId: entry.platformId,
-                  addedAt: entry.addedAt,
-                  endedAt: entry.endedAt,
-                  source: entry.source,
-                  mastered: entry.mastered,
-                  spoilers: entry.spoilers,
-                  allowReactions: entry.allowReactions,
-                  steamMinutes: entry.steamMinutes,
-                  steamLastPlayedAt: entry.steamLastPlayedAt,
-                  updatedAt: entry.updatedAt,
-                },
-              },
-            ]
-          : [],
+    return { results: toIndexItems(entries) };
+  }
+
+  /**
+   * A profile's overview rails, each at most a dozen light cards: now playing, most played on
+   * Steam, recently finished or dropped, and the cover shelf (best graded first, then the
+   * ungraded by when they were added). A private list comes back empty with `private: true`.
+   */
+  static async getOverview(username: string, viewerId: string | null) {
+    const owner = await requireUser(username);
+    if (!canSeeList(owner, viewerId)) {
+      return {
+        private: true,
+        playing: [],
+        mostPlayed: [],
+        recent: [],
+        shelf: [],
+        hallOfFame: false,
+      };
+    }
+    const rail = (
+      where: (t: typeof userGames) => SQL,
+      orderBy: (t: typeof userGames) => SQL[],
+      limit = OVERVIEW_RAIL,
+    ) =>
+      postgresDb.query.userGames.findMany({
+        where: { RAW: (t) => and(eq(t.userId, owner.id), where(t))! },
+        orderBy: (t) => [...orderBy(t), sql`${t.id}`],
+        limit,
+        columns: { review: false, userId: false, gameId: false },
+        extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },
+        with: INDEX_GAME_WITH,
+      });
+    const [playing, mostPlayed, recent, shelf] = await Promise.all([
+      rail(
+        (t) => eq(t.status, UserGameStatus.Playing),
+        (t) => [sql`${t.addedAt} desc`],
       ),
+      rail(
+        (t) => sql`${t.steamMinutes} > 0`,
+        (t) => [sql`${t.steamMinutes} desc`],
+      ),
+      rail(
+        (t) => sql`${t.endedAt} is not null`,
+        (t) => [sql`${t.endedAt} desc`],
+      ),
+      rail(
+        (t) => sql`exists (select 1 from ${cover} where ${cover.gameId} = ${t.gameId})`,
+        (t) => [sql`coalesce(${t.rating}, 0) desc`, sql`${t.addedAt} desc`],
+        OVERVIEW_SHELF,
+      ),
+    ]);
+    const shelfItems = toIndexItems(shelf);
+    return {
+      private: false,
+      playing: toIndexItems(playing),
+      mostPlayed: toIndexItems(mostPlayed),
+      recent: toIndexItems(recent),
+      shelf: shelfItems,
+      // The shelf is a hall of fame once it opens with an S
+      hallOfFame: (shelfItems[0]?.userGameData.rating ?? 0) >= S_GRADE_MIN,
     };
   }
 

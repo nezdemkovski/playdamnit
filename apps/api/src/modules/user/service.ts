@@ -216,9 +216,15 @@ export abstract class UserService {
    * Find a user by ID
    */
   static async findById(userId: string) {
-    const userData = await postgresDb.query.user.findFirst({
-      where: { id: userId },
-    });
+    const [userData, platforms] = await Promise.all([
+      postgresDb.query.user.findFirst({ where: { id: userId } }),
+      postgresDb
+        .select({ id: userGames.platformId })
+        .from(userGames)
+        .where(and(eq(userGames.userId, userId), sql`${userGames.platformId} is not null`))
+        .groupBy(userGames.platformId)
+        .orderBy(desc(count()), userGames.platformId),
+    ]);
 
     if (!userData) {
       throw new NotFoundError("User not found");
@@ -233,6 +239,9 @@ export abstract class UserService {
       bio: userData.bio,
       links: userData.links,
       listPublic: userData.listPublic,
+      // The platforms the member logs games on, most used first: a new entry goes on the first
+      // of these the game is on
+      preferredPlatformIds: platforms.map((p) => p.id!),
     };
   }
 

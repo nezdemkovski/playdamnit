@@ -6,7 +6,8 @@ import { escapeLike } from "@/utils/searchGames";
 import { createRateLimiter } from "@/utils/rateLimit";
 import { TooManyRequestsError } from "@/utils/errors";
 import { UserGameStatus } from "@playdamnit/db/enums";
-import { HttpMethod, SteamOpenId } from "@/utils/enums";
+import { HttpMethod, IdleKind, SteamOpenId } from "@/utils/enums";
+import { idleOf } from "@/modules/userGame/idle";
 import { decodeState, encodeState, steamLoginUrl, verifySteamLogin } from "@/modules/steam/openid";
 
 describe("csv", () => {
@@ -211,5 +212,37 @@ describe("grade bands", () => {
     ]);
     for (const band of GRADE_BANDS) expect(gradeOf(ratingOfGrade(band.grade))).toBe(band.grade);
     expect(ratingOfGrade(null)).toBeNull();
+  });
+});
+
+describe("idleOf", () => {
+  const now = Date.UTC(2026, 9, 15);
+  const daysAgo = (n: number) => new Date(now - n * 86_400_000);
+  const entry = (status: UserGameStatus, touched: number, steam?: number) => ({
+    status,
+    addedAt: daysAgo(400),
+    updatedAt: daysAgo(touched),
+    steamLastPlayedAt: steam === undefined ? null : daysAgo(steam),
+  });
+
+  test("playing turns stale after a month", () => {
+    expect(idleOf(entry(UserGameStatus.Playing, 30), now)).toEqual({
+      kind: IdleKind.PlayingFine,
+      days: 30,
+    });
+    expect(idleOf(entry(UserGameStatus.Playing, 31), now).kind).toBe(IdleKind.PlayingStale);
+  });
+
+  test("Steam's last launch wins over the last edit", () => {
+    expect(idleOf(entry(UserGameStatus.OnHold, 2, 90), now)).toEqual({
+      kind: IdleKind.OnHold,
+      days: 90,
+    });
+  });
+
+  test("backlog and wishes read today until a day has passed", () => {
+    expect(idleOf(entry(UserGameStatus.Backlog, 0), now).kind).toBe(IdleKind.Today);
+    expect(idleOf(entry(UserGameStatus.Backlog, 5), now).kind).toBe(IdleKind.Untouched);
+    expect(idleOf(entry(UserGameStatus.WantToPlay, 5), now).kind).toBe(IdleKind.Wanted);
   });
 });

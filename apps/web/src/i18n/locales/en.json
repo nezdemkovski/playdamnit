@@ -87,8 +87,10 @@
       "onHold_other": "{{count}} days on hold",
       "online": "no ending, no guilt",
       "today": "added today",
-      "never_one": "{{count}} day, never opened",
-      "never_other": "{{count}} days, never opened"
+      "untouched_one": "{{count}} day, never opened",
+      "untouched_other": "{{count}} days, never opened",
+      "wanted_one": "wanted for {{count}} day",
+      "wanted_other": "wanted for {{count}} days"
     },
     "toast": {
       "removed": "Removed. One less thing to feel bad about.",
@@ -187,6 +189,9 @@
     "displayName": "Display name",
     "username": "Username",
     "usernameHint": "3–30 letters, digits, dots or underscores",
+    "usernameTaken": "@{{name}} is taken",
+    "usernameAvailable": "Available",
+    "usernameUnavailable": "Not available",
     "email": "Email",
     "createAccount": "Create account"
   },

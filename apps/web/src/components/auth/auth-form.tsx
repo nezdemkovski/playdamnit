@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UsernameField, useUsernameCheck } from "@/components/auth/username-field";
 import { useSignIn, useSignUp } from "@/hooks/auth";
-
-const USERNAME_PATTERN = "^[a-zA-Z0-9_.]{3,30}$";
 
 /** Sign-in (password or passkey) and sign-up, in one card */
 export function AuthForm() {
@@ -22,6 +21,8 @@ export function AuthForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const usernameCheck = useUsernameCheck(username);
 
   const busy = signIn.password.isPending || signIn.passkey.isPending || signUp.isPending;
 
@@ -122,14 +123,12 @@ export function AuthForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="username">{t("auth.username")}</Label>
-                <Input
+                <UsernameField
                   id="username"
                   autoComplete="username"
-                  required
-                  pattern={USERNAME_PATTERN}
-                  title={t("auth.usernameHint")}
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={setUsername}
+                  check={usernameCheck}
                 />
               </div>
             </div>
@@ -156,7 +155,12 @@ export function AuthForm() {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" size="lg" disabled={busy}>
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={busy || usernameCheck.blocked}
+            >
               {signUp.isPending && <Loader2Icon className="animate-spin" />}{" "}
               {t("auth.createAccount")}
             </Button>
