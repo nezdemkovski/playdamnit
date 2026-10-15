@@ -11,6 +11,7 @@ import {
   ActivityIcon,
   CalendarIcon,
   CompassIcon,
+  ContactRoundIcon,
   FlameIcon,
   Gamepad2Icon,
   LibraryIcon,
@@ -27,7 +28,9 @@ import { ReviewCard } from "@/components/social/review-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { TasteMatches } from "@/components/home/taste-matches";
 import { Verdict } from "@/components/home/verdict";
+import { WeekStrip } from "@/components/home/week-strip";
 import { useSession } from "@/hooks/auth";
 import { useMyLibrary } from "@/hooks/library";
 import { relativeDate } from "@/lib/format";
@@ -51,6 +54,8 @@ function Home() {
   const forYou = home.data?.forYou ?? [];
   const feed = home.data?.feed ?? [];
   const week = home.data?.thisWeek ?? [];
+  const taste = home.data?.tasteMatches ?? [];
+  const best = home.data?.bestOfYear;
   const freshReviews = home.data?.freshReviews ?? [];
 
   const playing = entries
@@ -170,7 +175,25 @@ function Home() {
         </Section>
       )}
 
-      {week.length > 0 && (
+      {taste.length > 0 && (
+        <Section
+          title={t("home.sections.taste")}
+          icon={ContactRoundIcon}
+          action={
+            <Link
+              to="/community"
+              search={{ q: "", sort: GetApiUsersSort.Games, page: 1 }}
+              className="text-sm text-dimmed hover:text-white"
+            >
+              {t("home.sections.community")}
+            </Link>
+          }
+        >
+          <TasteMatches matches={taste} />
+        </Section>
+      )}
+
+      {week.some((d) => d.count > 0) && (
         <Section
           title={t("home.sections.thisWeek")}
           icon={CalendarIcon}
@@ -184,18 +207,7 @@ function Home() {
             </Link>
           }
         >
-          <GameRail>
-            {week.map((g) => (
-              <div key={g.id}>
-                <GameCard game={g} grade={byGameId.get(g.id)?.userGameData.grade} />
-                <div className="mt-1.5 text-xs text-dimmed">
-                  {g.firstReleaseDate
-                    ? format(new Date(g.firstReleaseDate * 1000), DateFormat.MonthDay)
-                    : ""}
-                </div>
-              </div>
-            ))}
-          </GameRail>
+          <WeekStrip days={week} byGameId={byGameId} />
         </Section>
       )}
 
@@ -221,6 +233,31 @@ function Home() {
       >
         <Rail games={home.data?.trending} byGameId={byGameId} />
       </Section>
+
+      {best && best.games.length > 0 && (
+        <Section
+          title={t("home.sections.bestOf", { year: best.year })}
+          icon={TrophyIcon}
+          action={
+            <Link
+              to="/charts"
+              search={{
+                tab: ChartTab.Best,
+                genreId: undefined,
+                platformId: undefined,
+                year: best.year,
+                type: undefined,
+                page: 1,
+              }}
+              className="text-sm text-dimmed hover:text-white"
+            >
+              {t("home.sections.charts")}
+            </Link>
+          }
+        >
+          <Rail games={best.games} byGameId={byGameId} />
+        </Section>
+      )}
 
       {freshReviews.length > 0 && (
         <Section title={t("home.sections.freshReviews")} icon={MessageSquareTextIcon}>

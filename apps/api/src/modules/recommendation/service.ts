@@ -60,6 +60,15 @@ export class RecommendationService {
         cross join lateral unnest(${game.similarGameIds}) with ordinality as s(id, ord)
         group by s.id
       ),
+      -- The library's games and the games they are editions of, as one set to hash against
+      -- (an "owned.game_id = c.id or e.version_parent_id = c.id" anti join was a nested loop)
+      owned as (
+        select ${userGames.gameId} as id from ${userGames} where ${userGames.userId} = ${userId}
+        union
+        select ${game.versionParentId} from ${userGames}
+        join ${game} on ${game.id} = ${userGames.gameId}
+        where ${userGames.userId} = ${userId} and ${game.versionParentId} is not null
+      ),
       ranked as (
         select c.id,
           c.score * (0.6 + coalesce(${game.totalRating}, 60) / 250)
@@ -74,11 +83,7 @@ export class RecommendationService {
           and (${game.gameType} is null or ${game.gameType} in ${RECOMMENDABLE_TYPES})
           and ${game.firstReleaseDate} <= ${now}
           and exists (select 1 from ${cover} where ${cover.gameId} = c.id)
-          and not exists (
-            select 1 from ${userGames} owned
-            left join ${game} e on e.id = owned.game_id
-            where owned.user_id = ${userId} and (owned.game_id = c.id or e.version_parent_id = c.id)
-          )
+          and not exists (select 1 from owned where owned.id = c.id)
       )
       select id from (
         select id, rank,

@@ -877,9 +877,11 @@ components:
             $ref: "#/components/schemas/Game"
         thisWeek:
           type: array
-          description: Released from yesterday to a week ahead
+          description: Today and the six days after, as UTC days, empty days included
           items:
-            $ref: "#/components/schemas/Game"
+            $ref: "#/components/schemas/HomeWeekDay"
+        bestOfYear:
+          $ref: "#/components/schemas/HomeBestOfYear"
         freshReviews:
           type: array
           items:
@@ -896,13 +898,54 @@ components:
           description: Picks for the viewer; null for a guest
           items:
             $ref: "#/components/schemas/Game"
+        tasteMatches:
+          type: array
+          nullable: true
+          description: Members with the viewer's taste, closest first; null for a guest
+          items:
+            $ref: "#/components/schemas/TasteMatch"
       required:
         - trending
         - newReleases
         - thisWeek
+        - bestOfYear
         - freshReviews
         - feed
         - forYou
+        - tasteMatches
+
+    HomeBestOfYear:
+      type: object
+      description: The best-rated games released this UTC year
+      properties:
+        year:
+          type: integer
+        games:
+          type: array
+          items:
+            $ref: "#/components/schemas/Game"
+      required:
+        - year
+        - games
+
+    HomeWeekDay:
+      type: object
+      properties:
+        date:
+          type: string
+          description: The UTC day, YYYY-MM-DD
+        count:
+          type: integer
+          description: Games released on the day
+        games:
+          type: array
+          description: The day's most popular releases, games with a cover first
+          items:
+            $ref: "#/components/schemas/Game"
+      required:
+        - date
+        - count
+        - games
 
     FeedResponse:
       type: object
@@ -2926,7 +2969,7 @@ paths:
       tags:
         - Games
       summary: The home page in one answer
-      description: The catalog rails, the latest reviews and, for a signed-in viewer, the friends feed and the picks for them.
+      description: Everything the home screens show, ready to render - the catalog rails, the week of releases by UTC day, the year's best, the latest reviews and, for a signed-in viewer, the friends feed, the picks for them and the members with their taste.
       responses:
         "200":
           description: Home page

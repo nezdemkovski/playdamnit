@@ -155,9 +155,19 @@
       "openCalendar": "Open the calendar",
       "trending": "Trending",
       "charts": "Charts",
+      "bestOf": "Best of {{year}}",
+      "taste": "Taste twins",
       "freshReviews": "Fresh reviews",
       "newReleases": "New releases",
       "recentlyAdded": "Recently added to your list"
+    },
+    "week": {
+      "releases_one": "{{count}} release",
+      "releases_other": "{{count}} releases"
+    },
+    "taste": {
+      "inCommon_one": "match · {{count}} game in common",
+      "inCommon_other": "match · {{count}} games in common"
     },
     "feed": {
       "added": "<user>{{name}}</user> added <game>{{game}}</game>",

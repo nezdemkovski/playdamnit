@@ -431,9 +431,50 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(guest.feed).toBeNull();
     expect(guest.forYou).toBeNull();
     expect(Array.isArray(guest.trending)).toBe(true);
+    expect(guest.tasteMatches).toBeNull();
     const member = await HomeService.load("bob");
     expect(Array.isArray(member.feed)).toBe(true);
     expect(Array.isArray(member.forYou)).toBe(true);
+    expect(Array.isArray(member.tasteMatches)).toBe(true);
+  });
+
+  test("the home week comes as seven UTC days with counts, covers first, and the year's best", async () => {
+    const DAY = 86_400;
+    const today = Math.floor(Date.now() / 1000 / DAY) * DAY;
+    const year = new Date().getUTCFullYear();
+    // [id, release, rating count, rating, cover]
+    const rows = [
+      [930201, today + 3600, 50, null, true],
+      [930202, today + 7200, 900, null, false],
+      [930203, today + 2 * DAY, 10, null, true],
+      [930204, today + 7 * DAY, 10, null, true],
+      [930205, Math.floor(Date.UTC(year, 0, 2) / 1000), 80, 97, true],
+    ] as const;
+    for (const [id, release, votes, rating, withCover] of rows) {
+      await pg.query(
+        `insert into game (id, name, slug, total_rating_count, total_rating, first_release_date)
+         values ($1, $2, $2, $3, $4, $5)`,
+        [id, `week-${id}`, votes, rating, release],
+      );
+      if (withCover) {
+        await pg.query(`insert into cover (id, game_id, hash) values ($1, $2, 'co1')`, [
+          id + 1000,
+          id,
+        ]);
+      }
+    }
+    const home = await HomeService.load(null);
+    const dates = Array.from({ length: 7 }, (_, i) =>
+      new Date((today + i * DAY) * 1000).toISOString().slice(0, 10),
+    );
+    expect(home.thisWeek.map((d) => d.date)).toEqual(dates);
+    expect(home.thisWeek.map((d) => d.count)).toEqual([2, 0, 1, 0, 0, 0, 0]);
+    // The day's game with a cover goes before a more popular one without
+    expect(home.thisWeek[0].games.map((g) => g.id)).toEqual([930201, 930202]);
+    expect(home.thisWeek[2].games.map((g) => g.id)).toEqual([930203]);
+    expect(home.bestOfYear.year).toBe(year);
+    expect(home.bestOfYear.games[0].id).toBe(930205);
+    await pg.query(`delete from game where id = any($1)`, [rows.map(([id]) => id)]);
   });
 
   test("the catalog browse honours filters and the member-based sorts", async () => {

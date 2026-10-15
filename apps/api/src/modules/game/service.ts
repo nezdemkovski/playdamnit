@@ -28,6 +28,7 @@ import { getImageUrl, IgdbImageSize } from "@/utils/image";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
 const SIMILAR_GAMES_LIMIT = 12;
+const DAY_SECONDS = 86_400;
 // Covers per day on the release calendar
 const RELEASE_DAY_COVERS = 4;
 // "Best" needs enough IGDB votes to mean anything
@@ -419,6 +420,42 @@ export abstract class GameService {
         covers: (r.covers ?? []).map((c) => getImageUrl(c.source, c.hash, IgdbImageSize.COVER_BIG)),
       })),
     };
+  }
+
+  /**
+   * Every UTC day from `from` (a day's start, Unix seconds) for `days` days, including the
+   * empty ones: how many games release on it and the cards of its `perDay` most popular,
+   * games with a cover first. One query ranks the range, a second loads the cards.
+   */
+  static async releasesByDay(from: number, days: number, perDay: number) {
+    const day = sql`to_char(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC', 'YYYY-MM-DD')`;
+    const order = [sql`${cover.hash} is null`, ...orderFor(GameSort.Popular)(game)];
+    const rows = await db.execute<{ date: string; count: number; ids: number[] | null }>(sql`
+      with ranked as (
+        select ${day} as date, ${game.id} as id,
+          row_number() over (partition by ${day} order by ${sql.join(order, sql`, `)}) as rank
+        from ${game}
+        left join ${cover} on ${cover.gameId} = ${game.id}
+        where ${isNull(game.deletedAt)}
+          and ${game.firstReleaseDate} between ${from} and ${from + days * DAY_SECONDS - 1}
+      )
+      select date, count(*)::int as count,
+        array_agg(id order by rank) filter (where rank <= ${perDay}) as ids
+      from ranked
+      group by date
+    `);
+    const byDate = new Map(rows.rows.map((r) => [r.date, r]));
+    const cards = await GameService.findCards(rows.rows.flatMap((r) => (r.ids ?? []).map(Number)));
+    const byId = new Map(cards.map((card) => [card.id, card]));
+    return Array.from({ length: days }, (_, i) => {
+      const date = new Date((from + i * DAY_SECONDS) * 1000).toISOString().slice(0, 10);
+      const row = byDate.get(date);
+      return {
+        date,
+        count: Number(row?.count ?? 0),
+        games: (row?.ids ?? []).flatMap((id) => byId.get(Number(id)) ?? []),
+      };
+    });
   }
 
   /** Cards for a set of ids, in the order given (library imports, lists, similar games) */
