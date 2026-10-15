@@ -1,5 +1,7 @@
 import winston from "winston";
 import { format } from "winston";
+import Transport from "winston-transport";
+import * as Sentry from "@sentry/bun";
 import "winston-daily-rotate-file";
 import {
   LogDir,
@@ -9,6 +11,8 @@ import {
   LogNamespace,
   LogRotation,
   LogTimestampFormat,
+  NodeEnv,
+  SentrySeverity,
   ServiceName,
 } from "./enums";
 
@@ -22,6 +26,45 @@ enum LogLevel {
   TRACE = "silly",
   SYSTEM = "system",
 }
+
+let sentryEnabled = false;
+
+/** Errors and job failures become Sentry issues, every log line goes to Sentry Logs */
+export const initSentry = (): boolean => {
+  const dsn = process.env.SENTRY_DSN;
+  if (!dsn) {
+    winstonLogger.info("[Sentry] DSN not provided, error tracking is disabled");
+    return false;
+  }
+  Sentry.init({
+    dsn,
+    environment: process.env.NODE_ENV || NodeEnv.Development,
+    release: process.env.APP_VERSION
+      ? `${ServiceName.Librarian}@${process.env.APP_VERSION}`
+      : undefined,
+    tracesSampleRate: process.env.NODE_ENV === NodeEnv.Production ? 0.2 : 1.0,
+    initialScope: { tags: { service: ServiceName.Librarian } },
+  });
+  sentryEnabled = true;
+  process.on("uncaughtException", (error) => {
+    winstonLogger.error("Uncaught exception:", { error });
+    Sentry.captureException(error);
+  });
+  process.on("unhandledRejection", (reason) => {
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    winstonLogger.error("Unhandled rejection:", { error });
+    Sentry.captureException(error);
+  });
+  return true;
+};
+
+/** Sends what is queued before the process exits */
+export const flushSentry = async () => {
+  if (sentryEnabled) await Sentry.close(2000);
+};
+
+/** Log lines to Sentry Logs, with their namespace and meta as attributes */
+const SentryWinstonTransport = Sentry.createSentryWinstonTransport(Transport);
 
 const consoleFormat = combine(
   colorize(),
@@ -57,6 +100,8 @@ const winstonLogger = winston.createLogger({
       maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
+    // Sends nothing until Sentry is initialized
+    new SentryWinstonTransport(),
   ],
 });
 
@@ -76,6 +121,13 @@ export const createLogger = (namespace: string): EnhancedLogger => {
   return {
     error: (message: string, meta: Record<string, any> = {}) => {
       winstonLogger.error(message, { namespace, ...meta });
+      if (sentryEnabled) {
+        Sentry.captureMessage(message, {
+          level: SentrySeverity.Error,
+          tags: { namespace },
+          extra: meta,
+        });
+      }
     },
 
     warn: (message: string, meta: Record<string, any> = {}) => {
@@ -116,6 +168,11 @@ export const createLogger = (namespace: string): EnhancedLogger => {
         },
         ...meta,
       });
+      if (sentryEnabled) {
+        // A job's operation is a tag, so failures group and filter by queue
+        const operation = typeof meta.operation === "string" ? { operation: meta.operation } : {};
+        Sentry.captureException(errorObject, { tags: { namespace, ...operation }, extra: meta });
+      }
     },
 
     setLevel: (level: LogLevel) => {

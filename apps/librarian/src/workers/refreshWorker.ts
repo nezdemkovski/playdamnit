@@ -6,6 +6,7 @@ import { game } from "@playdamnit/db/schema";
 import { QUEUES, type FetchByIdsJob } from "@playdamnit/db/jobs";
 import { createLogger } from "../utils/enhancedLogger";
 import { Schedule, LogNamespace } from "../utils/enums";
+import { reported } from "./reported";
 
 const logger = createLogger(LogNamespace.RefreshWorker);
 
@@ -42,6 +43,9 @@ const refreshStaleGames = async (boss: PgBoss) => {
 };
 
 export const registerRefreshWorker = async (boss: PgBoss): Promise<void> => {
-  await boss.work(QUEUES.REFRESH_STALE_GAMES, () => refreshStaleGames(boss));
+  await boss.work(
+    QUEUES.REFRESH_STALE_GAMES,
+    reported(QUEUES.REFRESH_STALE_GAMES, () => refreshStaleGames(boss)),
+  );
   await boss.schedule(QUEUES.REFRESH_STALE_GAMES, Schedule.RefreshStaleGames);
 };

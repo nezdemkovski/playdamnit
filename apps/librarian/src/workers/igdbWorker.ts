@@ -12,6 +12,7 @@ import { fetchIGDBByIds } from "../utils/igdb/utils";
 import { writeGamesBatch } from "../catalog/writeGames";
 import { createLogger } from "../utils/enhancedLogger";
 import { LogNamespace } from "../utils/enums";
+import { reported } from "./reported";
 
 const logger = createLogger(LogNamespace.IgdbWorker);
 
@@ -53,5 +54,9 @@ const handleFetchByIds = async ([job]: Job<FetchByIdsJob>[]) => {
 };
 
 export const registerIgdbWorkers = async (boss: PgBoss): Promise<void> => {
-  await boss.work<FetchByIdsJob>(QUEUES.FETCH_BY_IDS, INTERACTIVE_POLLING, handleFetchByIds);
+  await boss.work<FetchByIdsJob>(
+    QUEUES.FETCH_BY_IDS,
+    INTERACTIVE_POLLING,
+    reported(QUEUES.FETCH_BY_IDS, handleFetchByIds),
+  );
 };

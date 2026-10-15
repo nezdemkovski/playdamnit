@@ -126,7 +126,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 
 ## Logging & errors
 
-Winston with daily rotating files (`LOG_DIR`, default `./logs`) and Sentry when `SENTRY_DSN` is set (20% traces in production).
+Winston with daily rotating files (`LOG_DIR`, default `./logs`) and Sentry when `SENTRY_DSN` is set (20% traces in production). The API and the librarian have their own Sentry projects (`playdamnit-api`, `playdamnit-librarian`; DSNs in 1Password `playdamnit` as `SENTRY_DSN_API` and `SENTRY_DSN_LIBRARIAN`, read by the gitops ExternalSecrets). Every log line at `LOG_LEVEL` goes to Sentry Logs through a winston transport; `logger.error`/`exception` also make issues, warnings stay logs. Releases are `<service>@<APP_VERSION>` (the charts pass their appVersion). Librarian jobs wrap their handler in `reported(queue, handler)` (`src/workers/reported.ts`), so a failure is logged and tagged with its queue before pg-boss retries it.
 
 ## Testing
 

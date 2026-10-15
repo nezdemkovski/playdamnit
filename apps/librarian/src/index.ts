@@ -1,7 +1,7 @@
 import { PgBoss } from "pg-boss";
 
 import { ALL_QUEUES } from "@playdamnit/db/jobs";
-import logger from "./utils/enhancedLogger";
+import logger, { flushSentry, initSentry } from "./utils/enhancedLogger";
 import { registerIgdbWorkers } from "./workers/igdbWorker";
 import { registerRefreshWorker } from "./workers/refreshWorker";
 import { registerLookupsWorker } from "./workers/lookupsWorker";
@@ -46,6 +46,7 @@ const registerIgdbWebhooks = async () => {
 
 const start = async () => {
   logger.system("Starting playdamnit librarian service...");
+  logger.system(initSentry() ? "Sentry error tracking enabled" : "Sentry error tracking disabled");
 
   validateEnvironment();
 
@@ -86,13 +87,15 @@ const shutdown = async () => {
   }
 
   logger.system("Librarian shut down successfully");
+  await flushSentry();
   process.exit(0);
 };
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-start().catch((error) => {
+start().catch(async (error) => {
   logger.exception(error, { source: LogSource.LibrarianStart });
+  await flushSentry();
   process.exit(1);
 });

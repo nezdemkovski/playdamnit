@@ -21,6 +21,7 @@ import { QUEUES } from "@playdamnit/db/jobs";
 import { fetchAllIGDB } from "../utils/igdb/utils";
 import { createLogger } from "../utils/enhancedLogger";
 import { Schedule, LogNamespace } from "../utils/enums";
+import { reported } from "./reported";
 
 const logger = createLogger(LogNamespace.LookupsWorker);
 
@@ -190,9 +191,12 @@ const syncLookups = async (opts: { force?: boolean } = {}) => {
 };
 
 export const registerLookupsWorker = async (boss: PgBoss): Promise<void> => {
-  await boss.work<{ force?: boolean }>(QUEUES.SYNC_LOOKUPS, async ([job]) => {
-    await syncLookups(job.data ?? {});
-  });
+  await boss.work<{ force?: boolean }>(
+    QUEUES.SYNC_LOOKUPS,
+    reported(QUEUES.SYNC_LOOKUPS, async ([job]) => {
+      await syncLookups(job.data ?? {});
+    }),
+  );
   await boss.schedule(QUEUES.SYNC_LOOKUPS, Schedule.SyncLookups, { force: true });
 
   // Catch up after a deploy; the handler skips the run if the last one is recent enough

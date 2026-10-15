@@ -75,6 +75,16 @@ export enum LogSource {
   LibrarianStart = "librarian-start",
 }
 
+/** The service name logs and Sentry events carry; Sentry releases are `<service>@<version>` */
 export enum ServiceName {
   Librarian = "playdamnit-librarian",
+}
+
+export enum NodeEnv {
+  Development = "development",
+  Production = "production",
+}
+
+export enum SentrySeverity {
+  Error = "error",
 }

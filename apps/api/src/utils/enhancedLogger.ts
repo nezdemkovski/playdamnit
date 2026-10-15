@@ -1,5 +1,6 @@
 import winston from "winston";
 import { format } from "winston";
+import Transport from "winston-transport";
 import * as Sentry from "@sentry/bun";
 import "winston-daily-rotate-file";
 import {
@@ -11,6 +12,7 @@ import {
   LogTimestampFormat,
   NodeEnv,
   SentrySeverity,
+  ServiceName,
 } from "@/utils/enums";
 
 const { combine, timestamp, printf, colorize, json } = format;
@@ -39,7 +41,12 @@ export const initSentry = (): boolean => {
     Sentry.init({
       dsn,
       environment: process.env.NODE_ENV || NodeEnv.Development,
+      // The chart passes its appVersion, so an issue names the release that brought it
+      release: process.env.APP_VERSION
+        ? `${ServiceName.Api}@${process.env.APP_VERSION}`
+        : undefined,
       tracesSampleRate: process.env.NODE_ENV === NodeEnv.Production ? 0.2 : 1.0,
+      initialScope: { tags: { service: ServiceName.Api } },
     });
 
     sentryEnabled = true;
@@ -73,6 +80,9 @@ export const flushSentry = async (): Promise<boolean> => {
   }
 };
 
+/** Log lines to Sentry Logs, with their namespace and meta as attributes */
+const SentryWinstonTransport = Sentry.createSentryWinstonTransport(Transport);
+
 const consoleFormat = combine(
   colorize(),
   timestamp({ format: LogTimestampFormat.DateTime }),
@@ -85,7 +95,7 @@ const consoleFormat = combine(
 const winstonLogger = winston.createLogger({
   level: process.env.LOG_LEVEL || LogLevel.INFO,
   format: combine(timestamp(), json()),
-  defaultMeta: { service: "playdamnit-api" },
+  defaultMeta: { service: ServiceName.Api },
   transports: [
     new winston.transports.Console({
       format: consoleFormat,
@@ -116,6 +126,8 @@ const winstonLogger = winston.createLogger({
       maxFiles: LogRotation.MaxFiles,
       zippedArchive: true,
     }),
+    // Sends nothing until Sentry is initialized
+    new SentryWinstonTransport(),
   ],
 });
 
@@ -158,28 +170,13 @@ export const createLogger = (namespace: string): EnhancedLogger => {
       }
     },
 
+    // Warnings and below are only logs (Sentry Logs included), not issues
     warn: (message: string, meta: Record<string, any> = {}) => {
       winstonLogger.warn(message, { namespace, ...meta });
-
-      if (sentryEnabled) {
-        Sentry.captureMessage(message, {
-          level: SentrySeverity.Warning,
-          tags: { namespace },
-          extra: meta,
-        });
-      }
     },
 
     info: (message: string, meta: Record<string, any> = {}) => {
       winstonLogger.info(message, { namespace, ...meta });
-
-      if (sentryEnabled && meta && meta.sendToSentry) {
-        Sentry.captureMessage(message, {
-          level: SentrySeverity.Info,
-          tags: { namespace },
-          extra: meta,
-        });
-      }
     },
 
     debug: (message: string, meta: Record<string, any> = {}) => {

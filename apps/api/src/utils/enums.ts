@@ -229,8 +229,11 @@ export enum LogFileName {
 
 export enum SentrySeverity {
   Error = "error",
-  Warning = "warning",
-  Info = "info",
+}
+
+/** The service name logs and Sentry events carry; Sentry releases are `<service>@<version>` */
+export enum ServiceName {
+  Api = "playdamnit-api",
 }
 
 /** IGDB external_game_source ids the API reads */
