@@ -9,7 +9,8 @@ const { resendApiKey, emailFrom, isDev } = getConfig();
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Without a key the API runs without email: sign-up needs no verification and password
-// reset is off (see src/lib/auth.ts). In development emails are only logged anyway.
+// reset is off (see src/lib/auth.ts). In development they are logged, and sent for real only
+// when a key is set in .env (to try them in an inbox).
 export const emailEnabled = !!resend || isDev;
 
 // The templates live in @playdamnit/emails (React Email); `bun run --cwd packages/emails dev`
@@ -29,8 +30,8 @@ export const sendEmail = async ({ to, subject, html, text }: { to: string } & Re
   }
 
   return resend.emails.send({
-    from: isDev ? "onboarding@resend.dev" : emailFrom,
-    to: isDev ? "delivered@resend.dev" : to,
+    from: emailFrom,
+    to,
     subject,
     html,
     text,

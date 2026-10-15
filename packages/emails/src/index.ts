@@ -15,7 +15,7 @@ const rendered = async (subject: string, email: ReactElement): Promise<RenderedE
 });
 
 export const verifyEmail = (props: VerifyEmailProps) =>
-  rendered("Confirm your email", createElement(VerifyEmail, props));
+  rendered(`Your code is ${props.code}`, createElement(VerifyEmail, props));
 
 export const changeEmail = (props: ChangeEmailProps) =>
   rendered(

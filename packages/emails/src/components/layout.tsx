@@ -122,6 +122,16 @@ export function Paragraph({ children }: { children: ReactNode }) {
   return <Text style={styles.paragraph}>{children}</Text>;
 }
 
+/** A one-time code, big and spaced so it reads (and copies) at a glance */
+export function Code({ label, code }: { label: string; code: string }) {
+  return (
+    <Section style={styles.codeBox}>
+      <Text style={styles.codeLabel}>{label}</Text>
+      <Text style={styles.code}>{code}</Text>
+    </Section>
+  );
+}
+
 /** An address or a name inside a paragraph, set off the way the site sets off data */
 export function Data({ children }: { children: ReactNode }) {
   return <span style={styles.data}>{children}</span>;
@@ -200,6 +210,30 @@ const styles = {
     padding: "16px 28px",
     margin: "8px 0 0",
     borderRadius: 0,
+  },
+  codeBox: {
+    backgroundColor: color.background,
+    border: `1px solid ${color.border}`,
+    padding: "16px 20px",
+    margin: "8px 0 24px",
+  },
+  codeLabel: {
+    fontFamily: font.mono,
+    fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase" as const,
+    color: color.muted,
+    margin: "0 0 8px",
+  },
+  code: {
+    fontFamily: font.mono,
+    fontSize: "32px",
+    lineHeight: "36px",
+    fontWeight: 700,
+    letterSpacing: "0.3em",
+    color: color.foreground,
+    margin: 0,
   },
   note: {
     fontSize: "13px",

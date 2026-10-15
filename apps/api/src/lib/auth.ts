@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { username, admin, openAPI } from "better-auth/plugins";
+import { createEmailVerificationToken } from "better-auth/api";
+import { username, admin, openAPI, emailOTP } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
 import { passkey } from "@better-auth/passkey";
 
@@ -48,6 +49,8 @@ const tokenClaims = (token: string): { requestType?: string } => {
 };
 
 const SESSION_COOKIE_CACHE_SECONDS = 5 * 60;
+// The confirmation email's link and code both last a day
+const CONFIRMATION_SECONDS = 24 * 60 * 60;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -64,7 +67,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
-    verifyEmailTokenExpiresIn: 24 * 60 * 60 * 1000, // 24 hours
+    verifyEmailTokenExpiresIn: CONFIRMATION_SECONDS * 1000,
     // No email configured: accounts are usable right after sign-up and reset is unavailable
     requireEmailVerification: emailEnabled,
     ...(emailEnabled && {
@@ -86,7 +89,7 @@ export const auth = betterAuth({
           to: user.email,
           ...(await (changing
             ? changeEmail({ url, newEmail: user.email, step: "new", siteUrl })
-            : verifyEmail({ url, siteUrl }))),
+            : verifyEmail({ url, code: await confirmationCode(user.email), siteUrl }))),
         });
       },
     }),
@@ -139,6 +142,23 @@ export const auth = betterAuth({
       usernameValidator: isValidUsername,
     }),
     passkey({ rpID, rpName: "PlayDamnIt", origin: passkeyOrigins }),
+    // Only for confirming an address: the confirmation email carries a code next to its link, for
+    // the apps to type (or autofill from Mail). Signing in or up by code stays off.
+    emailOTP({
+      expiresIn: CONFIRMATION_SECONDS,
+      disableSignUp: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (!emailEnabled || type !== "email-verification") return;
+        const token = await createEmailVerificationToken(
+          process.env.BETTER_AUTH_SECRET ?? "",
+          email,
+          undefined,
+          CONFIRMATION_SECONDS,
+        );
+        const url = `${betterAuthUrl}/api/auth/verify-email?token=${token}&callbackURL=%2F`;
+        await sendEmail({ to: email, ...(await verifyEmail({ url, code: otp, siteUrl })) });
+      },
+    }),
     admin(),
     apiKey(),
     openAPI(),
@@ -168,3 +188,8 @@ export const auth = betterAuth({
     return [];
   },
 });
+
+/** A fresh code for the confirmation email, stored by the email OTP plugin */
+function confirmationCode(email: string): Promise<string> {
+  return auth.api.createVerificationOTP({ body: { email, type: "email-verification" } });
+}
