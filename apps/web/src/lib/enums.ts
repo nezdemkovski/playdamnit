@@ -99,7 +99,8 @@ export enum ImageLoading {
 
 /** Sizes IGDB serves, swapped into the image URL (see lib/image.ts) */
 export enum IgdbSize {
-  CoverSmall = "cover_small",
+  /** 180×256, sharp on 2x/3x screens up to 60px (plain cover_small is 90px) */
+  CoverSmall = "cover_small_2x",
   CoverBig = "cover_big",
   ScreenshotMed = "screenshot_med",
   ScreenshotBig = "screenshot_big",
