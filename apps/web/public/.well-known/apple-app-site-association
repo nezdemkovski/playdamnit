@@ -1,5 +1,27 @@
 {
   "webcredentials": {
     "apps": ["DBVKAAM5R6.cloud.nezdemkovski.playdamnit"]
+  },
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["DBVKAAM5R6.cloud.nezdemkovski.playdamnit"],
+        "components": [
+          { "/": "/", "exclude": true },
+          { "/": "/api/*", "exclude": true },
+          { "/": "/assets/*", "exclude": true },
+          { "/": "/.well-known/*", "exclude": true },
+          { "/": "/auth", "exclude": true },
+          { "/": "/search", "exclude": true },
+          { "/": "/favicon.ico", "exclude": true },
+          { "/": "/logo.svg", "exclude": true },
+          { "/": "/*/settings", "exclude": true },
+          { "/": "/games/*" },
+          { "/": "/lists/*" },
+          { "/": "/*" },
+          { "/": "/*/*" }
+        ]
+      }
+    ]
   }
 }
