@@ -210,6 +210,35 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
     expect((await UserService.findById("hidden")).preferredPlatformIds).toEqual([]);
   });
 
+  test("a game added without a platform goes on the member's most used one it is on", async () => {
+    const onBoth = 940101;
+    const onNone = 940102;
+    for (const id of [onBoth, onNone]) {
+      await pg.query(
+        `insert into game (id, name, slug, first_release_date) values ($1, $2, $3, 1600000000)`,
+        [id, `Game ${id}`, `game-${id}`],
+      );
+    }
+    await pg.query(`insert into game_to_platform (game_id, platform_id) values ($1, 48), ($1, 6)`, [
+      onBoth,
+    ]);
+    // dana logs on PC (6) twice and PS4 (48) once
+    expect(await UserGameService.defaultPlatform("dana", onBoth)).toBe(6);
+    // no history: the game's first platform
+    expect(await UserGameService.defaultPlatform("dana_", onBoth)).toBe(6);
+    // a game on no platform stays without one
+    expect(await UserGameService.defaultPlatform("dana", onNone)).toBeNull();
+    const added = await UserGameService.addUserGame("dana_", onBoth, {
+      status: UserGameStatus.WantToPlay,
+    });
+    expect(added.entry?.userGameData.platformId).toBe(6);
+    const kept = await UserGameService.addUserGame("dana_", onNone, {
+      status: UserGameStatus.WantToPlay,
+      platformId: null,
+    });
+    expect(kept.entry?.userGameData.platformId ?? null).toBeNull();
+  });
+
   test("every entry carries its idle fact", async () => {
     const [g1, g2, g3, g4, g5] = GAMES;
     const { results } = await UserGameService.getLibraryIndex("dana", "dana");

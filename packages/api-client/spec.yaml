@@ -2075,6 +2075,8 @@ components:
           nullable: true
         platformId:
           type: number
+          nullable: true
+          description: Left out, the server picks the platform the member logs most games on among the game's, else the game's first; null keeps it empty
         endedAt:
           type: string
           nullable: true
@@ -2088,7 +2090,6 @@ components:
       required:
         - gameId
         - status
-        - platformId
 
     UserGameUpdateRequest:
       type: object

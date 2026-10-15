@@ -25,7 +25,8 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       rating: t.Optional(ratingSchema),
       grade: t.Optional(t.Nullable(gradeSchema)),
       review: t.Optional(reviewSchema),
-      platformId: platformIdSchema,
+      // Left out, the server picks one (UserGameService.defaultPlatform)
+      platformId: t.Optional(t.Nullable(platformIdSchema)),
       endedAt: t.Optional(endedAtSchema),
       mastered: t.Optional(t.Boolean()),
       spoilers: t.Optional(t.Boolean()),

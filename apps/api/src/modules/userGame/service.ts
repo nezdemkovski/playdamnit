@@ -2,7 +2,15 @@ import { checkPublicText } from "@/modules/moderation/filter";
 import { and, count, eq, inArray, sql, type SQL } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
-import { cover, game, platform, playthrough, userGames } from "@playdamnit/db/schema";
+import {
+  cover,
+  game,
+  gameToPlatform,
+  LOCAL_PLATFORM_MIN_ID,
+  platform,
+  playthrough,
+  userGames,
+} from "@playdamnit/db/schema";
 import { PgErrorCode, UserGameSource, UserGameStatus } from "@playdamnit/db/enums";
 import { ensureGamesInCatalog } from "@/utils/catalogRequests";
 import {
@@ -430,7 +438,37 @@ export abstract class UserGameService {
   }
 
   /**
-   * Add a game to the user's library, fetching it from IGDB if the catalog lacks it
+   * The platform a new entry goes on when the client sends none: the one the member logs most
+   * games on among the game's platforms (and the local ones, Steam Deck and the like, which IGDB
+   * does not list), else the game's first platform; null for a game on no platform
+   */
+  static async defaultPlatform(userId: string, gameId: number): Promise<number | null> {
+    const result = await postgresDb.execute<{ id: number }>(sql`
+      with mine as (
+        select ${userGames.platformId} as id, count(*) as n
+        from ${userGames}
+        where ${userGames.userId} = ${userId} and ${userGames.platformId} is not null
+        group by ${userGames.platformId}
+      ),
+      candidates as (
+        select ${gameToPlatform.platformId} as id from ${gameToPlatform}
+        where ${gameToPlatform.gameId} = ${gameId}
+        union
+        select ${platform.id} from ${platform} where ${platform.id} >= ${LOCAL_PLATFORM_MIN_ID}
+      )
+      select candidates.id
+      from candidates left join mine on mine.id = candidates.id
+      -- a local platform only when the member uses it
+      where mine.n is not null or candidates.id < ${LOCAL_PLATFORM_MIN_ID}
+      order by mine.n desc nulls last, candidates.id
+      limit 1
+    `);
+    return result.rows[0]?.id ?? null;
+  }
+
+  /**
+   * Add a game to the user's library, fetching it from IGDB if the catalog lacks it. Without a
+   * platformId the server picks one (`defaultPlatform`); an explicit null keeps it empty.
    */
   static async addUserGame(userId: string, gameId: number, input: UserGameInput) {
     checkPublicText(input.review);
@@ -440,6 +478,10 @@ export abstract class UserGameService {
     }
 
     await assertPlatformExists(input.platformId);
+    const platformId =
+      input.platformId === undefined
+        ? await UserGameService.defaultPlatform(userId, gameId)
+        : input.platformId;
     const requestedRating = resolveRating(input);
     const rating = canGrade(input.status) ? requestedRating : null;
     const endedAt = ENDED_STATUSES.includes(input.status) ? parseEndedAt(input.endedAt) : null;
@@ -457,7 +499,7 @@ export abstract class UserGameService {
           spoilers: input.spoilers ?? false,
           allowReactions: input.allowReactions ?? true,
           endedAt: endedAt ?? null,
-          platformId: input.platformId ?? null,
+          platformId,
           source: UserGameSource.Manual,
         })
         .onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
