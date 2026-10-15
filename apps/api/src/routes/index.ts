@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { meRoutes } from "./me";
 import { recommendationRoutes } from "./me/recommendations";
 import { tasteRoutes } from "./me/taste";
+import { signInRoutes } from "./me/signIn";
 import { steamImportRoutes } from "./me/steam";
 import { getSteamActivity } from "./user/[username]/steam-activity";
 import { getUserActivity } from "./user/[username]/activity";
@@ -45,6 +46,7 @@ export const routes = new Elysia()
   .use(steamImportRoutes)
   .use(recommendationRoutes)
   .use(tasteRoutes)
+  .use(signInRoutes)
   .use(getSteamActivity)
   .use(getUserActivity)
 

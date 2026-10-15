@@ -180,4 +180,27 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
     const list = await UserGameService.getUserGames("dana", { limit: 1 });
     expect(list.results[0].userGameData.idle.kind).toBeDefined();
   });
+
+  test("sign-in methods: password, passkeys, and Apple unlinkable only beside another account", async () => {
+    const { signInMethods } = await import("@/modules/user/signIn");
+    expect(await signInMethods("dana")).toEqual({
+      password: false,
+      passkeys: 0,
+      apple: { linked: false, canUnlink: false },
+    });
+    await pg.query(
+      `insert into account (id, account_id, provider_id, user_id, created_at, updated_at)
+       values ('acc-apple', '001.apple', 'apple', 'dana', now(), now())`,
+    );
+    // Apple is the only account: it cannot be unlinked yet
+    expect((await signInMethods("dana")).apple).toEqual({ linked: true, canUnlink: false });
+    await pg.query(
+      `insert into account (id, account_id, provider_id, user_id, password, created_at, updated_at)
+       values ('acc-pass', 'dana', 'credential', 'dana', 'hash', now(), now())`,
+    );
+    expect(await signInMethods("dana")).toMatchObject({
+      password: true,
+      apple: { linked: true, canUnlink: true },
+    });
+  });
 });

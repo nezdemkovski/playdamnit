@@ -94,7 +94,9 @@ export const auth = betterAuth({
   },
   // Apple verifies the address, so signing in with Apple joins an account with the same email
   account: {
-    accountLinking: { trustedProviders: [SocialProvider.Apple] },
+    // A signed-in member linking Apple from settings may use a different address ("Hide My
+    // Email" relays never match); signing in with Apple still joins only the same email
+    accountLinking: { trustedProviders: [SocialProvider.Apple], allowDifferentEmails: true },
   },
   user: {
     // Password-confirmed, immediate; every row that references the user cascades

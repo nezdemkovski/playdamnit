@@ -1085,6 +1085,28 @@ components:
         - results
         - private
 
+    SignInMethods:
+      type: object
+      properties:
+        password:
+          type: boolean
+        passkeys:
+          type: number
+        apple:
+          type: object
+          properties:
+            linked:
+              type: boolean
+            canUnlink:
+              type: boolean
+          required:
+            - linked
+            - canUnlink
+      required:
+        - password
+        - passkeys
+        - apple
+
     ShowcaseResponse:
       type: object
       properties:
@@ -2378,6 +2400,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InternalServerErrorResponse"
+
+  /api/me/sign-in:
+    get:
+      operationId: getApiMeSignIn
+      tags:
+        - Me
+      summary: Sign-in methods
+      description: How the signed-in member can sign in, for settings. Apple can be unlinked only while another linked account remains (passkeys do not count).
+      responses:
+        "200":
+          description: The methods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignInMethods"
+        "401":
+          description: Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
+
+  /api/me/password:
+    post:
+      operationId: postApiMePassword
+      tags:
+        - Me
+      summary: Set a first password
+      description: For an account made with Apple that has no password yet; refused when one is set (change it with Better Auth's change-password).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+              required:
+                - newPassword
+      responses:
+        "200":
+          description: Set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                required:
+                  - status
+        "400":
+          description: A password is already set, or it is too short
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "401":
+          description: Not signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
 
   /api/games/showcase:
     get:

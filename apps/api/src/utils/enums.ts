@@ -198,6 +198,12 @@ export enum SocialProvider {
   Apple = "apple",
 }
 
+/** Better Auth's `account.provider_id` values: a password is the "credential" account */
+export enum AuthProviderId {
+  Credential = "credential",
+  Apple = "apple",
+}
+
 export enum OpenAiModel {
   Gpt4o = "gpt-4o",
 }
