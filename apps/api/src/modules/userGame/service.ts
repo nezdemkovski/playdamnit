@@ -17,6 +17,7 @@ import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@
 import { canSeeList, requireUser } from "@/utils/social";
 import { idleOf } from "./idle";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
+import { canGrade } from "./rules";
 import { GameService } from "@/modules/game/service";
 
 const MAX_IMPORT_GAMES = 1000;
@@ -437,7 +438,9 @@ export abstract class UserGameService {
     }
 
     await assertPlatformExists(input.platformId);
-    const rating = resolveRating(input);
+    const requestedRating = resolveRating(input);
+    const rating = canGrade(input.status) ? requestedRating : null;
+    const endedAt = ENDED_STATUSES.includes(input.status) ? parseEndedAt(input.endedAt) : null;
 
     try {
       const [inserted] = await postgresDb
@@ -451,7 +454,7 @@ export abstract class UserGameService {
           mastered: input.mastered ?? false,
           spoilers: input.spoilers ?? false,
           allowReactions: input.allowReactions ?? true,
-          endedAt: parseEndedAt(input.endedAt) ?? null,
+          endedAt: endedAt ?? null,
           platformId: input.platformId ?? null,
           source: UserGameSource.Manual,
         })
@@ -497,19 +500,27 @@ export abstract class UserGameService {
     await assertPlatformExists(input.platformId);
 
     const rating = resolveRating(input);
-    const endedAt = parseEndedAt(input.endedAt);
+    const endedAt =
+      input.status !== undefined && !ENDED_STATUSES.includes(input.status)
+        ? null
+        : parseEndedAt(input.endedAt);
+    // Evaluate against the row being updated, not a preceding read: a status-only PATCH must
+    // clear an obsolete grade/date, and a grade-only PATCH cannot race a move to the backlog.
+    const status = input.status ?? userGames.status;
+    const storedRating = rating === undefined ? userGames.rating : rating;
+    const storedEndedAt = endedAt === undefined ? userGames.endedAt : endedAt;
 
     const [updated] = await postgresDb
       .update(userGames)
       .set({
         ...(input.status !== undefined && { status: input.status }),
-        ...(rating !== undefined && { rating: rating?.toString() ?? null }),
+        rating: sql`case when ${status} in (${UserGameStatus.WantToPlay}, ${UserGameStatus.Backlog}) then null else ${storedRating}::numeric end`,
         ...(input.review !== undefined && { review: input.review }),
         ...(input.mastered !== undefined && { mastered: input.mastered }),
         ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
         ...(input.allowReactions !== undefined && { allowReactions: input.allowReactions }),
         ...(input.platformId !== undefined && { platformId: input.platformId }),
-        ...(endedAt !== undefined && { endedAt }),
+        endedAt: sql`case when ${status} in (${UserGameStatus.Finished}, ${UserGameStatus.Dropped}) then ${storedEndedAt}::timestamp else null end`,
       })
       .where(and(eq(userGames.userId, userId), eq(userGames.gameId, gameId)))
       .returning();
@@ -693,7 +704,13 @@ export abstract class UserGameService {
     return {
       ok: true,
       gameId,
-      value: { status: status as UserGameStatus, rating, review, platformId, endedAt },
+      value: {
+        status: status as UserGameStatus,
+        rating: canGrade(status as UserGameStatus) ? rating : null,
+        review,
+        platformId,
+        endedAt,
+      },
     };
   }
 

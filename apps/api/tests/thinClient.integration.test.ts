@@ -90,6 +90,48 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
     await pg?.end();
   });
 
+  test("the server owns grade and finish-date rules for every write shape", async () => {
+    await pg.query(`insert into "user" (id, name, email, email_verified, created_at, updated_at, username)
+      values ('rules', 'rules', 'rules@example.com', true, now(), now(), 'rules')`);
+    const id = GAMES[0]!;
+    const created = await UserGameService.addUserGame("rules", id, {
+      status: UserGameStatus.Backlog,
+      rating: 9,
+      endedAt: "2020-01-01",
+    });
+    expect(created.game.rating).toBeNull();
+    expect(created.game.endedAt).toBeNull();
+    const finished = await UserGameService.updateUserGame("rules", id, {
+      status: UserGameStatus.Finished,
+      rating: 8,
+      endedAt: "2020-01-01",
+    });
+    expect(finished.game.rating).toBe(8);
+    expect(finished.game.endedAt).not.toBeNull();
+    const statusOnly = await UserGameService.updateUserGame("rules", id, {
+      status: UserGameStatus.WantToPlay,
+    });
+    expect(statusOnly.game.rating).toBeNull();
+    expect(statusOnly.game.endedAt).toBeNull();
+    const gradeOnly = await UserGameService.updateUserGame("rules", id, { rating: 10 });
+    expect(gradeOnly.game.rating).toBeNull();
+    const dateOnly = await UserGameService.updateUserGame("rules", id, { endedAt: "2020-01-01" });
+    expect(dateOnly.game.endedAt).toBeNull();
+    await UserGameService.updateUserGame("rules", id, {
+      status: UserGameStatus.Finished,
+      rating: 7,
+      endedAt: "2020-01-01",
+    });
+    const playing = await UserGameService.updateUserGame("rules", id, {
+      status: UserGameStatus.Playing,
+    });
+    expect(playing.game.rating).toBe(7);
+    expect(playing.game.endedAt).toBeNull();
+    const reviewOnly = await UserGameService.updateUserGame("rules", id, { review: "Keep grade" });
+    expect(reviewOnly.game.status).toBe(UserGameStatus.Playing);
+    expect(reviewOnly.game.rating).toBe(7);
+  });
+
   test("the username rule, with a reason for each break", async () => {
     expect(await checkUsername("ab", null)).toMatchObject({
       valid: false,

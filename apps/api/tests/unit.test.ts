@@ -54,6 +54,16 @@ describe("normalizeImportRow", () => {
     expect(row({ review: "'=SUM(1)" })).toMatchObject({ ok: true, value: { review: "=SUM(1)" } });
   });
 
+  test("drops ratings from unplayed imported games", () => {
+    for (const status of [UserGameStatus.WantToPlay, UserGameStatus.Backlog]) {
+      expect(row({ status, rating: 9 })).toMatchObject({ ok: true, value: { rating: null } });
+    }
+    expect(row({ status: UserGameStatus.Playing, rating: 9 })).toMatchObject({
+      ok: true,
+      value: { rating: 9 },
+    });
+  });
+
   test("rejects bad input", () => {
     expect(row({ gameId: "abc" })).toMatchObject({ ok: false });
     expect(row({ status: "nope" })).toMatchObject({ ok: false });
