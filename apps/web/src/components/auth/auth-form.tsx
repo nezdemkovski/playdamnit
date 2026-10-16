@@ -28,12 +28,17 @@ export function AuthForm() {
 
   return (
     <div className="panel w-full max-w-md p-6 sm:p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <img src="/mimic.svg" alt="" className="size-10" />
-        <div>
-          <h1 className="text-xl font-bold">{t("app.name")}</h1>
-          <p className="text-sm text-dimmed">{t("auth.tagline")}</p>
-        </div>
+      <div className="mb-6">
+        <h1>
+          <img
+            src="/brand-lockup.svg"
+            alt={t("app.name")}
+            width="1710"
+            height="630"
+            className="h-auto w-full max-w-[320px]"
+          />
+        </h1>
+        <p className="mt-3 text-sm text-dimmed">{t("auth.tagline")}</p>
       </div>
 
       <Tabs defaultValue="sign-in">

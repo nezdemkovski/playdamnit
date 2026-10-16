@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import {
   Body,
   Button,
-  Column,
   Container,
   Head,
   Heading,
@@ -11,7 +10,6 @@ import {
   Img,
   Link,
   Preview,
-  Row,
   Section,
   Text,
 } from "react-email";
@@ -60,26 +58,16 @@ export function Layout({
       <Preview>{preview}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
-          {/* The name, once, by the mark; the plain-text part keeps the name and skips the image */}
           <Section style={styles.header}>
-            <Row>
-              <Column width="52" data-skip-in-text="true">
-                <Link href={siteUrl}>
-                  <Img
-                    src={`${siteUrl}/email/mimic.png`}
-                    width="40"
-                    height="40"
-                    alt=""
-                    style={styles.logo}
-                  />
-                </Link>
-              </Column>
-              <Column>
-                <Link href={siteUrl} style={styles.wordmark}>
-                  {siteName}
-                </Link>
-              </Column>
-            </Row>
+            <Link href={siteUrl}>
+              <Img
+                src={`${siteUrl}/email/brand-lockup.png`}
+                width="320"
+                height="118"
+                alt={siteName}
+                style={styles.logo}
+              />
+            </Link>
           </Section>
           <Section style={styles.card}>
             <Text style={styles.eyebrow}>{eyebrow}</Text>
@@ -151,15 +139,7 @@ const styles = {
     padding: "0 16px",
   },
   header: { padding: "0 0 20px" },
-  logo: { display: "block", border: 0 },
-  wordmark: {
-    fontFamily: font.display,
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: 900,
-    color: color.foreground,
-    textDecoration: "none",
-  },
+  logo: { display: "block", border: 0, maxWidth: "100%", height: "auto" },
   card: {
     backgroundColor: color.card,
     border: `1px solid ${color.border}`,

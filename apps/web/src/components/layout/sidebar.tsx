@@ -228,7 +228,14 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
           className="mb-3 block self-center xl:self-start xl:px-1"
           aria-label={t("app.name")}
         >
-          <img src="/mimic.svg" alt="" className="size-9" />
+          <img src="/mimic.svg" alt="" className="size-9 xl:hidden" />
+          <img
+            src="/brand-lockup.svg"
+            alt=""
+            width="1710"
+            height="630"
+            className="hidden h-auto w-[200px] xl:block"
+          />
         </Link>
         {user && (
           <Link
