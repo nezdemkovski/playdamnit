@@ -66,7 +66,7 @@ export function Layout({
               <Column width="52" data-skip-in-text="true">
                 <Link href={siteUrl}>
                   <Img
-                    src={`${siteUrl}/email/logo.png`}
+                    src={`${siteUrl}/email/mimic.png`}
                     width="40"
                     height="40"
                     alt=""
