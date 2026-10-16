@@ -26,7 +26,7 @@ on:
 env:
   REGISTRY: ghcr.io
   # Inlined into the web bundle: the browser-facing origin of the API (same host, /api/*)
-  PUBLIC_API_URL: https://games.nezdemkovski.cloud
+  PUBLIC_API_URL: https://playdamnit.com
 
 concurrency:
   group: publish-${{ github.ref }}

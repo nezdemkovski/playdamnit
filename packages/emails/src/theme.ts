@@ -24,4 +24,4 @@ export const siteName = "Play, damn it!";
 export const tagline = "Log it. Rate it. Get judged.";
 
 /** Where the site lives; links and the logo point here. The API passes its own URL. */
-export const defaultSiteUrl = "https://games.nezdemkovski.cloud";
+export const defaultSiteUrl = "https://playdamnit.com";

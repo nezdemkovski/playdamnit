@@ -311,7 +311,7 @@ All code phases are in. What remains, in order:
 ## Deployment: homelab Kubernetes — deployed 2026-10-11
 
 Target: the Flux-managed homelab cluster (`~/Sites/homelab-gitops`, see its `AGENTS.md`), one
-hostname `games.nezdemkovski.cloud` with `/api/*` routed to the API and everything else to the
+hostname `playdamnit.com` with `/api/*` routed to the API and everything else to the
 web app (same origin: no CORS, first-party auth cookies).
 
 What exists (2026-10-11):
@@ -325,7 +325,7 @@ What exists (2026-10-11):
   Service. Chart `version`/`appVersion` are the single release number for all three.
 - **CI**: `ci.yml` lints and renders the charts; `docker-publish.yml` tags images with the chart's
   `appVersion` (plus branch/sha), builds the web bundle with
-  `VITE_API_URL=https://games.nezdemkovski.cloud`, and pushes the charts to
+  `VITE_API_URL=https://playdamnit.com`, and pushes the charts to
   `oci://ghcr.io/nezdemkovski/charts/playdamnit-<app>` on every push to `master`.
 - **GitOps** (branch `playdamnit` in `homelab-gitops`, not pushed): `apps/playdamnit/` with the
   namespace, ExternalSecrets (`playdamnit-ghcr`, `playdamnit-postgres-owner`, `cnpg-backup-s3`,
@@ -335,10 +335,10 @@ What exists (2026-10-11):
   `clusters/homelab/playdamnit.yaml`. `infrastructure/network-policies/workload-playdamnit.yaml`
   (deny by default, DNS/API/same-namespace/public egress) and `playdamnit` added to the
   clusterwide lists (API server egress, tunnel ingress, CNPG backup egress and operator ingress).
-  `charts/cloudflared/values.yaml` routes `games.nezdemkovski.cloud` (`^/api/.*` → API, rest → web).
+  `charts/cloudflared/values.yaml` routes `playdamnit.com` (`^/api/.*` → API, rest → web).
 
 State after the first reconcile (2026-10-11, release 0.1.1): CNPG cluster healthy, web and API
-live at https://games.nezdemkovski.cloud (`/api/*` → API), librarian running with the IGDB webhooks
+live at https://playdamnit.com (`/api/*` → API), librarian running with the IGDB webhooks
 registered and `sync-lookups` done. The catalog is empty on purpose until the first full walk;
 webhooks and `drain-dirty` already fill in whatever IGDB touches meanwhile. `RESEND_API_KEY` is
 optional since 0.1.1: without it sign-up skips verification and password reset is disabled; adding
