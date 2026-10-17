@@ -206,40 +206,6 @@ export enum AuthProviderId {
   Apple = "apple",
 }
 
-/** `user.role` values the API gives a meaning; Better Auth's admin plugin owns the rest */
-export enum UserRole {
-  /** The shared read-only account behind "Try the demo": nothing it does is saved */
-  Demo = "demo",
-}
-
-/** Error codes the API adds to a `{ error, message }` body, for the clients to act on */
-export enum ApiErrorCode {
-  DemoReadOnly = "DEMO_READ_ONLY",
-}
-
-/**
- * Better Auth endpoints (paths under /api/auth) a demo session may still call: reading itself,
- * leaving the demo, and every way into an account of one's own. The rest would change the
- * shared account. Named here as well as by method because the API's own server-side calls
- * (`auth.api.getSession`) reach the hooks with no method.
- */
-export enum DemoAuthPath {
-  GetSession = "/get-session",
-  ListSessions = "/list-sessions",
-  SignOut = "/sign-out",
-  SignIn = "/sign-in/",
-  SignUp = "/sign-up/",
-  VerifyEmail = "/verify-email",
-  SendVerificationEmail = "/send-verification-email",
-  EmailOtp = "/email-otp/",
-  ForgetPassword = "/forget-password",
-  ResetPassword = "/reset-password",
-  RequestPasswordReset = "/request-password-reset",
-  Callback = "/callback/",
-  PasskeyAuthenticateOptions = "/passkey/generate-authenticate-options",
-  PasskeyVerifyAuthentication = "/passkey/verify-authentication",
-}
-
 export enum OpenAiModel {
   Gpt4o = "gpt-4o",
 }

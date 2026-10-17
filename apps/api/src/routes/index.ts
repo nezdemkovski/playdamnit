@@ -39,8 +39,6 @@ import { listRoutes } from "./lists";
 
 import { postAIChat } from "./chat/ai/POST";
 
-import { demoRoutes } from "./demo/session";
-
 import { postIgdbWebhook } from "./webhooks/igdb/POST";
 
 export const routes = new Elysia()
@@ -83,7 +81,5 @@ export const routes = new Elysia()
   .use(listRoutes)
 
   .use(postAIChat)
-
-  .use(demoRoutes)
 
   .use(postIgdbWebhook);

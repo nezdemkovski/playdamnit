@@ -41,11 +41,6 @@ components:
         message:
           type: string
           description: Human readable error message
-        code:
-          type: string
-          description: >
-            Set when the client should act on the reason: DEMO_READ_ONLY from the shared demo
-            account, which may change nothing
       required:
         - error
 
@@ -1874,11 +1869,6 @@ components:
             first of these the game is on
           items:
             type: number
-        demo:
-          type: boolean
-          description: >
-            The shared read-only demo account: every write answers 403 with code DEMO_READ_ONLY,
-            and the account pages (email, password, deletion) do not apply
       required:
         - id
         - image
@@ -1889,7 +1879,6 @@ components:
         - links
         - listPublic
         - preferredPlatformIds
-        - demo
 
     PublicUserResponse:
       type: object
@@ -3355,41 +3344,6 @@ paths:
                     type: number
                 required:
                   - unread
-
-  /api/demo/session:
-    post:
-      operationId: postApiDemoSession
-      tags:
-        - Me
-      summary: Sign into the shared read-only demo account
-      description: >
-        Sets the session cookie of the demo account, so the caller sees every feature with a
-        real library. The account can change nothing (every write answers 403 with code
-        DEMO_READ_ONLY) and is kept out of member lists. Rate limited per client.
-      responses:
-        "200":
-          description: Signed in; the session cookie is set
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                required:
-                  - ok
-        "404":
-          description: The demo is not available on this server
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotFoundErrorResponse"
-        "429":
-          description: Too many demo sessions from this client
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TooManyRequestsErrorResponse"
 
   /api/me/notifications/read:
     post:

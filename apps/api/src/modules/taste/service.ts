@@ -3,7 +3,7 @@ import { user, userGames } from "@playdamnit/db/schema";
 
 import { db } from "@/db/postgres";
 import { GameService } from "@/modules/game/service";
-import { followedAmong, notDemo } from "@/utils/social";
+import { followedAmong } from "@/utils/social";
 
 export const MAX_TASTE_MATCHES = 30;
 /** Games two members must both have graded before their grades say anything */
@@ -39,7 +39,7 @@ export class TasteService {
         select theirs.user_id, theirs.game_id, mine.rating as a, theirs.rating as b
         from ${userGames} theirs
         join mine on mine.game_id = theirs.game_id
-        join ${user} on ${user.id} = theirs.user_id and ${user.listPublic} and ${notDemo()}
+        join ${user} on ${user.id} = theirs.user_id and ${user.listPublic}
         where theirs.user_id <> ${viewerId} and theirs.rating > 0
       ),
       scored as (

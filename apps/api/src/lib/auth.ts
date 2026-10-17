@@ -1,11 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import {
-  APIError,
-  createAuthMiddleware,
-  createEmailVerificationToken,
-  getSessionFromCtx,
-} from "better-auth/api";
+import { createEmailVerificationToken } from "better-auth/api";
 import { username, admin, openAPI, emailOTP } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
 import { passkey } from "@better-auth/passkey";
@@ -24,15 +19,7 @@ import { isValidUsername, USERNAME_MAX, USERNAME_MIN } from "@/modules/user/user
 import { changeEmail, resetPassword, verifyEmail } from "@playdamnit/emails";
 
 import { emailEnabled, sendEmail } from "@/utils/email";
-import {
-  ApiErrorCode,
-  DemoAuthPath,
-  Hostname,
-  HttpMethod,
-  Origin,
-  SocialProvider,
-} from "@/utils/enums";
-import { isDemoUser } from "@/utils/social";
+import { Hostname, Origin, SocialProvider } from "@/utils/enums";
 
 const { trustedOrigins, isDev, betterAuthUrl, appleAppBundleId, appleClientId, appleClientSecret } =
   getConfig();
@@ -62,14 +49,6 @@ const tokenClaims = (token: string): { requestType?: string } => {
 };
 
 const SESSION_COOKIE_CACHE_SECONDS = 5 * 60;
-
-// What the shared demo account may still do here: leave, and every way into an account of
-// one's own. Reads (GET) are always fine; anything else would change the account for everyone.
-const DEMO_AUTH_PATHS = Object.values(DemoAuthPath);
-const demoMayCall = (path: string) =>
-  DEMO_AUTH_PATHS.some((allowed) =>
-    allowed.endsWith("/") ? path.startsWith(allowed) : path === allowed,
-  );
 
 // The confirmation email's link and code both last a day
 const CONFIRMATION_SECONDS = 24 * 60 * 60;
@@ -185,22 +164,6 @@ export const auth = betterAuth({
     apiKey(),
     openAPI(),
   ],
-  hooks: {
-    // The demo session (modules/demo/service.ts) is read only; the API's own routes refuse
-    // its writes in the `auth` macro, and this refuses them on Better Auth's endpoints. The
-    // API's own `auth.api` calls come through here too, with the endpoint's path and no method.
-    before: createAuthMiddleware(async (ctx) => {
-      if (ctx.method === HttpMethod.Get || demoMayCall(ctx.path)) return;
-      const session = await getSessionFromCtx(ctx);
-      if (session && isDemoUser(session.user)) {
-        throw new APIError("FORBIDDEN", {
-          message:
-            "This is the demo account: nothing is saved. Create an account to keep your own list.",
-          code: ApiErrorCode.DemoReadOnly,
-        });
-      }
-    }),
-  },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: betterAuthUrl,
   trustedOrigins: (request) => {

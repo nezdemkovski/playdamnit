@@ -27,10 +27,8 @@ import { emptyGradeCounts, GRADE_BANDS, gradeIndexSql, gradeOf } from "@/utils/g
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import {
   canSeeList,
-  isDemoUser,
   isFollowing,
   followedAmong,
-  notDemo,
   notify,
   PUBLIC_USER_COLUMNS,
   requireUser,
@@ -102,8 +100,7 @@ export abstract class UserService {
     const data = await postgresDb.query.user.findFirst({
       where: { username },
     });
-    // The demo account has a profile for itself only
-    if (!data || (isDemoUser(data) && data.id !== viewerId)) {
+    if (!data) {
       throw new NotFoundError("User not found");
     }
 
@@ -247,8 +244,6 @@ export abstract class UserService {
       // The platforms the member logs games on, most used first: a new entry goes on the first
       // of these the game is on
       preferredPlatformIds: platforms.map((p) => p.id!),
-      // The shared read-only account: the apps say so and keep the account pages away
-      demo: isDemoUser(userData),
     };
   }
 
@@ -294,10 +289,7 @@ export abstract class UserService {
     viewerId: string | null;
   }) {
     const q = opts.q?.trim();
-    const where = and(
-      notDemo(),
-      q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined,
-    );
+    const where = q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined;
     const sort = opts.sort ?? UserSort.Games;
     const order =
       sort === UserSort.Followers
@@ -340,7 +332,6 @@ export abstract class UserService {
   }
 
   static async follow(followerId: string, username: string) {
-    // The demo account is nobody's to follow (requireUser hides it), nor does it follow anyone
     const target = await requireUser(username);
     if (target.id === followerId) throw new BadRequestError("You can't follow yourself");
     await postgresDb
@@ -364,15 +355,10 @@ export abstract class UserService {
     kind: ConnectionKind,
     opts: { limit: number; offset: number; viewerId: string | null },
   ) {
-    const target = await requireUser(username, opts.viewerId);
-    // The other side of each follow is a member, never the demo account (it is seeded with
-    // follows so its feed has life; it must not show up as a follower)
+    const target = await requireUser(username);
     const followers = kind === ConnectionKind.Followers;
     const where = (t: Pick<typeof userFollows, "followerId" | "followingId">) => {
-      const [own, other] = followers
-        ? [t.followingId, t.followerId]
-        : [t.followerId, t.followingId];
-      return sql`${own} = ${target.id} and exists (select 1 from ${user} where ${user.id} = ${other} and ${notDemo()})`;
+      return eq(followers ? t.followingId : t.followerId, target.id);
     };
     const [rows, [{ total }]] = await Promise.all([
       postgresDb.query.userFollows.findMany({
@@ -497,7 +483,7 @@ export abstract class UserService {
     viewerId: string | null,
     opts: { days?: number; tz?: string },
   ) {
-    const owner = await requireUser(username, viewerId);
+    const owner = await requireUser(username);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
     const tz = safeZone(opts.tz);
     const span = opts.days ?? ACTIVITY_DAYS;
@@ -565,7 +551,7 @@ export abstract class UserService {
 
   /** Journal: playthroughs plus finished/dropped entries without one, newest first */
   static async journal(username: string, viewerId: string | null, opts: { year?: number }) {
-    const owner = await requireUser(username, viewerId);
+    const owner = await requireUser(username);
     if (!canSeeList(owner, viewerId)) return { results: [], private: true };
 
     const [runs, entries] = await Promise.all([
@@ -655,8 +641,6 @@ export abstract class UserService {
   }
 
   static async avatar(username: string) {
-    // Not requireUser: the picture's URL reaches only whoever may see the profile (the demo's
-    // own, for the demo), and the file itself gives nothing away
     const owner = await postgresDb.query.user.findFirst({
       where: { username },
       columns: { id: true },

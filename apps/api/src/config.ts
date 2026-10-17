@@ -24,10 +24,6 @@ const steamApiKey = process.env.STEAM_API_KEY;
 const appleAppBundleId = process.env.APPLE_APP_BUNDLE_ID || "cloud.nezdemkovski.playdamnit";
 const appleClientId = process.env.APPLE_CLIENT_ID;
 const appleClientSecret = process.env.APPLE_CLIENT_SECRET;
-// The shared read-only demo account "Try the demo" signs into (see scripts/demo-account.ts);
-// without both the demo is off
-const demoUsername = process.env.DEMO_USERNAME;
-const demoPassword = process.env.DEMO_PASSWORD;
 
 const config = {
   isDev,
@@ -44,8 +40,6 @@ const config = {
   appleAppBundleId,
   appleClientId,
   appleClientSecret,
-  demoUsername,
-  demoPassword,
 };
 
 export const getConfig = () => {
