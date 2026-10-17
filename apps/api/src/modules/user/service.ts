@@ -27,8 +27,10 @@ import { emptyGradeCounts, GRADE_BANDS, gradeIndexSql, gradeOf } from "@/utils/g
 import { GAME_CARD_COLUMNS, GAME_CARD_WITH, transformGameResponse } from "@/utils/gameTransformers";
 import {
   canSeeList,
+  isDemoUser,
   isFollowing,
   followedAmong,
+  notDemo,
   notify,
   PUBLIC_USER_COLUMNS,
   requireUser,
@@ -100,7 +102,10 @@ export abstract class UserService {
     const data = await postgresDb.query.user.findFirst({
       where: { username },
     });
-    if (!data) throw new NotFoundError("User not found");
+    // The demo account has a profile for itself only
+    if (!data || (isDemoUser(data) && data.id !== viewerId)) {
+      throw new NotFoundError("User not found");
+    }
 
     // "This year" is the UTC calendar year (ended_at is kept in UTC), the same for every client
     const year = new Date().getUTCFullYear();
@@ -242,6 +247,8 @@ export abstract class UserService {
       // The platforms the member logs games on, most used first: a new entry goes on the first
       // of these the game is on
       preferredPlatformIds: platforms.map((p) => p.id!),
+      // The shared read-only account: the apps say so and keep the account pages away
+      demo: isDemoUser(userData),
     };
   }
 
@@ -287,7 +294,10 @@ export abstract class UserService {
     viewerId: string | null;
   }) {
     const q = opts.q?.trim();
-    const where = q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined;
+    const where = and(
+      notDemo(),
+      q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined,
+    );
     const sort = opts.sort ?? UserSort.Games;
     const order =
       sort === UserSort.Followers
@@ -330,6 +340,7 @@ export abstract class UserService {
   }
 
   static async follow(followerId: string, username: string) {
+    // The demo account is nobody's to follow (requireUser hides it), nor does it follow anyone
     const target = await requireUser(username);
     if (target.id === followerId) throw new BadRequestError("You can't follow yourself");
     await postgresDb
@@ -353,13 +364,19 @@ export abstract class UserService {
     kind: ConnectionKind,
     opts: { limit: number; offset: number; viewerId: string | null },
   ) {
-    const target = await requireUser(username);
+    const target = await requireUser(username, opts.viewerId);
+    // The other side of each follow is a member, never the demo account (it is seeded with
+    // follows so its feed has life; it must not show up as a follower)
+    const followers = kind === ConnectionKind.Followers;
+    const where = (t: Pick<typeof userFollows, "followerId" | "followingId">) => {
+      const [own, other] = followers
+        ? [t.followingId, t.followerId]
+        : [t.followerId, t.followingId];
+      return sql`${own} = ${target.id} and exists (select 1 from ${user} where ${user.id} = ${other} and ${notDemo()})`;
+    };
     const [rows, [{ total }]] = await Promise.all([
       postgresDb.query.userFollows.findMany({
-        where:
-          kind === ConnectionKind.Followers
-            ? { followingId: target.id }
-            : { followerId: target.id },
+        where: { RAW: (t) => where(t) },
         orderBy: { createdAt: "desc" },
         limit: opts.limit,
         offset: opts.offset,
@@ -368,14 +385,7 @@ export abstract class UserService {
           following: { columns: PUBLIC_USER_COLUMNS },
         },
       }),
-      postgresDb
-        .select({ total: count() })
-        .from(userFollows)
-        .where(
-          kind === ConnectionKind.Followers
-            ? eq(userFollows.followingId, target.id)
-            : eq(userFollows.followerId, target.id),
-        ),
+      postgresDb.select({ total: count() }).from(userFollows).where(where(userFollows)),
     ]);
     const users = rows.map((row) =>
       kind === ConnectionKind.Followers ? row.follower : row.following,

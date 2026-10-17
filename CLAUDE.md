@@ -91,6 +91,7 @@ See `docs/ARCHITECTURE.md` for flows and the schema and `docs/CATALOG_MIRROR_PLA
 - The auth tables are passed to `drizzleAdapter(db, { schema })` explicitly — Drizzle v1 clients carry no schema.
 - The auth tables live in `packages/db/src/schema.ts`; after a Better Auth upgrade compare them with `bunx @better-auth/cli generate` output (the config loads under Node now that the driver is `node-postgres`).
 - Auth endpoints are served by the `/api/auth/*` route in `src/index.ts`; don't also `.mount()` the handler.
+- **Demo account** (`src/modules/demo/service.ts`): one shared member with `role = demo` (`UserRole.Demo`), named by `DEMO_USERNAME`/`DEMO_PASSWORD` (without both the demo is off). `POST /api/demo/session` signs the caller into it (rate limited per IP, sessions last a day) and forwards Better Auth's cookies; `GET /api/me` answers `demo: true`. It is read only: the `auth` macro answers every non-GET with 403 `{ code: "DEMO_READ_ONLY" }`, and a `hooks.before` in `src/lib/auth.ts` refuses Better Auth's own endpoints except sign-out and the ways into another account (`DemoAuthPath`). It never shows to members: `requireUser`/`findByUsername` 404 for anyone else, `notDemo()` filters member search, follow lists and taste matches, and its list is private. `bun run scripts/demo-account.ts create|unlock|lock` makes it, opens it to fill its library with the apps, and locks it again.
 
 ### Librarian (`apps/librarian`)
 

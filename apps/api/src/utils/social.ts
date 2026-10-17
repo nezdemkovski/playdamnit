@@ -1,11 +1,23 @@
 import { and, eq, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
-import { notification, user, userFollows } from "@playdamnit/db/schema";
+import { notification, user } from "@playdamnit/db/schema";
 import type { NotificationType } from "@playdamnit/db/enums";
 import { NotFoundError } from "@/utils/errors";
+import { UserRole } from "@/utils/enums";
 
 export const PUBLIC_USER_COLUMNS = { id: true, username: true, name: true, image: true } as const;
+
+/**
+ * Whether this is the shared read-only demo account (see `modules/demo/service.ts`). Takes
+ * any user shape: Better Auth's session user does not declare the admin plugin's `role`.
+ */
+export const isDemoUser = (member: object | null | undefined): boolean =>
+  (member as { role?: unknown } | null | undefined)?.role === UserRole.Demo;
+
+/** SQL filter keeping the demo account out of member lists, searches and matches */
+export const notDemo = (roleColumn: SQL | unknown = user.role): SQL =>
+  sql`${roleColumn} is distinct from ${UserRole.Demo}`;
 
 export type PublicUser = {
   id: string;
@@ -14,13 +26,16 @@ export type PublicUser = {
   image: string | null;
 };
 
-/** Resolve a username to the row, or 404 */
-export const requireUser = async (username: string) => {
+/**
+ * Resolve a username to the row, or 404. The demo account resolves only for itself: to anyone
+ * else it does not exist (its library is private on top, like any member's can be)
+ */
+export const requireUser = async (username: string, viewerId: string | null = null) => {
   const row = await db.query.user.findFirst({
     where: { username },
-    columns: { id: true, username: true, name: true, image: true, listPublic: true },
+    columns: { id: true, username: true, name: true, image: true, listPublic: true, role: true },
   });
-  if (!row) throw new NotFoundError("User not found");
+  if (!row || (isDemoUser(row) && row.id !== viewerId)) throw new NotFoundError("User not found");
   return row;
 };
 
