@@ -29,14 +29,18 @@ export abstract class DemoService {
    */
   static async signIn(): Promise<{ cookies: string[] }> {
     if (!demoUsername || !demoPassword) throw new NotFoundError("The demo is not available");
-    const { headers, response } = await auth.api.signInUsername({
-      body: { username: demoUsername, password: demoPassword },
-      returnHeaders: true,
-    });
-    if (!response || !isDemoUser(response.user)) {
-      // Misconfigured: the account exists but is a member's; never hand out its session
+    const signedIn = await auth.api
+      .signInUsername({
+        body: { username: demoUsername, password: demoPassword },
+        returnHeaders: true,
+      })
+      // No such account yet, or another password: the environment is set but the account is not
+      .catch(() => null);
+    if (!signedIn?.response || !isDemoUser(signedIn.response.user)) {
+      // Not set up (see scripts/demo-account.ts), or the name is a member's: never hand out a session
       throw new ServiceUnavailableError("The demo account is not set up");
     }
+    const { headers, response } = signedIn;
     await db
       .update(session)
       .set({ expiresAt: new Date(Date.now() + DEMO_SESSION_MS) })

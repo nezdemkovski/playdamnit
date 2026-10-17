@@ -6,6 +6,7 @@ import { Client } from "pg";
 import { Elysia } from "elysia";
 import { UserGameStatus } from "@playdamnit/db/enums";
 import { ApiErrorCode, ConnectionKind, HttpHeader, HttpMethod, MimeType } from "@/utils/enums";
+import { AppError } from "@/utils/errors";
 
 const TEST_URL = process.env.TEST_POSTGRES_URL;
 // Set by tests/setup.ts
@@ -94,6 +95,12 @@ describe.skipIf(!TEST_URL)("demo account (integration)", () => {
     const { meRoutes } = await import("@/routes/me");
     const { userSocialRoutes } = await import("@/routes/user/[username]/social");
     app = new Elysia()
+      // The status mapping src/index.ts gives AppErrors, so the routes answer as they do live
+      .error(({ error, status }) =>
+        error instanceof AppError
+          ? status(error.statusCode, { error: error.errorType, message: error.message })
+          : undefined,
+      )
       .use(betterAuth)
       .group("/api", (api) => api.use(demoRoutes).use(meRoutes).use(userSocialRoutes));
 
@@ -136,6 +143,16 @@ describe.skipIf(!TEST_URL)("demo account (integration)", () => {
       [demoId],
     );
     expect(rows[0]).toEqual({ role: "demo", list_public: false, email_verified: true });
+  });
+
+  test("answers 503, not 500, while the account is missing", async () => {
+    await pg.query(`update "user" set username = 'demo_parked' where id = $1`, [demoId]);
+    try {
+      const res = await call(HttpMethod.Post, "/api/demo/session");
+      expect(res.status).toBe(503);
+    } finally {
+      await pg.query(`update "user" set username = 'demo' where id = $1`, [demoId]);
+    }
   });
 
   test("hands out a day-long session of the demo account", async () => {
