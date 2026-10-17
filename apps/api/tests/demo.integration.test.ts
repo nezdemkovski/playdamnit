@@ -151,12 +151,11 @@ describe.skipIf(!TEST_URL)("demo account (integration)", () => {
     expect(body.id).toBe(demoId);
     expect(body.demo).toBe(true);
 
-    const { rows } = await pg.query(
-      `select extract(epoch from (expires_at - now())) as seconds from session where user_id = $1`,
-      [demoId],
-    );
-    expect(Number(rows[0].seconds)).toBeLessThanOrEqual(24 * 60 * 60);
-    expect(Number(rows[0].seconds)).toBeGreaterThan(23 * 60 * 60);
+    // Measured against this clock, which set it: the database's may drift (a container's does)
+    const { rows } = await pg.query(`select expires_at from session where user_id = $1`, [demoId]);
+    const seconds = (new Date(rows[0].expires_at).getTime() - Date.now()) / 1000;
+    expect(seconds).toBeLessThanOrEqual(24 * 60 * 60);
+    expect(seconds).toBeGreaterThan(23 * 60 * 60);
   });
 
   test("refuses every write of the API with DEMO_READ_ONLY, and still reads", async () => {
@@ -212,6 +211,16 @@ describe.skipIf(!TEST_URL)("demo account (integration)", () => {
     expect(own.id).toBe(demoId);
 
     await expect(UserService.follow("mia", DEMO_USERNAME)).rejects.toThrow("User not found");
+
+    // Its own library, overview and journal read as any member's do; to others they are not there
+    const { UserGameService } = await import("@/modules/userGame/service");
+    const mine = await UserGameService.getUserGames(DEMO_USERNAME, { viewerId: demoId });
+    expect(mine.results.length).toBe(GAMES.length);
+    expect((await UserGameService.getOverview(DEMO_USERNAME, demoId)).private).toBeFalsy();
+    expect((await UserService.journal(DEMO_USERNAME, demoId, {})).private).toBeFalsy();
+    await expect(UserGameService.getUserGames(DEMO_USERNAME, { viewerId: "mia" })).rejects.toThrow(
+      "User not found",
+    );
 
     const followers = await UserService.connections("mia", ConnectionKind.Followers, {
       limit: 50,

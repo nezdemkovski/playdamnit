@@ -273,7 +273,7 @@ export abstract class UserGameService {
       sort?: LibrarySort;
     } = {},
   ) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, opts.viewerId ?? null);
     if (!canSeeList(userData, opts.viewerId ?? null)) {
       throw new ForbiddenError("This list is private");
     }
@@ -332,7 +332,7 @@ export abstract class UserGameService {
       graded?: boolean;
     } = {},
   ) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, viewerId);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
@@ -362,7 +362,7 @@ export abstract class UserGameService {
    * ungraded by when they were added). A private list comes back empty with `private: true`.
    */
   static async getOverview(username: string, viewerId: string | null) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) {
       return {
         private: true,
@@ -419,7 +419,7 @@ export abstract class UserGameService {
 
   /** One entry in full, review included, as the library list serves it */
   static async getEntry(username: string, gameId: number, viewerId: string | null) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, viewerId);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
@@ -577,7 +577,7 @@ export abstract class UserGameService {
   }
 
   static async listPlaythroughs(username: string, gameId: number, viewerId: string | null) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
     const rows = await postgresDb.query.playthrough.findMany({
       where: { userId: owner.id, gameId },

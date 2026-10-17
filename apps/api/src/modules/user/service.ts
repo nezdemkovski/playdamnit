@@ -497,7 +497,7 @@ export abstract class UserService {
     viewerId: string | null,
     opts: { days?: number; tz?: string },
   ) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
     const tz = safeZone(opts.tz);
     const span = opts.days ?? ACTIVITY_DAYS;
@@ -565,7 +565,7 @@ export abstract class UserService {
 
   /** Journal: playthroughs plus finished/dropped entries without one, newest first */
   static async journal(username: string, viewerId: string | null, opts: { year?: number }) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) return { results: [], private: true };
 
     const [runs, entries] = await Promise.all([
@@ -655,7 +655,13 @@ export abstract class UserService {
   }
 
   static async avatar(username: string) {
-    const owner = await requireUser(username);
+    // Not requireUser: the picture's URL reaches only whoever may see the profile (the demo's
+    // own, for the demo), and the file itself gives nothing away
+    const owner = await postgresDb.query.user.findFirst({
+      where: { username },
+      columns: { id: true },
+    });
+    if (!owner) throw new NotFoundError("User not found");
     const row = await postgresDb.query.userAvatar.findFirst({ where: { userId: owner.id } });
     if (!row) throw new NotFoundError("No avatar");
     return row;
