@@ -1,3 +1,5 @@
+import { ContentActions } from "@/components/social/content-actions";
+import { ContentKind } from "@playdamnit/api-client";
 import { useGetApiListsById, type Game } from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -123,6 +125,9 @@ function ListPage() {
               <Markdown className="mt-3 max-w-2xl text-white/80">{data.description}</Markdown>
             )}
           </div>
+          {!isOwn && data.user && (
+            <ContentActions kind={ContentKind.List} targetId={id} authorId={data.user.id} />
+          )}
           {isOwn && (
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>

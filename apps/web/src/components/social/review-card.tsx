@@ -1,3 +1,5 @@
+import { ContentActions } from "./content-actions";
+import { ContentKind } from "@playdamnit/api-client";
 import { PutApiReviewsByIdReactionBodyEmoji, type Review } from "@playdamnit/api-client";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { EyeOffIcon, SmilePlusIcon, TrophyIcon } from "lucide-react";
@@ -33,6 +35,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
   const { toggle, isPending } = useReviewReaction();
   const [revealed, setRevealed] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const hidden = review.spoilers && !revealed;
   const username = review.user.username ?? "";
 
@@ -42,6 +45,7 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
     toggle(review.id, review.gameId, emoji, review.myReaction);
   };
 
+  if (blocked) return null;
   return (
     <article className={cn("panel p-4 sm:p-5", className)}>
       <div className="flex gap-4">
@@ -57,6 +61,12 @@ export function ReviewCard({ review, withGame, className }: ReviewCardProps) {
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-3">
+            <ContentActions
+              kind={ContentKind.Review}
+              targetId={review.id}
+              authorId={review.user.id}
+              didBlock={() => setBlocked(true)}
+            />
             <Link to="/$username" params={{ username }} className="shrink-0">
               <UserAvatar user={review.user} className="size-10" />
             </Link>

@@ -6,6 +6,8 @@ import * as schema from "./schema";
 // Better Auth's adapter uses the plain query builder.
 export const relations = defineRelations(
   {
+    userBlock: schema.userBlock,
+    contentReport: schema.contentReport,
     user: schema.user,
     session: schema.session,
     account: schema.account,

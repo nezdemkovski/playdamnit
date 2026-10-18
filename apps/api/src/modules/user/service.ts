@@ -1,3 +1,5 @@
+import { visibleAuthor, requireVisibleAuthor } from "@/modules/moderation/visibility";
+import { checkPublicText } from "@/modules/moderation/filter";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
@@ -12,7 +14,7 @@ import {
   userFollows,
   userGames,
 } from "@playdamnit/db/schema";
-import { NotificationType, UserGameStatus } from "@playdamnit/db/enums";
+import { MemberRole, NotificationType, UserGameStatus } from "@playdamnit/db/enums";
 import { BadRequestError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import {
   ActivityAction,
@@ -103,6 +105,8 @@ export abstract class UserService {
     if (!data) {
       throw new NotFoundError("User not found");
     }
+
+    await requireVisibleAuthor(data.id, viewerId);
 
     // "This year" is the UTC calendar year (ended_at is kept in UTC), the same for every client
     const year = new Date().getUTCFullYear();
@@ -234,6 +238,7 @@ export abstract class UserService {
 
     return {
       id: userData.id,
+      isModerator: userData.role === MemberRole.Admin,
       username: userData.username,
       email: userData.email,
       name: userData.name,
@@ -251,6 +256,7 @@ export abstract class UserService {
     userId: string,
     input: { bio?: string | null; links?: string[]; listPublic?: boolean },
   ) {
+    checkPublicText(input.bio);
     if (input.bio && input.bio.length > MAX_BIO) {
       throw new BadRequestError(`Bio must be at most ${MAX_BIO} characters`);
     }
@@ -289,7 +295,10 @@ export abstract class UserService {
     viewerId: string | null;
   }) {
     const q = opts.q?.trim();
-    const where = q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined;
+    const where = and(
+      visibleAuthor(user.id, opts.viewerId),
+      q ? or(ilike(user.username, `%${q}%`), ilike(user.name, `%${q}%`)) : undefined,
+    );
     const sort = opts.sort ?? UserSort.Games;
     const order =
       sort === UserSort.Followers
@@ -332,7 +341,7 @@ export abstract class UserService {
   }
 
   static async follow(followerId: string, username: string) {
-    const target = await requireUser(username);
+    const target = await requireUser(username, followerId);
     if (target.id === followerId) throw new BadRequestError("You can't follow yourself");
     await postgresDb
       .insert(userFollows)
@@ -343,7 +352,7 @@ export abstract class UserService {
   }
 
   static async unfollow(followerId: string, username: string) {
-    const target = await requireUser(username);
+    const target = await requireUser(username, followerId);
     await postgresDb
       .delete(userFollows)
       .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, target.id)));
@@ -355,10 +364,13 @@ export abstract class UserService {
     kind: ConnectionKind,
     opts: { limit: number; offset: number; viewerId: string | null },
   ) {
-    const target = await requireUser(username);
+    const target = await requireUser(username, opts.viewerId);
     const followers = kind === ConnectionKind.Followers;
     const where = (t: Pick<typeof userFollows, "followerId" | "followingId">) => {
-      return eq(followers ? t.followingId : t.followerId, target.id);
+      return and(
+        eq(followers ? t.followingId : t.followerId, target.id),
+        visibleAuthor(followers ? t.followerId : t.followingId, opts.viewerId),
+      )!;
     };
     const [rows, [{ total }]] = await Promise.all([
       postgresDb.query.userFollows.findMany({
@@ -391,14 +403,20 @@ export abstract class UserService {
     const [{ unread }] = await postgresDb
       .select({ unread: count() })
       .from(notification)
-      .where(and(eq(notification.userId, userId), sql`${notification.readAt} is null`));
+      .where(
+        and(
+          eq(notification.userId, userId),
+          visibleAuthor(notification.actorId, userId),
+          sql`${notification.readAt} is null`,
+        ),
+      );
     return { unread: Number(unread) };
   }
 
   static async notifications(userId: string, opts: { limit: number }) {
     const [rows, [{ unread }]] = await Promise.all([
       postgresDb.query.notification.findMany({
-        where: { userId },
+        where: { userId, RAW: (t) => visibleAuthor(t.actorId, userId) },
         orderBy: { createdAt: "desc" },
         limit: opts.limit,
         with: {
@@ -409,7 +427,13 @@ export abstract class UserService {
       postgresDb
         .select({ unread: count() })
         .from(notification)
-        .where(and(eq(notification.userId, userId), sql`${notification.readAt} is null`)),
+        .where(
+          and(
+            eq(notification.userId, userId),
+            visibleAuthor(notification.actorId, userId),
+            sql`${notification.readAt} is null`,
+          ),
+        ),
     ]);
     return {
       results: rows.map((row) => ({
@@ -437,7 +461,13 @@ export abstract class UserService {
     await postgresDb
       .update(notification)
       .set({ readAt: new Date() })
-      .where(and(eq(notification.userId, userId), sql`${notification.readAt} is null`));
+      .where(
+        and(
+          eq(notification.userId, userId),
+          visibleAuthor(notification.actorId, userId),
+          sql`${notification.readAt} is null`,
+        ),
+      );
     return { ok: true };
   }
 
@@ -446,7 +476,7 @@ export abstract class UserService {
     const rows = await postgresDb.query.userGames.findMany({
       where: {
         RAW: (t) =>
-          sql`${t.userId} in (select ${userFollows.followingId} from ${userFollows} where ${userFollows.followerId} = ${userId}) and exists (select 1 from ${user} where ${user.id} = ${t.userId} and ${user.listPublic})`,
+          sql`${t.userId} in (select ${userFollows.followingId} from ${userFollows} where ${userFollows.followerId} = ${userId}) and exists (select 1 from ${user} where ${user.id} = ${t.userId} and ${user.listPublic}) and ${visibleAuthor(t.userId, userId)}`,
       },
       orderBy: { updatedAt: "desc" },
       limit: opts.limit,
@@ -483,7 +513,7 @@ export abstract class UserService {
     viewerId: string | null,
     opts: { days?: number; tz?: string },
   ) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
     const tz = safeZone(opts.tz);
     const span = opts.days ?? ACTIVITY_DAYS;
@@ -551,7 +581,7 @@ export abstract class UserService {
 
   /** Journal: playthroughs plus finished/dropped entries without one, newest first */
   static async journal(username: string, viewerId: string | null, opts: { year?: number }) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) return { results: [], private: true };
 
     const [runs, entries] = await Promise.all([

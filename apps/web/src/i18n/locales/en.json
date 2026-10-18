@@ -756,5 +756,61 @@
     "syncNow": "Sync now",
     "open": "Open on Steam",
     "friends": "Steam friends"
+  },
+  "safety": {
+    "actions": "More actions",
+    "report": "Report",
+    "block": "Block user",
+    "blockText": "You won’t see each other’s profiles or content. You can undo this in Settings.",
+    "unblock": "Unblock",
+    "blocked": "Blocked users",
+    "sent": "Report sent",
+    "failed": "Couldn’t save this change",
+    "abuse": "Harassment or threats",
+    "hate": "Hateful content",
+    "sexual": "Sexual content",
+    "spam": "Spam",
+    "other": "Other",
+    "queue": "Reports",
+    "dismiss": "Dismiss report",
+    "remove": "Remove content",
+    "ban": "Suspend account",
+    "banText": "This hides their content for everyone and revokes their sessions.",
+    "deletionEmail": "Check your email to confirm deletion",
+    "retry": "Try again"
+  },
+  "moderation": {
+    "title": "Moderation",
+    "restricted": "Administrator access required",
+    "deletedAccount": "Deleted account",
+    "queue": "Queue",
+    "history": "History",
+    "suspended": "Suspended accounts",
+    "refresh": "Refresh",
+    "saved": "Saved",
+    "emptyQueue": "No pending reports",
+    "emptyHistory": "No decisions yet",
+    "emptySuspended": "No suspended accounts",
+    "reportedBy": "Reported by",
+    "resolvedBy": "Reviewed by",
+    "openContent": "Open list",
+    "until": "Until {{date}}",
+    "restore": "Restore access",
+    "restoreText": "This account will be visible again. The member must sign in again; old sessions stay revoked.",
+    "removeText": "Remove this reported review or list from the service? A review’s library entry stays in place.",
+    "pagination": "Moderation pages",
+    "previous": "Previous",
+    "next": "Next",
+    "kind": {
+      "user": "Profile",
+      "review": "Review",
+      "list": "List"
+    },
+    "status": {
+      "dismissed": "Dismissed",
+      "removed": "Removed",
+      "banned": "Suspended",
+      "pending": "Pending"
+    }
   }
 }

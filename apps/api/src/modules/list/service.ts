@@ -1,3 +1,5 @@
+import { requireVisibleAuthor } from "@/modules/moderation/visibility";
+import { checkPublicText } from "@/modules/moderation/filter";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
@@ -52,6 +54,7 @@ const summary = (
 /** Custom, ordered collections of games ("Top 10 of 2025", "Cozy games") */
 export abstract class ListService {
   static async forUser(userId: string, viewerId: string | null) {
+    await requireVisibleAuthor(userId, viewerId);
     const rows = await db.query.gameList.findMany({
       where: { userId, ...(userId !== viewerId && { isPublic: true }) },
       orderBy: { updatedAt: "desc" },
@@ -78,6 +81,7 @@ export abstract class ListService {
     });
     if (!list || (!list.isPublic && list.userId !== viewerId))
       throw new NotFoundError("List not found");
+    await requireVisibleAuthor(list.userId, viewerId);
     return {
       ...summary(list, list.items.length),
       games: list.items.map((item) => ({
@@ -89,6 +93,7 @@ export abstract class ListService {
   }
 
   static async create(userId: string, input: ListInput) {
+    checkPublicText(input.name, input.description);
     const [created] = await db
       .insert(gameList)
       .values({
@@ -109,6 +114,7 @@ export abstract class ListService {
   }
 
   static async update(listId: string, userId: string, input: Partial<ListInput>) {
+    checkPublicText(input.name, input.description);
     await ListService.own(listId, userId);
     const [updated] = await db
       .update(gameList)

@@ -12,7 +12,7 @@ export const getSteamActivity = new Elysia()
     "/user/:username/steam-activity",
     { viewer: true, params: t.Object({ username: t.String() }) },
     async ({ params, viewer }) => {
-      const owner = await requireUser(params.username);
+      const owner = await requireUser(params.username, viewer?.id ?? null);
       if (!canSeeList(owner, viewer?.id ?? null)) throw new ForbiddenError("This list is private");
       return SteamService.activity(owner.id);
     },

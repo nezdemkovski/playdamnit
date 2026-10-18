@@ -1,3 +1,4 @@
+import { moderationRoutes } from "./moderation";
 import { Elysia } from "elysia";
 
 import { meRoutes } from "./me";
@@ -75,6 +76,7 @@ export const routes = new Elysia()
   .use(exportUserGames)
   .use(importUserGames)
 
+  .use(moderationRoutes)
   .use(reviewRoutes)
   .use(listRoutes)
 

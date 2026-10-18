@@ -9,10 +9,12 @@ import {
   LogOutIcon,
   SearchIcon,
   SettingsIcon,
+  ShieldCheckIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { useGetApiMe } from "@playdamnit/api-client";
 import { useTranslation } from "react-i18next";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -23,6 +25,7 @@ import { RoutePath } from "@/lib/enums";
 
 type To =
   | "/"
+  | "/admin/moderation"
   | "/auth"
   | "/calendar"
   | "/charts"
@@ -105,6 +108,7 @@ export function Sidebar({ onSearch }: SidebarProps) {
   const { t } = useTranslation();
   const { user } = useSession();
   const signOut = useSignOut();
+  const me = useGetApiMe({ query: { enabled: !!user } });
   const unread = useUnreadNotifications(!!user);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const username = user?.username ?? "";
@@ -159,6 +163,14 @@ export function Sidebar({ onSearch }: SidebarProps) {
         params={{ username }}
         active={is(`${profilePath}/settings`)}
       />
+      {me.data?.isModerator && (
+        <RailItem
+          label={t("moderation.title")}
+          icon={ShieldCheckIcon}
+          to="/admin/moderation"
+          active={is("/admin/moderation")}
+        />
+      )}
       <RailItem label={t("nav.signOut")} icon={LogOutIcon} onClick={() => signOut.mutate()} />
     </>
   ) : (

@@ -11,6 +11,77 @@ components:
       name: better-auth.session_token
 
   schemas:
+    ContentKind:
+      type: string
+      enum: [user, review, list]
+      x-enumNames: [User, Review, List]
+    ReportReason:
+      type: string
+      enum: [abuse, hate, sexual, spam, other]
+      x-enumNames: [Abuse, Hate, Sexual, Spam, Other]
+    ModerationAction:
+      type: string
+      enum: [dismissed, removed, banned]
+      x-enumNames: [Dismissed, Removed, Banned]
+    ReportStatus:
+      type: string
+      enum: [pending, dismissed, removed, banned]
+      x-enumNames: [Pending, Dismissed, Removed, Banned]
+    SuspendedUser:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        username: { type: string, nullable: true }
+        image: { type: string, nullable: true }
+        banReason: { type: string, nullable: true }
+        banExpires: { type: string, nullable: true }
+    SafetyReportInput:
+      type: object
+      required: [kind, targetId, reason]
+      properties:
+        kind: { $ref: "#/components/schemas/ContentKind" }
+        targetId: { type: string }
+        reason: { $ref: "#/components/schemas/ReportReason" }
+    BlockedUser:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        username: { type: string, nullable: true }
+        image: { type: string, nullable: true }
+    ModerationReport:
+      type: object
+      required: [id, kind, targetId, reason, context, status, createdAt]
+      properties:
+        id: { type: string }
+        kind: { $ref: "#/components/schemas/ContentKind" }
+        targetId: { type: string }
+        reason: { $ref: "#/components/schemas/ReportReason" }
+        context: { type: string }
+        subjectId: { type: string, nullable: true }
+        reporterId: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/ReportStatus" }
+        subject:
+          allOf: [{ $ref: "#/components/schemas/BlockedUser" }]
+          nullable: true
+        reporter:
+          allOf: [{ $ref: "#/components/schemas/BlockedUser" }]
+          nullable: true
+        resolver:
+          allOf: [{ $ref: "#/components/schemas/BlockedUser" }]
+          nullable: true
+        createdAt: { type: string }
+        resolvedAt: { type: string, nullable: true }
+        resolvedBy: { type: string, nullable: true }
+    SafetySuccess:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+
     BadRequestErrorResponse:
       description: 400 Bad request
       type: object
@@ -1841,6 +1912,8 @@ components:
     UserResponse:
       type: object
       properties:
+        isModerator:
+          type: boolean
         id:
           type: string
         image:
@@ -2235,6 +2308,173 @@ components:
         - details
 
 paths:
+  /api/me/reports:
+    post:
+      operationId: postApiMeReports
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SafetyReportInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetySuccess"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/me/blocks:
+    get:
+      operationId: getApiMeBlocks
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/BlockedUser" }
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/me/blocks/{id}:
+    put:
+      operationId: putApiMeBlocksById
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetySuccess"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+    delete:
+      operationId: deleteApiMeBlocksById
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetySuccess"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/moderation/reports:
+    get:
+      operationId: getApiModerationReports
+      parameters:
+        - in: query
+          name: resolved
+          schema: { type: boolean, default: false }
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, maximum: 100000, default: 0 }
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ModerationReport" }
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/moderation/suspensions:
+    get:
+      operationId: getApiModerationSuspensions
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, maximum: 100000, default: 0 }
+      responses:
+        "200":
+          description: Suspended accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SuspendedUser" }
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/moderation/suspensions/{id}:
+    delete:
+      operationId: deleteApiModerationSuspensionsById
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Account restored; sign-in required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SafetySuccess" }
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
+  /api/moderation/reports/{id}:
+    patch:
+      operationId: patchApiModerationReportsById
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { $ref: "#/components/schemas/ModerationAction" }
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafetySuccess"
+        "401":
+          description: Authentication required
+        "403":
+          description: Forbidden
   /api/me:
     patch:
       operationId: patchApiMe

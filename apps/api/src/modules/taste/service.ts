@@ -1,3 +1,4 @@
+import { visibleAuthor } from "@/modules/moderation/visibility";
 import { sql } from "drizzle-orm";
 import { user, userGames } from "@playdamnit/db/schema";
 
@@ -40,7 +41,7 @@ export class TasteService {
         from ${userGames} theirs
         join mine on mine.game_id = theirs.game_id
         join ${user} on ${user.id} = theirs.user_id and ${user.listPublic}
-        where theirs.user_id <> ${viewerId} and theirs.rating > 0
+        where theirs.user_id <> ${viewerId} and theirs.rating > 0 and ${visibleAuthor(sql`theirs.user_id`, viewerId)}
       ),
       scored as (
         select user_id, count(*)::int as shared,

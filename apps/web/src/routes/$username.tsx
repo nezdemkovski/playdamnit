@@ -1,3 +1,5 @@
+import { ContentActions } from "@/components/social/content-actions";
+import { ContentKind } from "@playdamnit/api-client";
 import { useGetApiUserByUsername } from "@playdamnit/api-client";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
@@ -118,7 +120,10 @@ function ProfileLayout() {
                   </Button>
                 </>
               ) : (
-                <FollowButton username={user.username} isFollowing={user.isFollowing} />
+                <>
+                  <FollowButton username={user.username} isFollowing={user.isFollowing} />
+                  <ContentActions kind={ContentKind.User} targetId={user.id} authorId={user.id} />
+                </>
               )}
             </div>
           </div>

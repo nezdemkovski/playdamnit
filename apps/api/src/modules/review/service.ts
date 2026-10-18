@@ -1,3 +1,4 @@
+import { requireVisibleAuthor } from "@/modules/moderation/visibility";
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
@@ -126,6 +127,7 @@ export abstract class ReviewService {
       columns: { userId: true, gameId: true, allowReactions: true },
     });
     if (!entry) throw new NotFoundError("Review not found");
+    await requireVisibleAuthor(entry.userId, userId);
     if (!entry.allowReactions) throw new ForbiddenError("The author turned reactions off");
     await db
       .insert(reviewReaction)

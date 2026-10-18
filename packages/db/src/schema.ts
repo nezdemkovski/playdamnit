@@ -20,6 +20,9 @@ import {
 import { sql } from "drizzle-orm";
 
 import {
+  ContentKind,
+  ReportReason,
+  ReportStatus,
   enumValues,
   ImageSource,
   NotificationType,
@@ -823,3 +826,48 @@ export const catalogDirty = pgTable("catalog_dirty", {
   reason: text("reason").notNull(),
   markedAt: timestamp("marked_at").defaultNow().notNull(),
 });
+
+// Blocking is directional; visibility checks both directions. No self-blocks.
+export const userBlock = pgTable(
+  "user_block",
+  {
+    blockerId: text("blocker_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    blockedId: text("blocked_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    index("user_block_blocked_idx").on(t.blockedId),
+    check("user_block_not_self", sql`${t.blockerId} <> ${t.blockedId}`),
+  ],
+);
+
+export const contentReport = pgTable(
+  "content_report",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    reporterId: text("reporter_id").references(() => user.id, { onDelete: "set null" }),
+    subjectId: text("subject_id").references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: enumValues(ContentKind) }).notNull(),
+    targetId: text("target_id").notNull(),
+    reason: text("reason", { enum: enumValues(ReportReason) }).notNull(),
+    // Bounded context for the moderator; not public and not a copy of the whole account.
+    context: text("context").notNull(),
+    status: text("status", { enum: enumValues(ReportStatus) })
+      .default(ReportStatus.Pending)
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    resolvedAt: timestamp("resolved_at"),
+    resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }),
+  },
+  (t) => [
+    unique("content_report_once").on(t.reporterId, t.kind, t.targetId),
+    index("content_report_queue_idx").on(t.status, t.createdAt),
+    index("content_report_subject_idx").on(t.subjectId),
+    index("content_report_resolved_by_idx").on(t.resolvedBy),
+  ],
+);

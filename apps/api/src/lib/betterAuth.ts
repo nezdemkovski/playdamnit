@@ -8,8 +8,10 @@ export const UNAUTHORIZED = { error: "Unauthorized", message: "Authentication re
 export const betterAuth = new Elysia({ name: "better-auth" }).macro({
   auth: {
     async derive({ status, request: { headers } }) {
+      // Observe revoked sessions immediately on protected endpoints, including moderator bans.
       const session = await auth.api.getSession({
         headers,
+        query: { disableCookieCache: true },
       });
 
       if (!session) return status(401, UNAUTHORIZED);

@@ -1,3 +1,4 @@
+import { visibleAuthor, requireVisibleAuthor } from "@/modules/moderation/visibility";
 import { and, eq, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
@@ -15,12 +16,13 @@ export type PublicUser = {
 };
 
 /** Resolve a username to the row, or 404. */
-export const requireUser = async (username: string) => {
+export const requireUser = async (username: string, viewerId: string | null = null) => {
   const row = await db.query.user.findFirst({
     where: { username },
     columns: { id: true, username: true, name: true, image: true, listPublic: true },
   });
   if (!row) throw new NotFoundError("User not found");
+  await requireVisibleAuthor(row.id, viewerId);
   return row;
 };
 
@@ -30,9 +32,12 @@ export const canSeeList = (owner: { id: string; listPublic: boolean }, viewerId:
 
 /** SQL filter for library rows the viewer may see: public lists plus the viewer's own */
 export const visibleToViewer = (userIdColumn: SQL | unknown, viewerId: string | null): SQL =>
-  viewerId
-    ? sql`(exists (select 1 from ${user} where ${user.id} = ${userIdColumn} and ${user.listPublic}) or ${userIdColumn} = ${viewerId})`
-    : sql`exists (select 1 from ${user} where ${user.id} = ${userIdColumn} and ${user.listPublic})`;
+  and(
+    visibleAuthor(userIdColumn, viewerId),
+    viewerId
+      ? sql`(exists (select 1 from ${user} where ${user.id} = ${userIdColumn} and ${user.listPublic}) or ${userIdColumn} = ${viewerId})`
+      : sql`exists (select 1 from ${user} where ${user.id} = ${userIdColumn} and ${user.listPublic})`,
+  )!;
 
 export const isFollowing = async (followerId: string | null, followingId: string) => {
   if (!followerId || followerId === followingId) return false;
@@ -63,6 +68,12 @@ export const notify = async (input: {
   emoji?: string | null;
 }) => {
   if (input.userId === input.actorId) return;
+  try {
+    await requireVisibleAuthor(input.actorId, input.userId);
+  } catch (error) {
+    if (error instanceof NotFoundError) return;
+    throw error;
+  }
   // Don't stack the same notification (a follow/unfollow/follow dance, repeated likes)
   await db
     .delete(notification)

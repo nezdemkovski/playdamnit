@@ -1,3 +1,4 @@
+import { checkPublicText } from "@/modules/moderation/filter";
 import { and, count, eq, inArray, sql, type SQL } from "drizzle-orm";
 
 import { db as postgresDb } from "@/db/postgres";
@@ -273,7 +274,7 @@ export abstract class UserGameService {
       sort?: LibrarySort;
     } = {},
   ) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, opts.viewerId ?? null);
     if (!canSeeList(userData, opts.viewerId ?? null)) {
       throw new ForbiddenError("This list is private");
     }
@@ -332,7 +333,7 @@ export abstract class UserGameService {
       graded?: boolean;
     } = {},
   ) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, viewerId);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
@@ -362,7 +363,7 @@ export abstract class UserGameService {
    * ungraded by when they were added). A private list comes back empty with `private: true`.
    */
   static async getOverview(username: string, viewerId: string | null) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) {
       return {
         private: true,
@@ -419,7 +420,7 @@ export abstract class UserGameService {
 
   /** One entry in full, review included, as the library list serves it */
   static async getEntry(username: string, gameId: number, viewerId: string | null) {
-    const userData = await requireUser(username);
+    const userData = await requireUser(username, viewerId);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
@@ -432,6 +433,7 @@ export abstract class UserGameService {
    * Add a game to the user's library, fetching it from IGDB if the catalog lacks it
    */
   static async addUserGame(userId: string, gameId: number, input: UserGameInput) {
+    checkPublicText(input.review);
     const { available } = await ensureGamesInCatalog([gameId]);
     if (!available.has(gameId)) {
       throw new NotFoundError("Game not found");
@@ -493,6 +495,7 @@ export abstract class UserGameService {
    * Update a library entry
    */
   static async updateUserGame(userId: string, gameId: number, input: Partial<UserGameInput>) {
+    checkPublicText(input.review);
     if (Object.keys(input).length === 0) {
       throw new BadRequestError("At least one field must be provided");
     }
@@ -577,7 +580,7 @@ export abstract class UserGameService {
   }
 
   static async listPlaythroughs(username: string, gameId: number, viewerId: string | null) {
-    const owner = await requireUser(username);
+    const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
     const rows = await postgresDb.query.playthrough.findMany({
       where: { userId: owner.id, gameId },
@@ -782,6 +785,12 @@ export abstract class UserGameService {
         continue;
       }
 
+      try {
+        checkPublicText(value.review);
+      } catch {
+        errorGames.push({ gameId, error: "This review cannot be published" });
+        continue;
+      }
       toWrite.push({
         userId,
         gameId,

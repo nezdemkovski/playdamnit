@@ -49,7 +49,7 @@ export const userSocialRoutes = new Elysia()
     { viewer: true, params, query: page },
     async ({ params, query, viewer }) => {
       const viewerId = viewer?.id ?? null;
-      const owner = await requireUser(params.username);
+      const owner = await requireUser(params.username, viewer?.id ?? null);
       if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
       return ReviewService.list({
         userId: owner.id,
@@ -74,13 +74,13 @@ export const userSocialRoutes = new Elysia()
     "/user/:username/likes",
     { viewer: true, params, query: page },
     async ({ params, query, viewer }) => {
-      const owner = await requireUser(params.username);
+      const owner = await requireUser(params.username, viewer?.id ?? null);
       if (!canSeeList(owner, viewer?.id ?? null)) throw new ForbiddenError("This list is private");
       return GameService.likedBy(owner.id, { limit: query.limit ?? 40, offset: query.offset ?? 0 });
     },
   )
   .get("/user/:username/lists", { viewer: true, params }, async ({ params, viewer }) => {
-    const owner = await requireUser(params.username);
+    const owner = await requireUser(params.username, viewer?.id ?? null);
     return ListService.forUser(owner.id, viewer?.id ?? null);
   })
   .post(

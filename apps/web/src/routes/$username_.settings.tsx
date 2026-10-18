@@ -1,4 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useGetApiMe } from "@playdamnit/api-client";
+import { Button } from "@/components/ui/button";
+import { SafetySettings } from "@/components/settings/safety-settings";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { DatabaseIcon, FingerprintIcon, KeyRoundIcon, UserIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +24,7 @@ function SettingsPage() {
   const { username } = Route.useParams();
   const { user, isLoading } = useSession();
   const navigate = useNavigate();
+  const me = useGetApiMe({ query: { enabled: !!user } });
   const isOwn = !!user?.username && user.username.toLowerCase() === username.toLowerCase();
 
   // Settings belong to the signed-in user: guests go to sign-in, others to their own page
@@ -39,7 +43,14 @@ function SettingsPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+        {me.data?.isModerator && (
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/moderation">{t("moderation.title")}</Link>
+          </Button>
+        )}
+      </div>
       <p className="mt-1 text-sm text-dimmed">{t("settings.subtitle")}</p>
 
       <Tabs defaultValue={SettingsTab.Profile} className="mt-6">
@@ -62,6 +73,7 @@ function SettingsPage() {
         </TabsContent>
         <TabsContent value={SettingsTab.Account} className="mt-8">
           <PasswordForm user={user} />
+          <SafetySettings />
         </TabsContent>
         <TabsContent value={SettingsTab.Passkeys} className="mt-8">
           <PasskeySettings />

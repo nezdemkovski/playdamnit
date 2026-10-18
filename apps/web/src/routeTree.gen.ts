@@ -29,6 +29,7 @@ import { Route as UsernameLikesRouteImport } from './routes/$username.likes'
 import { Route as UsernameListsRouteImport } from './routes/$username.lists'
 import { Route as UsernameReviewsRouteImport } from './routes/$username.reviews'
 import { Route as UsernameSettingsRouteImport } from './routes/$username_.settings'
+import { Route as AdminModerationRouteImport } from './routes/admin.moderation'
 import { Route as GamesIdRouteImport } from './routes/games.$id'
 import { Route as ListsIdRouteImport } from './routes/lists.$id'
 
@@ -132,6 +133,11 @@ const UsernameSettingsRoute = UsernameSettingsRouteImport.update({
   path: '/$username/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminModerationRoute = AdminModerationRouteImport.update({
+  id: '/admin/moderation',
+  path: '/admin/moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GamesIdRoute = GamesIdRouteImport.update({
   id: '/games/$id',
   path: '/games/$id',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
   '/$username/settings': typeof UsernameSettingsRoute
+  '/admin/moderation': typeof AdminModerationRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
   '/$username/': typeof UsernameIndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
   '/$username/settings': typeof UsernameSettingsRoute
+  '/admin/moderation': typeof AdminModerationRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
   '/$username': typeof UsernameIndexRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/$username/lists': typeof UsernameListsRoute
   '/$username/reviews': typeof UsernameReviewsRoute
   '/$username_/settings': typeof UsernameSettingsRoute
+  '/admin/moderation': typeof AdminModerationRoute
   '/games/$id': typeof GamesIdRoute
   '/lists/$id': typeof ListsIdRoute
   '/$username/': typeof UsernameIndexRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/$username/lists'
     | '/$username/reviews'
     | '/$username/settings'
+    | '/admin/moderation'
     | '/games/$id'
     | '/lists/$id'
     | '/$username/'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/$username/lists'
     | '/$username/reviews'
     | '/$username/settings'
+    | '/admin/moderation'
     | '/games/$id'
     | '/lists/$id'
     | '/$username'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/$username/lists'
     | '/$username/reviews'
     | '/$username_/settings'
+    | '/admin/moderation'
     | '/games/$id'
     | '/lists/$id'
     | '/$username/'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   UsernameSettingsRoute: typeof UsernameSettingsRoute
+  AdminModerationRoute: typeof AdminModerationRoute
   GamesIdRoute: typeof GamesIdRoute
   ListsIdRoute: typeof ListsIdRoute
 }
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsernameSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/moderation': {
+      id: '/admin/moderation'
+      path: '/admin/moderation'
+      fullPath: '/admin/moderation'
+      preLoaderRoute: typeof AdminModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/games/$id': {
       id: '/games/$id'
       path: '/games/$id'
@@ -504,6 +524,7 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   UsernameSettingsRoute: UsernameSettingsRoute,
+  AdminModerationRoute: AdminModerationRoute,
   GamesIdRoute: GamesIdRoute,
   ListsIdRoute: ListsIdRoute,
 }

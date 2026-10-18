@@ -80,3 +80,28 @@ export enum ReleaseDatePrecision {
 export enum PgErrorCode {
   UniqueViolation = "23505",
 }
+
+/** Public contributions that can be reported. */
+export enum ContentKind {
+  User = "user",
+  Review = "review",
+  List = "list",
+}
+export enum ReportReason {
+  Abuse = "abuse",
+  Hate = "hate",
+  Sexual = "sexual",
+  Spam = "spam",
+  Other = "other",
+}
+export enum ReportStatus {
+  Pending = "pending",
+  Dismissed = "dismissed",
+  Removed = "removed",
+  Banned = "banned",
+}
+
+export enum MemberRole {
+  User = "user",
+  Admin = "admin",
+}
