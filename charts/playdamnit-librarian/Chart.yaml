@@ -2,7 +2,7 @@ apiVersion: v2
 name: playdamnit-librarian
 description: "playdamnit librarian: IGDB mirror worker (pg-boss on Bun)"
 type: application
-version: 0.1.49
-appVersion: "0.1.49"
+version: 0.1.50
+appVersion: "0.1.50"
 annotations:
   org.opencontainers.image.source: https://github.com/nezdemkovski/playdamnit
