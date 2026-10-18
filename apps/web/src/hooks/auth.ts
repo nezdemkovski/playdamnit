@@ -131,8 +131,12 @@ export const useDeleteAccount = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: async (password: string) => unwrap(await authClient.deleteUser({ password })),
-    onSuccess: async () => {
+    mutationFn: async () => unwrap(await authClient.deleteUser()),
+    onSuccess: async (result) => {
+      if (result?.message === "Verification email sent") {
+        toast.success(t("safety.deletionEmail"));
+        return;
+      }
       queryClient.clear();
       toast.success(t("toast.accountDeleted"));
       navigate({ to: "/" });

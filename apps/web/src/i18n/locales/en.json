@@ -624,7 +624,7 @@
       "updatePassword": "Update password",
       "otherSessions": "Other sessions are signed out when the password changes.",
       "deleteTitle": "Delete account",
-      "deleteText": "Your list, reviews, lists, playthroughs, likes and follows are deleted immediately. There is no undo; export your list first if you want to keep it.",
+      "deleteText": "Your account, library and social content will be removed after you confirm the email. Export your library first if you want to keep it.",
       "confirmPassword": "Confirm with your password",
       "deleteButton": "Delete my account",
       "deleteDialogTitle": "Delete @{{username}}?",

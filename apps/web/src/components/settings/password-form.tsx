@@ -28,7 +28,6 @@ export function PasswordForm({ user }: { user: SessionUser }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [email, setEmail] = useState(user.email);
-  const [deletePassword, setDeletePassword] = useState("");
 
   return (
     <div className="space-y-10">
@@ -114,19 +113,9 @@ export function PasswordForm({ user }: { user: SessionUser }) {
       <section className="max-w-sm space-y-4 rounded-card border border-destructive/30 p-5">
         <h3 className="font-semibold text-destructive">{t("settings.account.deleteTitle")}</h3>
         <p className="text-sm text-dimmed">{t("settings.account.deleteText")}</p>
-        <div className="space-y-2">
-          <Label htmlFor="delete-password">{t("settings.account.confirmPassword")}</Label>
-          <Input
-            id="delete-password"
-            type="password"
-            autoComplete="current-password"
-            value={deletePassword}
-            onChange={(e) => setDeletePassword(e.target.value)}
-          />
-        </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" disabled={!deletePassword || deleteAccount.isPending}>
+            <Button variant="destructive" disabled={deleteAccount.isPending}>
               <Trash2Icon /> {t("settings.account.deleteButton")}
             </Button>
           </AlertDialogTrigger>
@@ -143,7 +132,7 @@ export function PasswordForm({ user }: { user: SessionUser }) {
               <AlertDialogCancel>{t("settings.account.keepAccount")}</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-white hover:bg-destructive/90"
-                onClick={() => deleteAccount.mutate(deletePassword)}
+                onClick={() => deleteAccount.mutate()}
               >
                 {t("settings.account.deleteEverything")}
               </AlertDialogAction>

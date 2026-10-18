@@ -1,3 +1,4 @@
+import DeleteAccount, { type DeleteAccountProps } from "./emails/delete-account";
 import { createElement, type ReactElement } from "react";
 import { render } from "react-email";
 
@@ -25,3 +26,6 @@ export const changeEmail = (props: ChangeEmailProps) =>
 
 export const resetPassword = (props: ResetPasswordProps) =>
   rendered("Reset your password", createElement(ResetPassword, props));
+
+export const deleteAccount = (props: DeleteAccountProps) =>
+  rendered("Confirm account deletion", createElement(DeleteAccount, props));

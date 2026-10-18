@@ -1,26 +1,82 @@
 {
   "webcredentials": {
-    "apps": ["DBVKAAM5R6.cloud.nezdemkovski.playdamnit"]
+    "apps": [
+      "DBVKAAM5R6.cloud.nezdemkovski.playdamnit"
+    ]
   },
   "applinks": {
     "details": [
       {
-        "appIDs": ["DBVKAAM5R6.cloud.nezdemkovski.playdamnit"],
+        "appIDs": [
+          "DBVKAAM5R6.cloud.nezdemkovski.playdamnit"
+        ],
         "components": [
-          { "/": "/", "exclude": true },
-          { "/": "/api/auth/verify-email" },
-          { "/": "/api/*", "exclude": true },
-          { "/": "/assets/*", "exclude": true },
-          { "/": "/.well-known/*", "exclude": true },
-          { "/": "/auth", "exclude": true },
-          { "/": "/search", "exclude": true },
-          { "/": "/favicon.ico", "exclude": true },
-          { "/": "/logo.svg", "exclude": true },
-          { "/": "/*/settings", "exclude": true },
-          { "/": "/games/*" },
-          { "/": "/lists/*" },
-          { "/": "/*" },
-          { "/": "/*/*" }
+          {
+            "/": "/privacy",
+            "exclude": true
+          },
+          {
+            "/": "/terms",
+            "exclude": true
+          },
+          {
+            "/": "/support",
+            "exclude": true
+          },
+          {
+            "/": "/",
+            "exclude": true
+          },
+          {
+            "/": "/api/auth/verify-email"
+          },
+          {
+            "/": "/api/auth/delete-user/callback"
+          },
+          {
+            "/": "/api/*",
+            "exclude": true
+          },
+          {
+            "/": "/assets/*",
+            "exclude": true
+          },
+          {
+            "/": "/.well-known/*",
+            "exclude": true
+          },
+          {
+            "/": "/auth",
+            "exclude": true
+          },
+          {
+            "/": "/search",
+            "exclude": true
+          },
+          {
+            "/": "/favicon.ico",
+            "exclude": true
+          },
+          {
+            "/": "/logo.svg",
+            "exclude": true
+          },
+          {
+            "/": "/*/settings",
+            "exclude": true
+          },
+          {
+            "/": "/games/*"
+          },
+          {
+            "/": "/lists/*"
+          },
+          {
+            "/": "/*"
+          },
+          {
+            "/": "/*/*"
+          }
         ]
       }
     ]

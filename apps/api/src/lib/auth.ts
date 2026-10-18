@@ -1,3 +1,4 @@
+import { revokeAppleForDeletion } from "@/modules/user/appleDeletion";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createEmailVerificationToken } from "better-auth/api";
@@ -16,7 +17,7 @@ import {
 } from "@/db/postgres";
 import { getConfig } from "@/config";
 import { isValidUsername, USERNAME_MAX, USERNAME_MIN } from "@/modules/user/username";
-import { changeEmail, resetPassword, verifyEmail } from "@playdamnit/emails";
+import { changeEmail, deleteAccount, resetPassword, verifyEmail } from "@playdamnit/emails";
 
 import { emailEnabled, sendEmail } from "@/utils/email";
 import { Hostname, Origin, SocialProvider } from "@/utils/enums";
@@ -112,8 +113,27 @@ export const auth = betterAuth({
     accountLinking: { trustedProviders: [SocialProvider.Apple], allowDifferentEmails: true },
   },
   user: {
-    // Password-confirmed, immediate; every row that references the user cascades
-    deleteUser: { enabled: true },
+    // An expiring confirmation link also works for Apple/passkey accounts without passwords.
+    // Better Auth consumes the one-time token before deleting the account and its sessions.
+    deleteUser: {
+      enabled: true,
+      deleteTokenExpiresIn: 60 * 60,
+      beforeDelete: async (user) => {
+        await revokeAppleForDeletion(user.id);
+      },
+      ...(emailEnabled && {
+        sendDeleteAccountVerification: async ({ user, url }) => {
+          const apple = await db.query.account.findFirst({
+            where: { userId: user.id, providerId: SocialProvider.Apple },
+            columns: { id: true },
+          });
+          await sendEmail({
+            to: user.email,
+            ...(await deleteAccount({ url, siteUrl, appleConnected: !!apple })),
+          });
+        },
+      }),
+    },
     changeEmail: {
       enabled: true,
       // Without email the new address is applied directly (accounts are never verified then)
