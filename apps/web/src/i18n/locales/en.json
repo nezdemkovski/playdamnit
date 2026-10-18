@@ -33,7 +33,10 @@
   "footer": {
     "copyright": "© {{year}} PlayDamnIt",
     "changelog": "Changelog",
-    "credit": "Game data by <igdb>IGDB</igdb>"
+    "credit": "Game data by <igdb>IGDB</igdb>",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "support": "Support"
   },
   "status": {
     "finished": "Finished",
@@ -193,7 +196,8 @@
     "usernameAvailable": "Available",
     "usernameUnavailable": "Not available",
     "email": "Email",
-    "createAccount": "Create account"
+    "createAccount": "Create account",
+    "termsNotice": "By creating an account, you agree to the <terms>Terms of use</terms> and acknowledge the <privacy>Privacy policy</privacy>."
   },
   "search": {
     "placeholder": "Search games…",

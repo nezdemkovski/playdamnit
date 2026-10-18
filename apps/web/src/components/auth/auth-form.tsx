@@ -1,6 +1,7 @@
 import { FingerprintIcon, Loader2Icon } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,6 +170,15 @@ export function AuthForm() {
               {signUp.isPending && <Loader2Icon className="animate-spin" />}{" "}
               {t("auth.createAccount")}
             </Button>
+            <p className="text-xs leading-5 text-muted-foreground">
+              <Trans
+                i18nKey="auth.termsNotice"
+                components={{
+                  terms: <Link to="/terms" className="underline underline-offset-4" />,
+                  privacy: <Link to="/privacy" className="underline underline-offset-4" />,
+                }}
+              />
+            </p>
           </form>
         </TabsContent>
       </Tabs>

@@ -17,7 +17,10 @@ import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as ChartsRouteImport } from './routes/charts'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as UsernameIndexRouteImport } from './routes/$username.index'
 import { Route as UsernameFriendsRouteImport } from './routes/$username.friends'
 import { Route as UsernameGamesRouteImport } from './routes/$username.games'
@@ -69,9 +72,24 @@ const NotificationsRoute = NotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsernameIndexRoute = UsernameIndexRouteImport.update({
@@ -134,7 +152,10 @@ export interface FileRoutesByFullPath {
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/$username/friends': typeof UsernameFriendsRoute
   '/$username/games': typeof UsernameGamesRoute
   '/$username/journal': typeof UsernameJournalRoute
@@ -154,7 +175,10 @@ export interface FileRoutesByTo {
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/$username/friends': typeof UsernameFriendsRoute
   '/$username/games': typeof UsernameGamesRoute
   '/$username/journal': typeof UsernameJournalRoute
@@ -176,7 +200,10 @@ export interface FileRoutesById {
   '/charts': typeof ChartsRoute
   '/community': typeof CommunityRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
   '/search': typeof SearchRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/$username/friends': typeof UsernameFriendsRoute
   '/$username/games': typeof UsernameGamesRoute
   '/$username/journal': typeof UsernameJournalRoute
@@ -199,7 +226,10 @@ export interface FileRouteTypes {
     | '/charts'
     | '/community'
     | '/notifications'
+    | '/privacy'
     | '/search'
+    | '/support'
+    | '/terms'
     | '/$username/friends'
     | '/$username/games'
     | '/$username/journal'
@@ -219,7 +249,10 @@ export interface FileRouteTypes {
     | '/charts'
     | '/community'
     | '/notifications'
+    | '/privacy'
     | '/search'
+    | '/support'
+    | '/terms'
     | '/$username/friends'
     | '/$username/games'
     | '/$username/journal'
@@ -240,7 +273,10 @@ export interface FileRouteTypes {
     | '/charts'
     | '/community'
     | '/notifications'
+    | '/privacy'
     | '/search'
+    | '/support'
+    | '/terms'
     | '/$username/friends'
     | '/$username/games'
     | '/$username/journal'
@@ -262,7 +298,10 @@ export interface RootRouteChildren {
   ChartsRoute: typeof ChartsRoute
   CommunityRoute: typeof CommunityRoute
   NotificationsRoute: typeof NotificationsRoute
+  PrivacyRoute: typeof PrivacyRoute
   SearchRoute: typeof SearchRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   UsernameSettingsRoute: typeof UsernameSettingsRoute
   GamesIdRoute: typeof GamesIdRoute
   ListsIdRoute: typeof ListsIdRoute
@@ -326,11 +365,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$username/': {
@@ -439,7 +499,10 @@ const rootRouteChildren: RootRouteChildren = {
   ChartsRoute: ChartsRoute,
   CommunityRoute: CommunityRoute,
   NotificationsRoute: NotificationsRoute,
+  PrivacyRoute: PrivacyRoute,
   SearchRoute: SearchRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   UsernameSettingsRoute: UsernameSettingsRoute,
   GamesIdRoute: GamesIdRoute,
   ListsIdRoute: ListsIdRoute,

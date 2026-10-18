@@ -1,0 +1,219 @@
+{
+  "updated": "Last updated: 18 October 2026",
+  "operatorTitle": "Who operates the service",
+  "registration": "Czech sole trader · IČO {{ico}}",
+  "contactTitle": "Contact",
+  "contactText": "For support, privacy requests, or a report about content on the service, email us. Include your username and the relevant link, but never your password, passkey, or verification code.",
+  "privacy": {
+    "title": "Privacy policy",
+    "intro": "This policy explains how Play, damn it! handles personal data across playdamnit.com and the iPhone and iPad app.",
+    "sections": [
+      {
+        "id": "data",
+        "title": "Data we use",
+        "paragraphs": [
+          "Account data includes your email address, username, display name, verification status, sign-in credentials or provider identifiers, and account settings. Passwords are stored as hashes. Passkeys use a public key; their private key stays with your authenticator.",
+          "We store the information you add: your game library, statuses, grades, reviews, playthroughs, notes, lists, reactions, follows, profile bio, links, and uploaded avatar. Some activity and statistics are calculated from those records.",
+          "Sessions and security records can include your IP address, user agent, session identifiers, and timestamps. Diagnostics can include device and app information, an installation identifier, errors, request URLs and search queries, and performance traces.",
+          "We also store personal blocks, content reports, and moderation decisions. Reports are shared with authorized moderators, not published as part of your profile. A report can include a limited copy of the reported content so it can be reviewed."
+        ]
+      },
+      {
+        "id": "purposes",
+        "title": "Why we use it",
+        "paragraphs": [
+          "We process account and library data to provide the service you request, including signing you in, saving your records, displaying profiles, handling imports and exports, suggesting games based on your library, grades, likes, and playtime, and sending account verification, security, and password-reset emails. Where GDPR applies, the basis is performance of our contract with you.",
+          "We use security records and diagnostics to prevent abuse, troubleshoot failures, and keep the service reliable. Where GDPR applies, we rely on our legitimate interests in operating and protecting the service, balanced against your rights. We also process data where necessary to meet a legal obligation. Where a feature requires consent under applicable law, we request it separately; you may withdraw it."
+        ]
+      },
+      {
+        "id": "visibility",
+        "title": "What other people can see",
+        "paragraphs": [
+          "Your profile name, username, bio, links, avatar, and the public content you contribute can be visible to other visitors. Library and list visibility follow the settings and privacy controls shown in the service. Reviews, reactions, and social activity may appear on game pages, profiles, and feeds. Review the controls before adding information you want to keep private.",
+          "We do not publish your account email address or sign-in credentials as part of your public profile. Public information can be copied by other people or indexed by search engines; removing it here cannot remove copies they independently keep."
+        ]
+      },
+      {
+        "id": "features",
+        "title": "Optional connections and features",
+        "paragraphs": [
+          "Sign in with Apple shares the identifiers and profile information you authorize, which can include an Apple private relay email address. Apple handles the native authorization.",
+          "Connecting Steam lets us read the profile and library information exposed by your Steam privacy settings. This can include your Steam ID, display name, avatar, profile URL, game ownership, playtime, and activity. We do not receive your Steam password. You can disconnect Steam in settings; imported records you keep in your library remain until you remove them.",
+          "Game images can load from IGDB/Twitch infrastructure, Steam avatars from Steam infrastructure, and videos from YouTube when you open the video player. Those services receive the network information needed to deliver their content."
+        ]
+      },
+      {
+        "id": "providers",
+        "title": "Service providers and disclosures",
+        "paragraphs": [
+          "We use Sentry for error reporting and performance diagnostics, Resend to deliver account emails, and Cloudflare to route and protect traffic to the service. Apple, Steam, and YouTube process information when you use their respective features.",
+          "Providers may process data outside the European Economic Area. Resend stores email data in the United States, including when messages are sent from its European sending region. Its Data Processing Addendum applies to every account and includes the EU Standard Contractual Clauses for international transfers. Cloudflare’s Data Processing Addendum forms part of its subscription terms. Provider privacy and processing information is linked below; contact us for information relevant to your data.",
+          "We may disclose information where necessary to comply with a legal obligation or protect the rights and security of the service and its users. We do not sell personal data or use it for third-party advertising."
+        ],
+        "links": [
+          {
+            "label": "Sentry",
+            "href": "https://sentry.io/privacy/"
+          },
+          {
+            "label": "Resend",
+            "href": "https://resend.com/legal/privacy-policy"
+          },
+          {
+            "label": "Cloudflare",
+            "href": "https://www.cloudflare.com/privacypolicy/"
+          },
+          {
+            "label": "Apple",
+            "href": "https://www.apple.com/legal/privacy/"
+          },
+          {
+            "label": "Steam",
+            "href": "https://store.steampowered.com/privacy_agreement/"
+          },
+          {
+            "label": "YouTube / Google",
+            "href": "https://policies.google.com/privacy"
+          },
+          {
+            "label": "Resend processing and retention",
+            "href": "https://resend.com/security/gdpr"
+          },
+          {
+            "label": "Cloudflare Data Processing Addendum",
+            "href": "https://www.cloudflare.com/cloudflare-customer-dpa/"
+          }
+        ]
+      },
+      {
+        "id": "storage",
+        "title": "Cookies and device storage",
+        "paragraphs": [
+          "The website uses authentication cookies to maintain and protect your session. Browser storage remembers preferences such as the library view. The app stores appearance preferences, a cached account record, and session information on your device. These support the features you request; we do not use advertising cookies or cross-app advertising tracking.",
+          "You can clear browser cookies and storage or remove the app to clear its local data. Doing so can sign you out or reset preferences, but does not delete your server account. Third-party media providers may use their own storage when you open their content."
+        ]
+      },
+      {
+        "id": "retention",
+        "title": "Retention and deletion",
+        "paragraphs": [
+          "We keep account information and the content you save while you maintain your account, or until you remove the relevant content. Session and verification records are kept for their authentication and security purposes. We retain diagnostics and security records for reliability, abuse prevention, and applicable legal obligations; the retention periods depend on the record type and provider.",
+          "Resend retains email content and delivery logs for 30 days on our current plan; its backup copies persist for 7 days. Our server log files are configured to rotate after 14 days and can disappear sooner when a service instance is replaced. Error events and performance diagnostics stored in Sentry, and traffic and security data processed by Cloudflare, follow their product-specific retention policies. These are separate from our server log files.",
+          "To delete your account, open Settings → Profile → Delete account and confirm the email we send. The confirmation link expires after one hour. This also works for accounts created with Apple or passkeys without a password. If you cannot access your account or email, contact support; we may verify ownership. Confirmation removes the account and its associated library and social records from the active service.",
+          "Our database backups use a 30-day recovery window. Backups are removed through the backup rotation process, which can retain an older base backup and the recovery records needed to cover that window. Deleted data may remain in these copies until rotation removes them; deletion from the active service does not immediately erase every backup. Some records may also need to be retained to meet a legal obligation or resolve a dispute. Contact us for information about a specific record or deletion request."
+        ]
+      },
+      {
+        "id": "rights",
+        "title": "Your choices and rights",
+        "paragraphs": [
+          "You can edit your profile and saved content, change available visibility settings, disconnect optional services, export your library, and request account deletion. Use the menu on a profile, review, or list to report content or block its author. A personal block affects visibility between those two accounts, not what other users see. Manage your blocks in Settings → Safety.",
+          "Where GDPR applies, you may request access, correction, erasure, restriction, and portability of your personal data, and object to processing based on legitimate interests. You can withdraw consent where processing relies on it. These rights have legal conditions and exceptions. Email us to make a request; we may verify your identity and normally respond within one month, subject to the extensions permitted by law.",
+          "You can complain to your local data-protection authority. The Czech supervisory authority is Úřad pro ochranu osobních údajů (ÚOOÚ)."
+        ],
+        "links": [
+          {
+            "label": "Czech data-protection authority",
+            "href": "https://uoou.gov.cz/"
+          }
+        ]
+      },
+      {
+        "id": "security",
+        "title": "Security, children, and changes",
+        "paragraphs": [
+          "We use safeguards such as encrypted connections, password hashing, and access controls, but no service can guarantee absolute security. Keep your account credentials private and contact us if you believe your account has been compromised.",
+          "The service is not directed at children who cannot lawfully use it or authorize the processing of their data. If you believe a child has provided personal data without the authorization required by applicable law, contact us so we can investigate and take appropriate action.",
+          "We update this policy when our practices change. The date at the top identifies the current version. We will provide additional notice of material changes where required."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms of use",
+    "intro": "These terms cover your use of Play, damn it! on the website and in the iPhone and iPad app.",
+    "sections": [
+      {
+        "id": "service",
+        "title": "Using the service",
+        "paragraphs": [
+          "Play, damn it! is a game-tracking and community service operated by the Czech sole trader identified below. By creating an account or using the service, you agree to these terms. Use the service only if you can legally agree to them; obtain a parent or guardian’s permission where applicable law requires it.",
+          "Keep your account information accurate and your credentials secure. Do not impersonate another person, access an account without permission, bypass security or access controls, disrupt the service, or use it for unlawful activity."
+        ]
+      },
+      {
+        "id": "content",
+        "title": "Your content and community conduct",
+        "paragraphs": [
+          "You retain the rights you have in your reviews, notes, lists, profile information, and other contributions. You give us a non-exclusive permission to host, process, reproduce, and display that content only as needed to operate the service in accordance with your visibility settings. This permission ends when the content is removed, except for copies retained for the limited purposes described in the privacy policy.",
+          "Only submit content you have the right to share. Do not post unlawful, threatening, harassing, discriminatory, sexually exploitative, or privacy-infringing content, spam, or material that infringes intellectual-property rights. Do not disclose another person’s private information without permission.",
+          "We use automated checks for clearly prohibited text and review content reports. Use Report on a profile, review, or list, or contact support with the relevant link. You can block another user to hide your profiles and content from each other. Reports do not automatically remove content. Authorized moderators can remove content or suspend accounts for violations. To challenge a decision, contact support. Not every contribution is reviewed before publication."
+        ]
+      },
+      {
+        "id": "third-parties",
+        "title": "Game data and third-party services",
+        "paragraphs": [
+          "Game names, images, and other catalog material belong to their respective rights holders. Catalog information is supplied through IGDB and other linked sources. The service is not affiliated with or endorsed by the game publishers, Apple, Valve, or those sources unless expressly stated.",
+          "Optional Steam connections, Apple sign-in, and external video players depend on the providers’ availability and terms."
+        ]
+      },
+      {
+        "id": "account",
+        "title": "Leaving and account deletion",
+        "paragraphs": [
+          "You can stop using the service at any time, export your library in settings, and start account deletion through Settings → Profile → Delete account. Confirm the expiring link sent to your account email. If you cannot access deletion, contact support. Deletion and any legally required retention are described in the privacy policy.",
+          "We may suspend or end access for a serious or repeated breach of these terms or where required by law. Where appropriate and legally permitted, we will provide an explanation and a way to contact us about the decision."
+        ]
+      },
+      {
+        "id": "availability",
+        "title": "Availability and responsibility",
+        "paragraphs": [
+          "We aim to keep the service reliable, but cannot promise uninterrupted access or that catalog data and recommendations are always complete or accurate. Features may change, and maintenance or third-party failures can interrupt access. Keep an export of information that is important to you.",
+          "Nothing in these terms excludes or limits liability or consumer rights that cannot lawfully be excluded or limited, including rights that apply to digital services."
+        ]
+      },
+      {
+        "id": "law",
+        "title": "Changes, applicable law, and contact",
+        "paragraphs": [
+          "These terms are governed by Czech law, without taking away mandatory consumer protections available in your country of residence. Any mandatory rules about which courts can hear a dispute continue to apply.",
+          "We will publish updated terms here and provide additional notice where required. Material changes apply prospectively, subject to your applicable rights. For questions or a dispute, contact us using the details below."
+        ]
+      }
+    ]
+  },
+  "support": {
+    "title": "Support",
+    "intro": "Get help with your account, your library, or something you found on Play, damn it!.",
+    "sections": [
+      {
+        "id": "help",
+        "title": "Account and app help",
+        "paragraphs": [
+          "Email support with your username, the device and app version, what you were trying to do, and what happened. A screenshot can help. Never send your password, passkey, one-time code, or API key.",
+          "For sign-in problems, include the sign-in method and the account email address if you are comfortable doing so. We may need to verify account ownership before making a change."
+        ]
+      },
+      {
+        "id": "deletion",
+        "title": "Delete an account or request your data",
+        "paragraphs": [
+          "Open Settings → Profile → Delete account, then confirm the email we send. The link expires after one hour. No password is needed, including for Apple sign-in accounts. You can export your library first. If you cannot access your account or its email, contact support.",
+          "For access, correction, deletion, or another privacy request, describe what you need and identify the account. We will verify ownership where necessary; do not email identity documents unless we specifically request an appropriate verification method."
+        ]
+      },
+      {
+        "id": "report",
+        "title": "Report content or a security problem",
+        "paragraphs": [
+          "Use Report in the menu on a profile, review, or list. You can also block the author; manage your blocks in Settings → Safety. To report by email, include the content link, username, and a short explanation. Tell us if there is an immediate safety concern. Contact us to question a moderation decision.",
+          "If you discover a security problem, email a description and the minimum steps needed to reproduce it. Do not access, change, or disclose another person’s data."
+        ]
+      }
+    ]
+  },
+  "navigation": "Policies and support"
+}

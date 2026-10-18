@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Footer } from "./footer";
 import { SearchDialog } from "./search-dialog";
@@ -7,15 +7,9 @@ import { Hotkey } from "@/lib/enums";
 import { useSession } from "@/hooks/auth";
 import { useSteamReturn } from "@/components/steam/use-steam-return";
 
-// The assistant pulls in the AI SDK; load it only when opened
-const AssistantDialog = lazy(() =>
-  import("@/components/assistant-dialog").then((m) => ({ default: m.AssistantDialog })),
-);
-
 /** Page frame: icon rail on the left, one centred column of content, footer */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [assistantOpen, setAssistantOpen] = useState(false);
   const { user } = useSession();
   useSteamReturn(user?.username ?? undefined);
 
@@ -32,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh">
-      <Sidebar onSearch={() => setSearchOpen(true)} onAssistant={() => setAssistantOpen(true)} />
+      <Sidebar onSearch={() => setSearchOpen(true)} />
       <div className="pb-20 md:pb-0 md:pl-[72px] xl:pl-60">
         <main className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6 md:pt-6">
           {children}
@@ -40,11 +34,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
-      {assistantOpen && (
-        <Suspense>
-          <AssistantDialog open={assistantOpen} onOpenChange={setAssistantOpen} />
-        </Suspense>
-      )}
     </div>
   );
 }

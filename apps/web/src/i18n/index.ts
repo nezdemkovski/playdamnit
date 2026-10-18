@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 
 import changelogEn from "./locales/changelog/en.json";
 import en from "./locales/en.json";
+import legalEn from "./locales/legal/en.json";
 
 /**
  * UI text lives in `locales/<language>.json`, one nested file per language. English is the
@@ -24,10 +25,15 @@ export const DEFAULT_LANGUAGE = Language.English;
 export enum Namespace {
   Translation = "translation",
   Changelog = "changelog",
+  Legal = "legal",
 }
 
 export const resources = {
-  [Language.English]: { [Namespace.Translation]: en, [Namespace.Changelog]: changelogEn },
+  [Language.English]: {
+    [Namespace.Translation]: en,
+    [Namespace.Changelog]: changelogEn,
+    [Namespace.Legal]: legalEn,
+  },
 } as const;
 
 void i18n.use(initReactI18next).init({

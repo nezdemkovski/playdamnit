@@ -208,3 +208,10 @@ export enum ChangeKind {
   Changed = "changed",
   Fixed = "fixed",
 }
+
+/** Public documents, available without a session. */
+export enum LegalDocument {
+  Privacy = "privacy",
+  Terms = "terms",
+  Support = "support",
+}

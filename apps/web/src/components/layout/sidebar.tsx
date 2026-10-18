@@ -9,7 +9,6 @@ import {
   LogOutIcon,
   SearchIcon,
   SettingsIcon,
-  SparklesIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -96,14 +95,13 @@ function RailItem({
 
 interface SidebarProps {
   onSearch: () => void;
-  onAssistant: () => void;
 }
 
 /**
  * The icon rail from the reference design: logo, avatar, search and the main sections. Icons
  * only from md, icons with labels from xl, a bottom bar on phones.
  */
-export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
+export function Sidebar({ onSearch }: SidebarProps) {
   const { t } = useTranslation();
   const { user } = useSession();
   const signOut = useSignOut();
@@ -154,7 +152,6 @@ export function Sidebar({ onSearch, onAssistant }: SidebarProps) {
         active={is("/notifications")}
         badge={unread}
       />
-      <RailItem label={t("nav.aiAssistant")} icon={SparklesIcon} onClick={onAssistant} />
       <RailItem
         label={t("nav.settings")}
         icon={SettingsIcon}

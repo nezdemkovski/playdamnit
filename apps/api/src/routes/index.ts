@@ -37,8 +37,6 @@ import { importUserGames } from "./user/[username]/games/import";
 import { reviewRoutes } from "./reviews";
 import { listRoutes } from "./lists";
 
-import { postAIChat } from "./chat/ai/POST";
-
 import { postIgdbWebhook } from "./webhooks/igdb/POST";
 
 export const routes = new Elysia()
@@ -79,7 +77,5 @@ export const routes = new Elysia()
 
   .use(reviewRoutes)
   .use(listRoutes)
-
-  .use(postAIChat)
 
   .use(postIgdbWebhook);
