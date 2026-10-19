@@ -22,13 +22,14 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       gameId: t.Numeric({
         error: "Game ID must be a valid number",
       }),
+      timeZone: t.Optional(t.String({ maxLength: 100 })),
       status: statusSchema,
       rating: t.Optional(ratingSchema),
       grade: t.Optional(t.Nullable(gradeSchema)),
       review: t.Optional(reviewSchema),
       // Left out, the server picks one (UserGameService.defaultPlatform)
       platformId: t.Optional(t.Nullable(platformIdSchema)),
-      endedAt: t.Optional(endedAtSchema),
+      endedAt: t.Optional(t.Nullable(endedAtSchema)),
       mastered: t.Optional(t.Boolean()),
       spoilers: t.Optional(t.Boolean()),
       allowReactions: t.Optional(t.Boolean()),

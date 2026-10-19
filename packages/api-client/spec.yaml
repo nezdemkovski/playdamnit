@@ -566,9 +566,29 @@ components:
         - id
         - url
 
+    VerdictSource:
+      type: string
+      enum: [overall, members]
+      x-enumNames: [Overall, Members]
+
+    GameVerdict:
+      type: object
+      properties:
+        source:
+          $ref: "#/components/schemas/VerdictSource"
+        grade:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Grade"
+        count:
+          type: number
+      required: [source, grade, count]
+
     GameCommunity:
       type: object
       properties:
+        verdict:
+          $ref: "#/components/schemas/GameVerdict"
         total:
           type: number
           description: Members with the game in their list
@@ -1100,6 +1120,27 @@ components:
         note:
           type: string
           nullable: true
+
+    PlaythroughBatchItem:
+      allOf:
+        - $ref: "#/components/schemas/PlaythroughInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+          required: [id]
+
+    PlaythroughBatchInput:
+      type: object
+      properties:
+        runs:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/PlaythroughBatchItem"
+      required: [runs]
 
     JournalItem:
       type: object
@@ -2054,6 +2095,10 @@ components:
     UserGameCreateRequest:
       type: object
       properties:
+        timeZone:
+          type: string
+          maxLength: 100
+          description: IANA time zone; when finishing without an explicit date, the API uses today here (preserving an existing date). Explicit null clears the date. Omit for legacy behavior.
         gameId:
           type: number
         status:
@@ -2100,6 +2145,10 @@ components:
     UserGameUpdateRequest:
       type: object
       properties:
+        timeZone:
+          type: string
+          maxLength: 100
+          description: IANA time zone; when finishing without an explicit date, the API uses today here (preserving an existing date). Explicit null clears the date. Omit for legacy behavior.
         status:
           $ref: "#/components/schemas/StatusEnum"
         rating:
@@ -4325,6 +4374,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Playthrough"
+
+    put:
+      operationId: putApiUserByUsernameGamesByIdPlaythroughs
+      tags: [User]
+      summary: Save an atomic batch of playthroughs; retry the same ids and content safely
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema: { type: string }
+        - name: id
+          in: path
+          required: true
+          schema: { type: number }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaythroughBatchInput"
+      responses:
+        "200":
+          description: All saved playthroughs in request order; nothing is saved on failure
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Playthrough"
 
   /api/user/{username}/games/{id}/playthroughs/{playthroughId}:
     patch:

@@ -1,3 +1,4 @@
+import { verdictOf } from "./verdict";
 import { and, count, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/postgres";
@@ -231,15 +232,27 @@ const communityStats = async (gameId: number) => {
   }
   const ratingAverage = ratings.avg ? Math.round(Number(ratings.avg) * 10) / 10 : null;
 
-  const [reviewCount] = await db
-    .select({ n: count() })
-    .from(userGames)
-    .where(and(eq(userGames.gameId, gameId), sql`${userGames.review} is not null`));
+  const [[reviewCount], catalog] = await Promise.all([
+    db
+      .select({ n: count() })
+      .from(userGames)
+      .where(and(eq(userGames.gameId, gameId), sql`${userGames.review} is not null`)),
+    db.query.game.findFirst({
+      where: { id: gameId },
+      columns: { totalRating: true, totalRatingCount: true },
+    }),
+  ]);
 
   return {
     total,
     statuses,
     mastered,
+    verdict: verdictOf(
+      catalog?.totalRating ?? null,
+      catalog?.totalRatingCount ?? null,
+      ratingAverage,
+      Number(ratings.n),
+    ),
     ratingAverage,
     /** The members' grade: the average's */
     grade: gradeOf(ratingAverage),

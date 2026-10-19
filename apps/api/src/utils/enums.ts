@@ -8,6 +8,11 @@ export enum NodeEnv {
   Test = "test",
 }
 
+export enum VerdictSource {
+  Overall = "overall",
+  Members = "members",
+}
+
 export enum GameSort {
   Id = "id",
   Popular = "popular",

@@ -1,3 +1,4 @@
+import { VerdictSource } from "@playdamnit/api-client";
 import {
   GameFirstReleaseDatePrecision,
   GetApiGamesByIdReviewsSort,
@@ -41,7 +42,6 @@ import { useMyEntry, useMyLibrary } from "@/hooks/library";
 import { compactNumber, formatHours, gameTypeName, releaseDate, shortDate } from "@/lib/format";
 import { igdbImage, igdbSrcSet, youtubeThumbnail } from "@/lib/image";
 import { IgdbSize, ImageLoading, MediaSlideType, PillSize } from "@/lib/enums";
-import { MEMBERS_VERDICT_MIN } from "@/lib/grade";
 
 export const Route = createFileRoute("/games/$id")({
   component: GamePage,
@@ -109,8 +109,8 @@ function GameDetail({ game }: { game: Game }) {
   const related = [...(game.children ?? []), ...(game.editions ?? [])];
   const community = game.community!;
   const membersGrade = community.grade;
-  const membersLead = !!membersGrade && community.ratingCount >= MEMBERS_VERDICT_MIN;
-  const leadGrade = membersLead ? membersGrade : worldGrade;
+  const membersLead = community.verdict?.source === VerdictSource.Members;
+  const leadGrade = community.verdict ? community.verdict.grade : worldGrade;
   const [reviewSort, setReviewSort] = useState(GetApiGamesByIdReviewsSort.Latest);
   // One gallery for everything visual: screenshots, then videos, then the covers
   const [mediaIndex, setMediaIndex] = useState(-1);
@@ -198,7 +198,7 @@ function GameDetail({ game }: { game: Game }) {
               ) : null}
             </div>
             <dl className="grid flex-1 grid-cols-2 gap-4 self-end sm:grid-cols-3">
-              {/* The other verdict, small: members until ten of them have graded, then overall */}
+              {/* The other verdict, small; the API chooses which one leads */}
               {membersLead ? (
                 <Stat label={t("game.stats.everyoneElse")}>
                   <span className="flex items-center gap-1.5 text-sm">

@@ -18,6 +18,7 @@ export const patchUserGame = new Elysia().use(betterAuth).patch(
     auth: true,
     params: libraryGameParams,
     body: t.Object({
+      timeZone: t.Optional(t.String({ maxLength: 100 })),
       status: t.Optional(statusSchema),
       rating: t.Optional(t.Nullable(ratingSchema)),
       grade: t.Optional(t.Nullable(gradeSchema)),

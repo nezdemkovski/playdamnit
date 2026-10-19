@@ -27,6 +27,7 @@ import { canSeeList, requireUser } from "@/utils/social";
 import { idleOf } from "./idle";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 import { canGrade } from "./rules";
+import { todayIn } from "./completionDate";
 import { GameService } from "@/modules/game/service";
 
 const MAX_IMPORT_GAMES = 1000;
@@ -50,6 +51,7 @@ interface UserGameInput {
   spoilers?: boolean;
   allowReactions?: boolean;
   playthroughs?: PlaythroughInput[];
+  timeZone?: string;
 }
 
 export interface PlaythroughInput {
@@ -80,7 +82,10 @@ export interface ImportGameInput {
 
 type LibraryOwner = { id: string; username?: string | null };
 
-const parseEndedAt = (value: string | null | undefined): Date | null | undefined => {
+const parseEndedAt = (
+  value: string | null | undefined,
+  timeZone?: string,
+): Date | null | undefined => {
   if (value === undefined) return undefined;
   if (value === null || value.trim() === "") return null;
 
@@ -88,7 +93,7 @@ const parseEndedAt = (value: string | null | undefined): Date | null | undefined
   if (Number.isNaN(date.getTime())) {
     throw new BadRequestError("Invalid date format for endedAt");
   }
-  if (date > new Date()) {
+  if (timeZone ? date.toISOString().slice(0, 10) > todayIn(timeZone) : date > new Date()) {
     throw new BadRequestError("Finished date cannot be in the future");
   }
   return date;
@@ -485,7 +490,10 @@ export abstract class UserGameService {
         : input.platformId;
     const requestedRating = resolveRating(input);
     const rating = canGrade(input.status) ? requestedRating : null;
-    const endedAt = ENDED_STATUSES.includes(input.status) ? parseEndedAt(input.endedAt) : null;
+    const today = input.timeZone ? todayIn(input.timeZone) : undefined;
+    const endedAt = ENDED_STATUSES.includes(input.status)
+      ? parseEndedAt(input.endedAt === undefined ? today : input.endedAt, input.timeZone)
+      : null;
 
     const runs = input.playthroughs ?? [];
     for (const run of runs) await assertPlatformExists(run.platformId);
@@ -580,15 +588,21 @@ export abstract class UserGameService {
     await assertPlatformExists(input.platformId);
 
     const rating = resolveRating(input);
+    const today = input.timeZone ? todayIn(input.timeZone) : undefined;
     const endedAt =
       input.status !== undefined && !ENDED_STATUSES.includes(input.status)
         ? null
-        : parseEndedAt(input.endedAt);
+        : parseEndedAt(input.endedAt, input.timeZone);
     // Evaluate against the row being updated, not a preceding read: a status-only PATCH must
     // clear an obsolete grade/date, and a grade-only PATCH cannot race a move to the backlog.
     const status = input.status ?? userGames.status;
     const storedRating = rating === undefined ? userGames.rating : rating;
-    const storedEndedAt = endedAt === undefined ? userGames.endedAt : endedAt;
+    const storedEndedAt =
+      endedAt === undefined
+        ? today && input.status !== undefined && ENDED_STATUSES.includes(input.status)
+          ? sql`coalesce(${userGames.endedAt}, ${today}::timestamp)`
+          : userGames.endedAt
+        : endedAt;
 
     const updated = await postgresDb.transaction(async (tx) => {
       const [changed] = await tx
@@ -708,6 +722,69 @@ export abstract class UserGameService {
       return row;
     });
     return { ...row, hours: row.hours !== null ? Number(row.hours) : null };
+  }
+
+  /** A stable client id makes an all-or-nothing batch safe to retry after a lost response. */
+  static async addPlaythroughs(
+    userId: string,
+    gameId: number,
+    inputs: (PlaythroughInput & { id: string })[],
+  ) {
+    if (
+      !inputs.length ||
+      inputs.length > 100 ||
+      new Set(inputs.map((run) => run.id.toLowerCase())).size !== inputs.length
+    ) {
+      throw new BadRequestError("Supply 1 to 100 playthroughs with unique ids");
+    }
+    for (const input of inputs) await assertPlatformExists(input.platformId);
+    const prepared = inputs.map((input) => ({
+      id: input.id.toLowerCase(),
+      userId,
+      gameId,
+      startedAt: parseDay(input.startedAt, "Start date") ?? null,
+      endedAt: parseDay(input.endedAt, "End date") ?? null,
+      hours: input.hours == null ? null : input.hours.toFixed(1),
+      platformId: input.platformId ?? null,
+      note: input.note?.trim() || null,
+    }));
+    const rows = await postgresDb.transaction(async (tx) => {
+      const [entry] = await tx
+        .select({ id: userGames.id })
+        .from(userGames)
+        .where(and(eq(userGames.userId, userId), eq(userGames.gameId, gameId)))
+        .for("update");
+      if (!entry) throw new NotFoundError("Game not found in user's library");
+      await tx.insert(playthrough).values(prepared).onConflictDoNothing({ target: playthrough.id });
+      const saved = await tx
+        .select()
+        .from(playthrough)
+        .where(
+          inArray(
+            playthrough.id,
+            prepared.map((run) => run.id),
+          ),
+        );
+      const byId = new Map(saved.map((run) => [run.id, run]));
+      return prepared.map((input) => {
+        const row = byId.get(input.id);
+        if (
+          !row ||
+          row.userId !== userId ||
+          row.gameId !== gameId ||
+          row.startedAt !== input.startedAt ||
+          row.endedAt !== input.endedAt ||
+          Number(row.hours ?? 0) !== Number(input.hours ?? 0) ||
+          (row.hours === null) !== (input.hours === null) ||
+          row.platformId !== input.platformId ||
+          row.note !== input.note
+        ) {
+          throw new ConflictError("A playthrough id already belongs to a different save");
+        }
+        return { ...row, hours: row.hours === null ? null : Number(row.hours) };
+      });
+    });
+    return rows;
   }
 
   static async updatePlaythrough(userId: string, id: string, input: PlaythroughInput) {
