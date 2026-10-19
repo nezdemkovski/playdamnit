@@ -44,3 +44,11 @@ export const libraryGameParams = t.Object({
   username: t.String(),
   id: t.Numeric(),
 });
+
+export const playthroughInputSchema = t.Object({
+  startedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
+  endedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
+  hours: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 99999 }))),
+  platformId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
+  note: t.Optional(t.Nullable(t.String({ maxLength: 1000 }))),
+});

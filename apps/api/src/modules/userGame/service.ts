@@ -49,6 +49,7 @@ interface UserGameInput {
   mastered?: boolean;
   spoilers?: boolean;
   allowReactions?: boolean;
+  playthroughs?: PlaythroughInput[];
 }
 
 export interface PlaythroughInput {
@@ -486,28 +487,50 @@ export abstract class UserGameService {
     const rating = canGrade(input.status) ? requestedRating : null;
     const endedAt = ENDED_STATUSES.includes(input.status) ? parseEndedAt(input.endedAt) : null;
 
+    const runs = input.playthroughs ?? [];
+    for (const run of runs) await assertPlatformExists(run.platformId);
+    const preparedRuns = runs.map((run) => ({
+      userId,
+      gameId,
+      startedAt: parseDay(run.startedAt, "Start date") ?? null,
+      endedAt: parseDay(run.endedAt, "End date") ?? null,
+      hours: run.hours?.toString() ?? null,
+      platformId: run.platformId ?? null,
+      note: run.note?.trim() || null,
+    }));
     try {
-      const [inserted] = await postgresDb
-        .insert(userGames)
-        .values({
-          userId,
-          gameId,
-          status: input.status,
-          rating: rating?.toString() ?? null,
-          review: input.review ?? null,
-          mastered: input.mastered ?? false,
-          spoilers: input.spoilers ?? false,
-          allowReactions: input.allowReactions ?? true,
-          endedAt: endedAt ?? null,
-          platformId,
-          source: UserGameSource.Manual,
-        })
-        .onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
-        .returning();
+      const inserted = await postgresDb.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(userGames)
+          .values({
+            userId,
+            gameId,
+            status: input.status,
+            rating: rating?.toString() ?? null,
+            review: input.review ?? null,
+            mastered: input.mastered ?? false,
+            spoilers: input.spoilers ?? false,
+            allowReactions: input.allowReactions ?? true,
+            endedAt: endedAt ?? null,
+            platformId,
+            source: UserGameSource.Manual,
+          })
+          .onConflictDoNothing({ target: [userGames.userId, userGames.gameId] })
+          .returning();
 
-      if (!inserted) {
-        throw new ConflictError("Game already exists in library");
-      }
+        if (!created) throw new ConflictError("Game already exists in library");
+        if (preparedRuns.length) {
+          await tx.insert(playthrough).values(preparedRuns);
+        } else if (created.status === UserGameStatus.Finished) {
+          await tx.insert(playthrough).values({
+            userId,
+            gameId,
+            platformId: created.platformId,
+            endedAt: created.endedAt?.toISOString().slice(0, 10) ?? null,
+          });
+        }
+        return created;
+      });
 
       // The entry as the list serves it and the game's new member numbers, so clients update
       // what they hold instead of loading the library and the game again
@@ -555,24 +578,40 @@ export abstract class UserGameService {
     const storedRating = rating === undefined ? userGames.rating : rating;
     const storedEndedAt = endedAt === undefined ? userGames.endedAt : endedAt;
 
-    const [updated] = await postgresDb
-      .update(userGames)
-      .set({
-        ...(input.status !== undefined && { status: input.status }),
-        rating: sql`case when ${status} in (${UserGameStatus.WantToPlay}, ${UserGameStatus.Backlog}) then null else ${storedRating}::numeric end`,
-        ...(input.review !== undefined && { review: input.review }),
-        ...(input.mastered !== undefined && { mastered: input.mastered }),
-        ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
-        ...(input.allowReactions !== undefined && { allowReactions: input.allowReactions }),
-        ...(input.platformId !== undefined && { platformId: input.platformId }),
-        endedAt: sql`case when ${status} in (${UserGameStatus.Finished}, ${UserGameStatus.Dropped}) then ${storedEndedAt}::timestamp else null end`,
-      })
-      .where(and(eq(userGames.userId, userId), eq(userGames.gameId, gameId)))
-      .returning();
+    const updated = await postgresDb.transaction(async (tx) => {
+      const [changed] = await tx
+        .update(userGames)
+        .set({
+          ...(input.status !== undefined && { status: input.status }),
+          rating: sql`case when ${status} in (${UserGameStatus.WantToPlay}, ${UserGameStatus.Backlog}) then null else ${storedRating}::numeric end`,
+          ...(input.review !== undefined && { review: input.review }),
+          ...(input.mastered !== undefined && { mastered: input.mastered }),
+          ...(input.spoilers !== undefined && { spoilers: input.spoilers }),
+          ...(input.allowReactions !== undefined && { allowReactions: input.allowReactions }),
+          ...(input.platformId !== undefined && { platformId: input.platformId }),
+          endedAt: sql`case when ${status} in (${UserGameStatus.Finished}, ${UserGameStatus.Dropped}) then ${storedEndedAt}::timestamp else null end`,
+        })
+        .where(and(eq(userGames.userId, userId), eq(userGames.gameId, gameId)))
+        .returning();
 
-    if (!updated) {
-      throw new NotFoundError("Game not found in user's library");
-    }
+      if (!changed) throw new NotFoundError("Game not found in user's library");
+      if (input.status === UserGameStatus.Finished) {
+        const existing = await tx
+          .select({ id: playthrough.id })
+          .from(playthrough)
+          .where(and(eq(playthrough.userId, userId), eq(playthrough.gameId, gameId)))
+          .limit(1);
+        if (!existing.length) {
+          await tx.insert(playthrough).values({
+            userId,
+            gameId,
+            platformId: changed.platformId,
+            endedAt: changed.endedAt?.toISOString().slice(0, 10) ?? null,
+          });
+        }
+      }
+      return changed;
+    });
 
     const [entry, community] = await Promise.all([
       libraryEntry(userId, gameId),
@@ -635,18 +674,27 @@ export abstract class UserGameService {
   static async addPlaythrough(userId: string, gameId: number, input: PlaythroughInput) {
     await UserGameService.requireEntry(userId, gameId);
     await assertPlatformExists(input.platformId);
-    const [row] = await postgresDb
-      .insert(playthrough)
-      .values({
-        userId,
-        gameId,
-        startedAt: parseDay(input.startedAt, "Start date") ?? null,
-        endedAt: parseDay(input.endedAt, "End date") ?? null,
-        hours: input.hours !== null && input.hours !== undefined ? input.hours.toString() : null,
-        platformId: input.platformId ?? null,
-        note: input.note?.trim() || null,
-      })
-      .returning();
+    const row = await postgresDb.transaction(async (tx) => {
+      const [entry] = await tx
+        .select({ id: userGames.id })
+        .from(userGames)
+        .where(and(eq(userGames.userId, userId), eq(userGames.gameId, gameId)))
+        .for("update");
+      if (!entry) throw new NotFoundError("Game not found in user's library");
+      const [row] = await tx
+        .insert(playthrough)
+        .values({
+          userId,
+          gameId,
+          startedAt: parseDay(input.startedAt, "Start date") ?? null,
+          endedAt: parseDay(input.endedAt, "End date") ?? null,
+          hours: input.hours !== null && input.hours !== undefined ? input.hours.toString() : null,
+          platformId: input.platformId ?? null,
+          note: input.note?.trim() || null,
+        })
+        .returning();
+      return row;
+    });
     return { ...row, hours: row.hours !== null ? Number(row.hours) : null };
   }
 

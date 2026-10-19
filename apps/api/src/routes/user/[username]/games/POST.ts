@@ -7,6 +7,7 @@ import {
   gradeSchema,
   libraryParams,
   platformIdSchema,
+  playthroughInputSchema,
   ratingSchema,
   reviewSchema,
   statusSchema,
@@ -31,6 +32,7 @@ export const postUserGame = new Elysia().use(betterAuth).post(
       mastered: t.Optional(t.Boolean()),
       spoilers: t.Optional(t.Boolean()),
       allowReactions: t.Optional(t.Boolean()),
+      playthroughs: t.Optional(t.Array(playthroughInputSchema, { maxItems: 100 })),
     }),
   },
   ({ params, user, body }) => {

@@ -2087,6 +2087,12 @@ components:
           type: boolean
         allowReactions:
           type: boolean
+        playthroughs:
+          type: array
+          maxItems: 100
+          description: Manual runs saved with the entry; a finished game with no runs gets its first playthrough automatically
+          items:
+            $ref: "#/components/schemas/PlaythroughInput"
       required:
         - gameId
         - status

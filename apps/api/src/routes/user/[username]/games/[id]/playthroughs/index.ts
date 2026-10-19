@@ -2,16 +2,10 @@ import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
 import { UserGameService } from "@/modules/userGame/service";
-import { libraryGameParams } from "@/modules/userGame/model";
+import { libraryGameParams, playthroughInputSchema } from "@/modules/userGame/model";
 import { StringFormat } from "@/utils/enums";
 
-const body = t.Object({
-  startedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
-  endedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
-  hours: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 99999 }))),
-  platformId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
-  note: t.Optional(t.Nullable(t.String({ maxLength: 1000 }))),
-});
+const body = playthroughInputSchema;
 
 const withPlaythrough = t.Object({
   username: t.String(),

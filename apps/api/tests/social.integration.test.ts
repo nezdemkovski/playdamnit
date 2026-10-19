@@ -256,6 +256,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
   });
 
   test("playthroughs feed the journal, which merges in finished entries", async () => {
+    // Finished creation now records a first run. Replace it with this test's dated runs.
+    for (const run of await UserGameService.listPlaythroughs("alice", GAME, "alice")) {
+      await UserGameService.deletePlaythrough("alice", run.id);
+    }
     await UserGameService.addPlaythrough("alice", GAME, {
       startedAt: "2025-03-01",
       endedAt: "2025-04-21",
