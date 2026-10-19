@@ -25,6 +25,7 @@ export enum OAuthGrantType {
 /** pg-boss cron expressions */
 export enum Schedule {
   DrainDirty = "* * * * *",
+  EnsureWebhooks = "*/5 * * * *",
   SyncCatalog = "0 2 * * *",
   SyncLookups = "30 3 * * *",
   RefreshStaleGames = "0 4 * * *",

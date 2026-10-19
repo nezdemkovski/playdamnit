@@ -31,7 +31,7 @@ const listWebhooks = async (): Promise<IGDBWebhook[]> =>
 /**
  * Make sure IGDB has an active webhook for every entity × method we rely on, pointing at this
  * deployment's public API. Inactive ones (IGDB disables a webhook whose URL stopped answering)
- * are deleted and re-created. Safe to run on every start.
+ * are deleted and re-created. Safe to run periodically as well as on start.
  */
 export const ensureWebhooks = async (opts: { baseUrl: string; secret: string }) => {
   const existing = await listWebhooks();

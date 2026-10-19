@@ -46,8 +46,11 @@ Headless worker and the only IGDB client. Runs as a **single instance**: the IGD
   types, website types, external game sources, collections, companies and time-to-beat.
 - `refresh-stale-games` (daily 04:00): re-fetches games not synced for 30 days (safety net).
 - `fetch-by-ids`: on-demand fetch for the API, answered with `NOTIFY`.
-- On start it registers the `games` and `covers` webhooks with IGDB when `WEBHOOK_BASE_URL` and
-  `IGDB_WEBHOOK_SECRET` are set.
+- `ensure-webhooks` (on start and every five minutes): checks all eight entities × three methods
+  with IGDB and restores missing or disabled subscriptions after delivery outages. Enabled when
+  `WEBHOOK_BASE_URL` and `IGDB_WEBHOOK_SECRET` are set. Active subscriptions are left unchanged;
+  failed checks or partial repairs fail the job and are reported to Sentry. The daily catalog
+  sync remains the fallback for missed game updates.
 
 Every game write goes through `src/catalog/writeGames.ts`: one transaction per batch, bulk upserts
 per table, the expanded IGDB document kept in `game.raw`, columns and child rows derived from it by
@@ -138,6 +141,7 @@ migrations: `packages/db/migrations/` (applied by the API image on start).
 | `sync-catalog`        | Hand / cron / self | Librarian | `{ mode, cursor? }`   |
 | `sync-lookups`        | Cron / start       | Librarian | `{ force? }`          |
 | `drain-dirty`         | Cron               | Librarian | —                     |
+| `ensure-webhooks`     | Cron / start       | Librarian | —                     |
 | `refresh-stale-games` | Cron               | Librarian | —                     |
 
 All queues are created by both services on start. `apps/librarian/scripts/enqueue.ts` puts a job
