@@ -1,0 +1,1 @@
+ALTER TABLE "collection" DROP CONSTRAINT "collection_slug_key";

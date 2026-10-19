@@ -502,7 +502,8 @@ export const collection = pgTable(
   {
     id: integer("id").primaryKey(),
     name: text("name").notNull(),
-    slug: text("slug").notNull().unique(),
+    // IGDB ids identify collections; slugs can be reused after upstream renames/merges.
+    slug: text("slug").notNull(),
   },
   (table) => [index("idx_collection_slug").on(table.slug)],
 );
