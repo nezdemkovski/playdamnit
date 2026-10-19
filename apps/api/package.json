@@ -1,6 +1,6 @@
 {
   "name": "@playdamnit/api",
-  "version": "1.0.50",
+  "version": "1.0.52",
   "private": true,
   "type": "module",
   "module": "src/index.ts",
