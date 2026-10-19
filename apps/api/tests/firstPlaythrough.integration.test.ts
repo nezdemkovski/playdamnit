@@ -22,7 +22,7 @@ describe.skipIf(!TEST_URL)("first finished playthrough", () => {
     await pg.query(
       "insert into platform (id, name, slug) values (6, 'PC', 'win') on conflict do nothing",
     );
-    for (let id = game; id < game + 6; id++) {
+    for (let id = game; id < game + 8; id++) {
       await pg.query(
         "insert into game (id, name, slug, total_rating_count) values ($1, $2, $2, 100) on conflict do nothing",
         [id, `first-run-${id}`],
@@ -65,10 +65,11 @@ describe.skipIf(!TEST_URL)("first finished playthrough", () => {
     expect(await service.listPlaythroughs(user, game + 1, user)).toHaveLength(1);
   });
 
-  test("two manual drafts replace the automatic first run and save with the game", async () => {
+  test("a matching manual completion avoids an automatic duplicate", async () => {
     await service.addUserGame(user, game + 2, {
       status: UserGameStatus.Finished,
       platformId: 6,
+      endedAt: "2026-01-01",
       playthroughs: [
         { endedAt: "2025-01-01", hours: 12, platformId: 6 },
         { endedAt: "2026-01-01", hours: 8, note: "NG+", platformId: 6 },
@@ -79,6 +80,36 @@ describe.skipIf(!TEST_URL)("first finished playthrough", () => {
     expect(runs.map((run) => run.hours).sort()).toEqual([12, 8]);
     await service.updateUserGame(user, game + 2, { status: UserGameStatus.Finished });
     expect(await service.listPlaythroughs(user, game + 2, user)).toHaveLength(2);
+  });
+
+  test("an end-only historical run and the selected finish both survive creation and reload", async () => {
+    await service.addUserGame(user, game + 6, {
+      status: UserGameStatus.Finished,
+      platformId: 6,
+      endedAt: "2026-10-19",
+      playthroughs: [{ endedAt: "2025-03-04", platformId: 6 }],
+    });
+    const runs = await service.listPlaythroughs(user, game + 6, user);
+    expect(runs).toHaveLength(2);
+    expect(runs.map((run) => run.endedAt).toSorted()).toEqual(["2025-03-04", "2026-10-19"]);
+    expect(runs.every((run) => run.startedAt === null && run.hours === null)).toBe(true);
+    await service.updateUserGame(user, game + 6, {
+      status: UserGameStatus.Finished,
+      endedAt: "2026-10-19",
+    });
+    expect(await service.listPlaythroughs(user, game + 6, user)).toHaveLength(2);
+  });
+
+  test("a same-day manual run keeps its details without a duplicate", async () => {
+    await service.addUserGame(user, game + 7, {
+      status: UserGameStatus.Finished,
+      platformId: 6,
+      endedAt: "2026-10-19",
+      playthroughs: [{ endedAt: "2026-10-19", platformId: 6, hours: 10, note: "First finish" }],
+    });
+    const runs = await service.listPlaythroughs(user, game + 7, user);
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({ endedAt: "2026-10-19", hours: 10, note: "First finish" });
   });
 
   test("invalid drafts do not leave a partially added game", async () => {

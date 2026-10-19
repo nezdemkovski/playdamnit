@@ -519,16 +519,28 @@ export abstract class UserGameService {
           .returning();
 
         if (!created) throw new ConflictError("Game already exists in library");
-        if (preparedRuns.length) {
-          await tx.insert(playthrough).values(preparedRuns);
-        } else if (created.status === UserGameStatus.Finished) {
-          await tx.insert(playthrough).values({
+        const completionDay = created.endedAt?.toISOString().slice(0, 10) ?? null;
+        // Historical runs are additional completions, not replacements for the selected
+        // finish date. A manual run on that date/platform already represents this finish.
+        const includesCompletion = preparedRuns.some(
+          (run) => run.endedAt === completionDay && run.platformId === created.platformId,
+        );
+        if (
+          created.status === UserGameStatus.Finished &&
+          (preparedRuns.length === 0 || completionDay !== null) &&
+          !includesCompletion
+        ) {
+          preparedRuns.push({
             userId,
             gameId,
+            startedAt: null,
+            endedAt: completionDay,
+            hours: null,
             platformId: created.platformId,
-            endedAt: created.endedAt?.toISOString().slice(0, 10) ?? null,
+            note: null,
           });
         }
+        if (preparedRuns.length) await tx.insert(playthrough).values(preparedRuns);
         return created;
       });
 

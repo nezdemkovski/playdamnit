@@ -2090,7 +2090,7 @@ components:
         playthroughs:
           type: array
           maxItems: 100
-          description: Manual runs saved with the entry; a finished game with no runs gets its first playthrough automatically
+          description: Manual runs saved with the entry; the selected finish date adds a completion unless a manual run already matches its date and platform
           items:
             $ref: "#/components/schemas/PlaythroughInput"
       required:
