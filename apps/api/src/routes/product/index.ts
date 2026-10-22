@@ -13,6 +13,7 @@ const feedback = createFeedbackService({
   apiKey: config.linearApiKey,
   teamId: config.linearTeamId,
   projectId: config.linearProjectId,
+  assigneeId: config.linearAssigneeId,
 });
 
 export const productRoutes = new Elysia()

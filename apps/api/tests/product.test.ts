@@ -16,7 +16,12 @@ const input = {
 };
 const actor = { id: "member", username: "tester" };
 const id = feedbackId(actor.id, input.requestId);
-const options = { apiKey: "unit-test-only", teamId: "team", projectId: "project" };
+const options = {
+  apiKey: "unit-test-only",
+  teamId: "team",
+  projectId: "project",
+  assigneeId: "owner",
+};
 const json = (body: unknown) => Response.json(body);
 
 function fake(responses: (() => Response | Promise<Response>)[]) {
@@ -75,6 +80,7 @@ describe("product endpoints", () => {
     const sent = calls[1].variables.input;
     expect(sent.teamId).toBe("team");
     expect(sent.projectId).toBe("project");
+    expect(sent.assigneeId).toBe("owner");
     expect(sent.title).toBe("[Bug] Library problem");
     expect(sent.description).toContain("@tester");
     expect(sent.description).toContain("1.0.1 (99)");

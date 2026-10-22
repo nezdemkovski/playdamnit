@@ -43,6 +43,7 @@ const config = {
   linearApiKey: process.env.LINEAR_API_KEY,
   linearTeamId: process.env.LINEAR_TEAM_ID,
   linearProjectId: process.env.LINEAR_PROJECT_ID,
+  linearAssigneeId: process.env.LINEAR_ASSIGNEE_ID,
 };
 
 export const getConfig = () => {

@@ -23,7 +23,7 @@ Both clients retain their bundled initial release if the endpoint is unavailable
 with whitespace-only values rejected. `appVersion` and `locale` are optional.
 Ten requests per account per hour are allowed per API process. Only the server receives
 `LINEAR_API_KEY`, `LINEAR_TEAM_ID` and `LINEAR_PROJECT_ID`. The key needs Read and Create
-issues access to the destination team. Do not put credentials in browser/mobile builds.
+issues access to the destination team. Optional `LINEAR_ASSIGNEE_ID` assigns feedback to its owner. Do not put credentials in browser/mobile builds.
 
 Success returns HTTP 201 with an opaque `id`; no private issue URL or Linear response
 is exposed. The issue includes the submitted text, username, platform, optional version

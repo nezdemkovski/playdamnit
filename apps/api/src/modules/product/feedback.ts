@@ -9,6 +9,7 @@ interface Options {
   apiKey?: string;
   teamId?: string;
   projectId?: string;
+  assigneeId?: string;
   fetcher?: Fetcher;
 }
 interface Actor {
@@ -81,6 +82,7 @@ export function createFeedbackService(options: Options) {
               id,
               teamId: options.teamId,
               projectId: options.projectId,
+              assigneeId: options.assigneeId,
               title: `[${input.kind === FeedbackKind.Bug ? "Bug" : "Feature"}] ${title}`,
               description,
             },
