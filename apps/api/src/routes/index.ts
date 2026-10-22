@@ -2,6 +2,7 @@ import { moderationRoutes } from "./moderation";
 import { Elysia } from "elysia";
 
 import { meRoutes } from "./me";
+import { getMeNow } from "./me/now";
 import { recommendationRoutes } from "./me/recommendations";
 import { tasteRoutes } from "./me/taste";
 import { signInRoutes } from "./me/signIn";
@@ -26,6 +27,7 @@ import { getGameReleaseDays } from "./games/release-days/GET";
 import { getGameShowcase } from "./games/showcase/GET";
 import { getUserGames } from "./user/[username]/games/GET";
 import { getUserGamesIndex } from "./user/[username]/games/index/GET";
+import { getUserGamesTiers } from "./user/[username]/games/tiers/GET";
 import { getUserOverview } from "./user/[username]/overview/GET";
 import { getUserGame } from "./user/[username]/games/[id]/GET";
 import { postUserGame } from "./user/[username]/games/POST";
@@ -42,6 +44,7 @@ import { postIgdbWebhook } from "./webhooks/igdb/POST";
 
 export const routes = new Elysia()
   .use(meRoutes)
+  .use(getMeNow)
   .use(steamImportRoutes)
   .use(recommendationRoutes)
   .use(tasteRoutes)
@@ -67,6 +70,7 @@ export const routes = new Elysia()
 
   .use(getUserGames)
   .use(getUserGamesIndex)
+  .use(getUserGamesTiers)
   .use(getUserOverview)
   .use(getUserGame)
   .use(postUserGame)

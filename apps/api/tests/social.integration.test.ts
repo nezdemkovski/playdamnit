@@ -396,6 +396,15 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       finishedThisYear: 1,
       typicalGrade: Grade.A,
       gradeCounts: { S: 0, A: 1, B: 0, C: 0, D: 0, F: 0 },
+      statusCounts: {
+        [UserGameStatus.Finished]: 1,
+        [UserGameStatus.Playing]: 0,
+        [UserGameStatus.Dropped]: 0,
+        [UserGameStatus.Online]: 0,
+        [UserGameStatus.OnHold]: 0,
+        [UserGameStatus.WantToPlay]: 1,
+        [UserGameStatus.Backlog]: 0,
+      },
     });
     expect(carol.badges?.map((b) => b.id)).toEqual(Object.values(BadgeId));
     expect(carol.badges?.filter((b) => b.earned).map((b) => b.id)).toEqual([BadgeId.First]);

@@ -20,14 +20,15 @@ import {
   transformGameResponse,
 } from "@/utils/gameTransformers";
 import { type Grade, LibrarySort } from "@/utils/enums";
-import { gradeOf, ratingOfGrade } from "@/utils/grade";
+import { GRADE_BANDS, gradeOf, ratingOfGrade } from "@/utils/grade";
 import { escapeLike } from "@/utils/searchGames";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
-import { idleOf } from "./idle";
+import { safeZone } from "@/utils/timeZone";
+import { idleOf, idleSinceSql } from "./idle";
 import { toUserGameData } from "./entry";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
-import { canGrade } from "./rules";
+import { canGrade, canGradeSql } from "./rules";
 import { todayIn } from "./completionDate";
 import { GameService } from "@/modules/game/service";
 import { ListService } from "@/modules/list/service";
@@ -40,6 +41,13 @@ const OVERVIEW_RAIL = 12;
 const OVERVIEW_SHELF = 20;
 /** The lowest rating that reads as an S */
 const S_GRADE_MIN = 9;
+/** Covers the Now tab's grading deck fans out */
+const NOW_DECK = 3;
+/** Backlog games the Now tab offers to start */
+const NOW_UP_NEXT = 4;
+/** The Now tab's release window, in days around today: yesterday through a week ahead */
+const NOW_WEEK_BEFORE = 1;
+const NOW_WEEK_AFTER = 7;
 
 interface UserGameInput {
   status: UserGameStatus;
@@ -198,6 +206,34 @@ const playthroughsOf = async (userId: string, gameId: number) => {
 /** A rating counts as a grade above zero; zero is what clearing a grade writes */
 const isGraded = (t: typeof userGames) => sql`coalesce(${t.rating}, 0) > 0`;
 
+/** Waiting for a grade: the status can carry one and there is none yet (the grading deck) */
+const awaitsGrade = (t: typeof userGames) => and(canGradeSql(t.status), sql`not ${isGraded(t)}`)!;
+
+/** The game's names (alternative ones included) contain `q`, as the library search matches */
+const nameMatches = (t: typeof userGames, q: string) =>
+  sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and coalesce(${game.searchNames}, ${game.name}) ilike ${`%${escapeLike(q)}%`})`;
+
+/** The light index rows of one member's entries, in the given order, the entry id last */
+const indexRows = (
+  ownerId: string,
+  where: (t: typeof userGames) => SQL | undefined,
+  orderBy: (t: typeof userGames) => SQL[],
+  limit?: number,
+) =>
+  postgresDb.query.userGames.findMany({
+    where: { RAW: (t) => and(eq(t.userId, ownerId), where(t))! },
+    orderBy: (t) => [...orderBy(t), sql`${t.id}`],
+    limit,
+    columns: { review: false, userId: false, gameId: false },
+    extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },
+    with: INDEX_GAME_WITH,
+  });
+
+/** Newest additions first: the index's order, which the deck and the tier board deal in */
+const newestFirst = (t: typeof userGames) => [sql`${t.addedAt} desc`];
+/** The most recently touched first */
+const latestUpdateFirst = (t: typeof userGames) => [sql`${t.updatedAt} desc`];
+
 /** One member's entry for a game as the list serves it, or null when the game is not in it */
 const libraryEntry = async (userId: string, gameId: number) => {
   const entry = await postgresDb.query.userGames.findFirst({
@@ -229,7 +265,7 @@ const libraryOrder = (t: typeof userGames, sort: LibrarySort): SQL[] => {
         sql` `,
       )} end`,
       // Idle longest first: Steam's last launch when there is one, else the last edit
-      sql`coalesce(${t.steamLastPlayedAt}, ${t.updatedAt}, ${t.addedAt}) asc`,
+      sql`${idleSinceSql(t)} asc`,
     ],
     [LibrarySort.Added]: [sql`${t.addedAt} desc`],
     [LibrarySort.Grade]: [sql`${t.rating} desc nulls last`],
@@ -293,9 +329,7 @@ export abstract class UserGameService {
       [
         eq(t.userId, userData.id),
         opts.status ? eq(t.status, opts.status) : undefined,
-        q
-          ? sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and coalesce(${game.searchNames}, ${game.name}) ilike ${`%${escapeLike(q)}%`})`
-          : undefined,
+        q ? nameMatches(t, q) : undefined,
       ].filter((f) => f !== undefined);
 
     const sort = opts.sort ?? LibrarySort.Added;
@@ -338,7 +372,10 @@ export abstract class UserGameService {
     username: string,
     viewerId: string | null,
     opts: {
-      /** Only graded entries (true) or only the ungraded (false): the grading deck's queue */
+      /**
+       * Only graded entries (true) or only those waiting for a grade (false): the grading deck's
+       * queue, which leaves out the statuses that cannot carry one
+       */
       graded?: boolean;
     } = {},
   ) {
@@ -351,11 +388,7 @@ export abstract class UserGameService {
         RAW: (t) =>
           and(
             eq(t.userId, userData.id),
-            opts.graded === undefined
-              ? undefined
-              : opts.graded
-                ? isGraded(t)
-                : sql`not ${isGraded(t)}`,
+            opts.graded === undefined ? undefined : opts.graded ? isGraded(t) : awaitsGrade(t),
           )!,
       },
       orderBy: { addedAt: "desc" },
@@ -387,20 +420,9 @@ export abstract class UserGameService {
       where: (t: typeof userGames) => SQL,
       orderBy: (t: typeof userGames) => SQL[],
       limit = OVERVIEW_RAIL,
-    ) =>
-      postgresDb.query.userGames.findMany({
-        where: { RAW: (t) => and(eq(t.userId, owner.id), where(t))! },
-        orderBy: (t) => [...orderBy(t), sql`${t.id}`],
-        limit,
-        columns: { review: false, userId: false, gameId: false },
-        extras: { hasReview: (t) => sql<boolean>`${t.review} is not null` },
-        with: INDEX_GAME_WITH,
-      });
+    ) => indexRows(owner.id, where, orderBy, limit);
     const [playing, mostPlayed, recent, shelf] = await Promise.all([
-      rail(
-        (t) => eq(t.status, UserGameStatus.Playing),
-        (t) => [sql`${t.addedAt} desc`],
-      ),
+      rail((t) => eq(t.status, UserGameStatus.Playing), latestUpdateFirst),
       rail(
         (t) => sql`${t.steamMinutes} > 0`,
         (t) => [sql`${t.steamMinutes} desc`],
@@ -424,6 +446,91 @@ export abstract class UserGameService {
       shelf: shelfItems,
       // The shelf is a hall of fame once it opens with an S
       hallOfFame: (shelfItems[0]?.userGameData.rating ?? 0) >= S_GRADE_MIN,
+    };
+  }
+
+  /**
+   * Everything the signed-in member's Now tab shows, ready to draw: what is being played (most
+   * recently touched first), the grading deck (how many wait for a grade and the first few, in
+   * the deck's order), the backlog's longest idle few, and the wanted or backlogged games
+   * releasing from yesterday through a week ahead (IGDB's UTC day against today in `tz`).
+   */
+  static async getNow(userId: string, opts: { tz?: string } = {}) {
+    const tz = safeZone(opts.tz);
+    const releaseDay = sql`(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC')::date`;
+    const today = sql`(now() at time zone ${tz})::date`;
+    const [playing, toGrade, [{ total: toGradeTotal }], upNext, thisWeek] = await Promise.all([
+      indexRows(userId, (t) => eq(t.status, UserGameStatus.Playing), latestUpdateFirst),
+      indexRows(userId, awaitsGrade, newestFirst, NOW_DECK),
+      postgresDb
+        .select({ total: count() })
+        .from(userGames)
+        .where(and(eq(userGames.userId, userId), awaitsGrade(userGames))),
+      indexRows(
+        userId,
+        (t) => eq(t.status, UserGameStatus.Backlog),
+        (t) => [sql`${idleSinceSql(t)} asc`],
+        NOW_UP_NEXT,
+      ),
+      indexRows(
+        userId,
+        (t) =>
+          and(
+            inArray(t.status, [UserGameStatus.WantToPlay, UserGameStatus.Backlog]),
+            sql`exists (select 1 from ${game} where ${game.id} = ${t.gameId} and ${releaseDay} between ${today} - ${NOW_WEEK_BEFORE}::int and ${today} + ${NOW_WEEK_AFTER}::int)`,
+          ),
+        (t) => [
+          sql`(select ${game.firstReleaseDate} from ${game} where ${game.id} = ${t.gameId}) asc`,
+        ],
+      ),
+    ]);
+    return {
+      playing: toIndexItems(playing),
+      toGrade: { total: toGradeTotal, games: toIndexItems(toGrade) },
+      upNext: toIndexItems(upNext),
+      thisWeek: toIndexItems(thisWeek),
+    };
+  }
+
+  /**
+   * A member's tier board: the graded entries grouped by grade, S to F, each tier newest
+   * addition first (the index's order). `status` and `q` narrow it as they narrow the library
+   * list. `total` counts the matching entries, `ungraded` those of them waiting for a grade.
+   */
+  static async getTiers(
+    username: string,
+    viewerId: string | null,
+    opts: { status?: UserGameStatus; q?: string } = {},
+  ) {
+    const owner = await requireUser(username, viewerId);
+    if (!canSeeList(owner, viewerId)) {
+      throw new ForbiddenError("This list is private");
+    }
+    const q = opts.q?.trim();
+    const filters = (t: typeof userGames) =>
+      and(
+        eq(t.userId, owner.id),
+        opts.status ? eq(t.status, opts.status) : undefined,
+        q ? nameMatches(t, q) : undefined,
+      )!;
+    const [graded, [counts]] = await Promise.all([
+      indexRows(owner.id, (t) => and(filters(t), isGraded(t)), newestFirst),
+      postgresDb
+        .select({
+          total: count(),
+          ungraded: sql<number>`count(*) filter (where ${awaitsGrade(userGames)})`,
+        })
+        .from(userGames)
+        .where(filters(userGames)),
+    ]);
+    const items = toIndexItems(graded);
+    return {
+      tiers: GRADE_BANDS.map(({ grade }) => {
+        const games = items.filter((item) => item.userGameData.grade === grade);
+        return { grade, count: games.length, games };
+      }),
+      total: Number(counts.total),
+      ungraded: Number(counts.ungraded),
     };
   }
 

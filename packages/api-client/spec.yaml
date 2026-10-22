@@ -1733,8 +1733,40 @@ components:
             - $ref: "#/components/schemas/Grade"
         gradeCounts:
           $ref: "#/components/schemas/GradeCounts"
+        statusCounts:
+          $ref: "#/components/schemas/StatusCounts"
       required:
-        [total, finished, graded, mastered, year, finishedThisYear, typicalGrade, gradeCounts]
+        [
+          total,
+          finished,
+          graded,
+          mastered,
+          year,
+          finishedThisYear,
+          typicalGrade,
+          gradeCounts,
+          statusCounts,
+        ]
+
+    StatusCounts:
+      type: object
+      description: How many entries have each status
+      properties:
+        finished:
+          type: number
+        playing:
+          type: number
+        dropped:
+          type: number
+        online:
+          type: number
+        on_hold:
+          type: number
+        want_to_play:
+          type: number
+        backlog:
+          type: number
+      required: [finished, playing, dropped, online, on_hold, want_to_play, backlog]
 
     UserGameData:
       type: object
@@ -1992,6 +2024,7 @@ components:
           type: boolean
         playing:
           type: array
+          description: The most recently updated first
           items:
             $ref: "#/components/schemas/LibraryIndexItem"
         mostPlayed:
@@ -2067,6 +2100,87 @@ components:
       required:
         - results
 
+    GradeDeck:
+      type: object
+      description: The entries waiting for a grade (a status that can carry one, no grade yet)
+      properties:
+        total:
+          type: number
+          description: How many wait
+        games:
+          type: array
+          description: The first few, in the order the grading deck deals them (newest added first)
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+      required:
+        - total
+        - games
+
+    NowResponse:
+      type: object
+      description: The signed-in member's Now tab, ready to draw
+      properties:
+        playing:
+          type: array
+          description: Every entry being played, the most recently updated first
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        toGrade:
+          $ref: "#/components/schemas/GradeDeck"
+        upNext:
+          type: array
+          description: Four backlog entries, the longest idle first (idle as `EntryIdle` counts it)
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+        thisWeek:
+          type: array
+          description: >
+            Want-to-play and backlog games releasing from yesterday through 7 days ahead (the
+            release's UTC day against today in `tz`), soonest first
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+      required:
+        - playing
+        - toGrade
+        - upNext
+        - thisWeek
+
+    Tier:
+      type: object
+      properties:
+        grade:
+          $ref: "#/components/schemas/Grade"
+        count:
+          type: number
+        games:
+          type: array
+          description: The tier's entries, newest added first
+          items:
+            $ref: "#/components/schemas/LibraryIndexItem"
+      required:
+        - grade
+        - count
+        - games
+
+    TiersResponse:
+      type: object
+      properties:
+        tiers:
+          type: array
+          description: Every grade, S to F, empty ones included
+          items:
+            $ref: "#/components/schemas/Tier"
+        total:
+          type: number
+          description: Entries matching the filters, graded or not
+        ungraded:
+          type: number
+          description: Of those, the ones waiting for a grade (the grading deck)
+      required:
+        - tiers
+        - total
+        - ungraded
+
     UserGameWithUserData:
       allOf:
         - $ref: "#/components/schemas/Game"
@@ -2121,6 +2235,14 @@ components:
             type: string
         listPublic:
           type: boolean
+        steamId:
+          type: string
+          nullable: true
+          description: The linked Steam account's SteamID64; null when none is linked
+        steamName:
+          type: string
+          nullable: true
+          description: The linked Steam account's name
         preferredPlatformIds:
           type: array
           description: >
@@ -2137,6 +2259,8 @@ components:
         - bio
         - links
         - listPublic
+        - steamId
+        - steamName
         - preferredPlatformIds
 
     PublicUserResponse:
@@ -2725,6 +2849,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/UnauthorizedErrorResponse"
 
+  /api/me/now:
+    get:
+      operationId: getApiMeNow
+      tags:
+        - Library
+      summary: The Now tab
+      description: >
+        What the signed-in member is playing, the grading deck, what is up next from the backlog
+        and the wanted games releasing this week, ready to draw.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: tz
+          in: query
+          required: false
+          description: IANA time zone today is counted in (the member's own); unknown zones count in UTC
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The Now tab
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NowResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedErrorResponse"
+
   /api/user/{username}:
     get:
       parameters:
@@ -3250,7 +3406,9 @@ paths:
         - name: graded
           in: query
           required: false
-          description: 1 for graded entries only, 0 for the ungraded only (the grading deck, newest first)
+          description: >
+            1 for graded entries only, 0 for those waiting for a grade only: a status that can
+            carry one and no grade yet (the grading deck, newest first)
           schema:
             type: string
             enum: ["1", "0"]
@@ -3283,6 +3441,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/NotFoundErrorResponse"
 
+  /api/user/{username}/games/tiers:
+    get:
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Only entries with this status
+          schema:
+            $ref: "#/components/schemas/StatusEnum"
+        - name: q
+          in: query
+          required: false
+          description: Only games whose name or alternative names contain this
+          schema:
+            type: string
+      operationId: getApiUserByUsernameGamesTiers
+      tags:
+        - User
+      summary: A member's tier board
+      description: >
+        The graded entries grouped by grade, S to F, each tier newest added first, with how many
+        entries match the filters and how many of them wait for a grade. Private lists are
+        owner-only.
+      responses:
+        "200":
+          description: Tier board
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TiersResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "403":
+          description: The list is private
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+
   /api/user/{username}/overview:
     get:
       parameters:
@@ -3296,10 +3508,10 @@ paths:
         - User
       summary: A profile's overview rails
       description: >
-        Now playing, most played on Steam, recently finished or dropped (a dozen each) and the
-        cover shelf (best graded first, then the ungraded by when they were added; up to 20,
-        clients repeat them to fill the width). A private list comes back empty with
-        `private: true`.
+        Now playing (most recently updated first), most played on Steam, recently finished or
+        dropped (a dozen each) and the cover shelf (best graded first, then the ungraded by when
+        they were added; up to 20, clients repeat them to fill the width). A private list comes
+        back empty with `private: true`.
       responses:
         "200":
           description: Overview rails

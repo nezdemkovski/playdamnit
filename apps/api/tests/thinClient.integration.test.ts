@@ -191,10 +191,11 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
     expect(own.playing).toHaveLength(1);
   });
 
-  test("the grading queue: ungraded only, newest first", async () => {
-    const [g1, g2, g3, g4, g5] = GAMES;
+  test("the grading queue: gradable and ungraded only, newest first", async () => {
+    // g4 (backlog) and g5 (want to play) cannot carry a grade, so they never reach the deck
+    const [g1, g2, g3] = GAMES;
     const ungraded = await UserGameService.getLibraryIndex("dana", null, { graded: false });
-    expect(ungraded.results.map((e) => e.id)).toEqual([NO_COVER, g5, g2, g4]);
+    expect(ungraded.results.map((e) => e.id)).toEqual([NO_COVER, g2]);
     const graded = await UserGameService.getLibraryIndex("dana", null, { graded: true });
     expect(graded.results.map((e) => e.id).toSorted()).toEqual([g1, g3].toSorted());
   });

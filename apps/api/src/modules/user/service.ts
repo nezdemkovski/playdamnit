@@ -35,6 +35,7 @@ import {
   PUBLIC_USER_COLUMNS,
   requireUser,
 } from "@/utils/social";
+import { safeZone } from "@/utils/timeZone";
 
 const MAX_BIO = 300;
 const MAX_LINKS = 5;
@@ -64,6 +65,8 @@ const avatarPath = (username: string, version: Date) =>
 /** Days the activity map covers by default: 52 weeks */
 export const ACTIVITY_DAYS = 364;
 
+const STATUSES = Object.values(UserGameStatus);
+
 // Games named per action of a day; the rest is only counted
 const ACTIVITY_NAMES = 4;
 
@@ -79,16 +82,6 @@ type ActivityRow = {
   dropped: ActivityGroup;
   updated: ActivityGroup;
   played: ActivityGroup;
-};
-
-/** An IANA zone the runtime knows, else UTC: days are the member's own, not the server's */
-const safeZone = (tz: string | undefined) => {
-  if (!tz) return "UTC";
-  try {
-    return new Intl.DateTimeFormat("en", { timeZone: tz }).resolvedOptions().timeZone;
-  } catch {
-    return "UTC";
-  }
 };
 
 /**
@@ -131,6 +124,11 @@ export abstract class UserService {
           finishedThisYear: sql<number>`count(*) filter (where ${userGames.status} = ${UserGameStatus.Finished} and extract(year from ${userGames.endedAt}) = ${year})`,
           graded: sql<number>`count(*) filter (where ${userGames.rating} > 0)`,
           mastered: sql<number>`count(*) filter (where ${userGames.mastered})`,
+          // One count per status, in the enum's order
+          statuses: sql<string[]>`array[${sql.join(
+            STATUSES.map((status) => sql`count(*) filter (where ${userGames.status} = ${status})`),
+            sql`, `,
+          )}]`,
           // The median, not the mean: always a grade the person actually gave, and a mix of S
           // and F does not average out to a C nobody got. Of an even count, the higher one.
           median: sql<
@@ -177,6 +175,9 @@ export abstract class UserService {
       finishedThisYear: Number(library.finishedThisYear),
       typicalGrade: gradeOf(library.median),
       gradeCounts,
+      statusCounts: Object.fromEntries(
+        STATUSES.map((status, i) => [status, Number(library.statuses[i])]),
+      ) as Record<UserGameStatus, number>,
     };
     // Same rules on every client: thresholds on the numbers above
     const badges = (
@@ -254,6 +255,9 @@ export abstract class UserService {
       bio: userData.bio,
       links: userData.links,
       listPublic: userData.listPublic,
+      // The linked Steam account, as the profile shows it to its owner
+      steamId: userData.steamId,
+      steamName: userData.steamId ? userData.steamName : null,
       // The platforms the member logs games on, most used first: a new entry goes on the first
       // of these the game is on
       preferredPlatformIds: platforms.map((p) => p.id!),

@@ -1,4 +1,7 @@
+import { sql, type SQL } from "drizzle-orm";
+
 import { UserGameStatus } from "@playdamnit/db/enums";
+import type { userGames } from "@playdamnit/db/schema";
 import { IdleKind } from "@/utils/enums";
 
 const DAY_MS = 86_400_000;
@@ -11,6 +14,10 @@ interface IdleInput {
   updatedAt: Date | null;
   steamLastPlayedAt: Date | null;
 }
+
+/** When an entry was last touched, as `idleOf` reads it: ascending is the longest idle first */
+export const idleSinceSql = (t: typeof userGames): SQL =>
+  sql`coalesce(${t.steamLastPlayedAt}, ${t.updatedAt}, ${t.addedAt})`;
 
 /**
  * How long an entry has sat untouched and which line says so. Steam's last launch is the truth
