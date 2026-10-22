@@ -19,6 +19,9 @@ Both clients retain their bundled initial release if the endpoint is unavailable
 }
 ```
 
+Clients show one message field and derive the Linear title from its opening text.
+The existing request contract still includes `title` for compatibility.
+
 `kind` is `bug` or `feature`; `title` allows 1–160 characters and `message` 1–5000,
 with whitespace-only values rejected. `appVersion` and `locale` are optional.
 Ten requests per account per hour are allowed per API process. Only the server receives

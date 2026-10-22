@@ -819,8 +819,7 @@
   "feedback": {
     "feature": "Request a feature",
     "bug": "Report a bug",
-    "title": "Short summary",
-    "message": "Tell us more",
+    "message": "Your message",
     "metadata": "Your username, platform and language are included.",
     "send": "Send feedback",
     "sending": "Sending…",

@@ -11,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -45,7 +44,6 @@ export function FeedbackSettings() {
 function FeedbackForm({ kind, done }: { kind: FeedbackKind; done: () => void }) {
   const { t, i18n } = useTranslation();
   const send = usePostApiFeedback();
-  const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const edited = () => {
@@ -70,12 +68,12 @@ function FeedbackForm({ kind, done }: { kind: FeedbackKind; done: () => void }) 
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            if (send.isPending || !title.trim() || !message.trim()) return;
+            if (send.isPending || !message.trim()) return;
             send.mutate({
               data: {
                 requestId,
                 kind,
-                title: title.trim(),
+                title: feedbackTitle(message),
                 message: message.trim(),
                 platform: ProductPlatform.Web,
                 locale: i18n.language,
@@ -83,20 +81,6 @@ function FeedbackForm({ kind, done }: { kind: FeedbackKind; done: () => void }) 
             });
           }}
         >
-          <div className="space-y-2">
-            <Label htmlFor="feedback-title">{t("feedback.title")}</Label>
-            <Input
-              id="feedback-title"
-              value={title}
-              required
-              maxLength={160}
-              disabled={send.isPending}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                edited();
-              }}
-            />
-          </div>
           <div className="space-y-2">
             <Label htmlFor="feedback-message">{t("feedback.message")}</Label>
             <Textarea
@@ -117,11 +101,20 @@ function FeedbackForm({ kind, done }: { kind: FeedbackKind; done: () => void }) 
               {t("feedback.failed")}
             </p>
           )}
-          <Button type="submit" disabled={send.isPending || !title.trim() || !message.trim()}>
+          <Button type="submit" disabled={send.isPending || !message.trim()}>
             {send.isPending ? t("feedback.sending") : t("feedback.send")}
           </Button>
         </form>
       )}
     </>
   );
+}
+
+function feedbackTitle(message: string) {
+  let title = "";
+  for (const character of message.trim().replace(/\s+/g, " ")) {
+    if (title.length + character.length > 160) break;
+    title += character;
+  }
+  return title;
 }

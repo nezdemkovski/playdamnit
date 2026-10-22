@@ -91,6 +91,7 @@ describe("product endpoints", () => {
     expect(await service.submit(actor, input)).toEqual({ id });
     expect(calls).toHaveLength(1);
     expect(feedbackId("another-member", input.requestId)).not.toBe(id);
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
   test("a timeout after acceptance finds the task instead of duplicating it", async () => {
     const { service } = fake([
