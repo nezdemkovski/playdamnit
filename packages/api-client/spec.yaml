@@ -52,6 +52,7 @@ components:
         name: { type: string }
         username: { type: string, nullable: true }
         image: { type: string, nullable: true }
+        steamAvatarUrl: { type: string, nullable: true }
     ModerationReport:
       type: object
       required: [id, kind, targetId, reason, context, status, createdAt]
@@ -655,6 +656,10 @@ components:
         image:
           type: string
           nullable: true
+        steamAvatarUrl:
+          type: string
+          nullable: true
+          description: Steam avatar used only when no profile picture is uploaded
       required:
         - id
         - username
@@ -2250,6 +2255,10 @@ components:
             first of these the game is on
           items:
             type: number
+        steamAvatarUrl:
+          type: string
+          nullable: true
+          description: Steam avatar used only when no profile picture is uploaded
       required:
         - id
         - image

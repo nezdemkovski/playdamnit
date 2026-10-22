@@ -27,6 +27,7 @@ export class TasteService {
       username: string | null;
       name: string;
       image: string | null;
+      steam_avatar_url: string | null;
       shared: number;
       agreement: number;
       top: number[];
@@ -51,7 +52,7 @@ export class TasteService {
         having count(*) >= ${MIN_SHARED_GRADES}
       )
       select ${user.id} as id, ${user.username} as username, ${user.name} as name,
-        ${user.image} as image, s.shared, s.agreement,
+        ${user.image} as image, ${user.steamAvatarUrl} as steam_avatar_url, s.shared, s.agreement,
         array(
           select p.game_id from pairs p where p.user_id = s.user_id
           order by p.a + p.b desc, p.game_id limit ${SHOWN_SHARED}
@@ -76,6 +77,7 @@ export class TasteService {
         username: m.username,
         name: m.name,
         image: m.image,
+        steamAvatarUrl: m.steam_avatar_url,
         isFollowing: following.has(m.id),
         shared: Number(m.shared),
         agreement: Number(m.agreement),

@@ -755,7 +755,10 @@
     "syncedAgo": "Synced {{when}}",
     "syncNow": "Sync now",
     "open": "Open on Steam",
-    "friends": "Steam friends"
+    "friends": "Steam friends",
+    "friend": "Steam friend",
+    "avatarSource": "Avatar from Steam",
+    "avatarHint": "Using your Steam avatar. Upload a photo to use your own."
   },
   "safety": {
     "actions": "More actions",

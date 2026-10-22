@@ -19,7 +19,12 @@ const AVATAR_SIZE = 256;
 const MAX_BIO = 300;
 const MAX_LINKS = 5;
 
-type ProfileUser = SessionUser & { bio?: string | null; links?: string[]; listPublic?: boolean };
+type ProfileUser = SessionUser & {
+  bio?: string | null;
+  links?: string[];
+  listPublic?: boolean;
+  steamAvatarUrl?: string | null;
+};
 
 /** Resize the picture in the browser so the upload stays small (JPEG, 256px square) */
 const resizeAvatar = (file: File): Promise<File> =>
@@ -133,6 +138,9 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           >
             <Trash2Icon /> {t("common.remove")}
           </Button>
+        )}
+        {!user.image && user.steamAvatarUrl && (
+          <p className="text-xs text-dimmed">{t("steam.avatarHint")}</p>
         )}
         <div className="text-xs text-dimmed">{t("settings.profile.avatarHint")}</div>
       </div>

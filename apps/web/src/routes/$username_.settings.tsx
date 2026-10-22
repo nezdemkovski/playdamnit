@@ -69,7 +69,7 @@ function SettingsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value={SettingsTab.Profile} className="mt-8">
-          <ProfileForm user={user} />
+          <ProfileForm user={{ ...user, ...me.data }} />
         </TabsContent>
         <TabsContent value={SettingsTab.Account} className="mt-8">
           <PasswordForm user={user} />

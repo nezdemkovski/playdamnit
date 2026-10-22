@@ -61,7 +61,13 @@ export abstract class ModerationService {
   }
   static async blocks(userId: string) {
     return db
-      .select({ id: user.id, username: user.username, name: user.name, image: user.image })
+      .select({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        image: user.image,
+        steamAvatarUrl: user.steamAvatarUrl,
+      })
       .from(userBlock)
       .innerJoin(user, eq(user.id, userBlock.blockedId))
       .where(eq(userBlock.blockerId, userId))
@@ -116,6 +122,7 @@ export abstract class ModerationService {
       username: table.username,
       name: table.name,
       image: table.image,
+      steamAvatarUrl: table.steamAvatarUrl,
     });
     return db
       .select({
@@ -148,6 +155,7 @@ export abstract class ModerationService {
         username: user.username,
         name: user.name,
         image: user.image,
+        steamAvatarUrl: user.steamAvatarUrl,
         banReason: user.banReason,
         banExpires: user.banExpires,
       })

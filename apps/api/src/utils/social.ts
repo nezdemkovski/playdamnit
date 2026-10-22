@@ -6,13 +6,20 @@ import { notification, user } from "@playdamnit/db/schema";
 import type { NotificationType } from "@playdamnit/db/enums";
 import { NotFoundError } from "@/utils/errors";
 
-export const PUBLIC_USER_COLUMNS = { id: true, username: true, name: true, image: true } as const;
+export const PUBLIC_USER_COLUMNS = {
+  id: true,
+  username: true,
+  name: true,
+  image: true,
+  steamAvatarUrl: true,
+} as const;
 
 export type PublicUser = {
   id: string;
   username: string | null;
   name: string;
   image: string | null;
+  steamAvatarUrl?: string | null;
 };
 
 /** Resolve a username to the row, or 404. */

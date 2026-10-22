@@ -331,6 +331,7 @@ export abstract class SteamService {
         username: user.username,
         name: user.name,
         image: user.image,
+        steamAvatarUrl: user.steamAvatarUrl,
         steamName: user.steamName,
         // "user".id spelled out: inside the subquery a bare "id" would be user_follows.id
         following: sql<boolean>`exists (select 1 from ${userFollows} where ${userFollows.followerId} = ${userId} and ${userFollows.followingId} = "user"."id")`,

@@ -1,4 +1,9 @@
-import { GetApiUsersSort, useGetApiUsers } from "@playdamnit/api-client";
+import {
+  GetApiUsersSort,
+  useGetApiUsers,
+  useGetApiMeSteamFriends,
+  getGetApiMeSteamFriendsQueryKey,
+} from "@playdamnit/api-client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Gamepad2Icon, SearchIcon, UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -16,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
-import { SteamFriends } from "@/components/steam/steam-friends";
+import { SteamLogo } from "@/components/steam/steam-logo";
 import { useSession } from "@/hooks/auth";
 
 const PAGE = 30;
@@ -44,6 +49,13 @@ function CommunityPage() {
     { q: search.q || undefined, sort: search.sort, limit: PAGE, offset: (search.page - 1) * PAGE },
     { query: { placeholderData: (prev) => prev } },
   );
+  const friends = useGetApiMeSteamFriends({
+    query: {
+      enabled: !!user,
+      queryKey: [...getGetApiMeSteamFriendsQueryKey(), user?.id],
+    },
+  });
+  const friendIds = new Set(user ? friends.data?.users.map((friend) => friend.id) : []);
   const total = query.data?.meta.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE));
 
@@ -88,8 +100,6 @@ function CommunityPage() {
         />
       </form>
 
-      <SteamFriends enabled={!!user} />
-
       <div className="mt-6 space-y-2">
         {query.isPending
           ? Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-16 rounded-card" />)
@@ -100,14 +110,26 @@ function CommunityPage() {
                 </Link>
                 <div className="min-w-0 flex-1">
                   {/* Long names and handles cut to one line */}
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <Link
-                      to="/$username"
-                      params={{ username: member.username ?? "" }}
-                      className="min-w-0 truncate font-bold hover:underline"
-                    >
-                      {member.name || member.username}
-                    </Link>
+                  <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Link
+                        to="/$username"
+                        params={{ username: member.username ?? "" }}
+                        className="min-w-0 truncate font-bold hover:underline"
+                      >
+                        {member.name || member.username}
+                      </Link>
+                      {friendIds.has(member.id) && (
+                        <span
+                          className="shrink-0 text-dimmed"
+                          role="img"
+                          aria-label={t("steam.friend")}
+                          title={t("steam.friend")}
+                        >
+                          <SteamLogo className="size-4" />
+                        </span>
+                      )}
+                    </div>
                     <span className="min-w-0 shrink-[3] truncate text-xs text-dimmed">
                       @{member.username}
                     </span>

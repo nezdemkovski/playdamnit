@@ -1,5 +1,6 @@
 import {
   getGetApiHomeQueryKey,
+  getGetApiMeQueryKey,
   getGetApiGamesByIdListsQueryKey,
   getGetApiGamesByIdQueryKey,
   getGetApiGamesByIdReviewsQueryKey,
@@ -139,6 +140,8 @@ export const useProfileUpdate = () => {
   const { user } = useSession();
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: [QueryKey.Session] });
+    queryClient.invalidateQueries({ queryKey: getGetApiMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetApiUsersQueryKey() });
     if (user?.username)
       queryClient.invalidateQueries({ queryKey: getGetApiUserByUsernameQueryKey(user.username) });
   };
