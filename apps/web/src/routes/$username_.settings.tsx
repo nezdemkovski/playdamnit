@@ -1,5 +1,6 @@
 import { useGetApiMe } from "@playdamnit/api-client";
 import { Button } from "@/components/ui/button";
+import { FeedbackSettings } from "@/components/settings/feedback";
 import { SafetySettings } from "@/components/settings/safety-settings";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { DatabaseIcon, FingerprintIcon, KeyRoundIcon, UserIcon } from "lucide-react";
@@ -82,6 +83,7 @@ function SettingsPage() {
           <DataSettings username={user.username ?? ""} />
         </TabsContent>
       </Tabs>
+      <FeedbackSettings />
     </>
   );
 }

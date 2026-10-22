@@ -11,6 +11,60 @@ components:
       name: better-auth.session_token
 
   schemas:
+    FeedbackKind:
+      type: string
+      enum: [bug, feature]
+      x-enumNames: [Bug, Feature]
+    ProductPlatform:
+      type: string
+      enum: [all, web, ios]
+      x-enumNames: [All, Web, IOS]
+    ChangelogKind:
+      type: string
+      enum: [new, changed, fixed]
+      x-enumNames: [New, Changed, Fixed]
+    FeedbackInput:
+      type: object
+      required: [requestId, kind, title, message, platform]
+      properties:
+        requestId: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/FeedbackKind" }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        message: { type: string, minLength: 1, maxLength: 5000 }
+        platform: { $ref: "#/components/schemas/ProductPlatform" }
+        appVersion: { type: string, maxLength: 64 }
+        locale: { type: string, maxLength: 35 }
+    FeedbackReceipt:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+    ChangelogChange:
+      type: object
+      required: [kind, title, details]
+      properties:
+        kind: { $ref: "#/components/schemas/ChangelogKind" }
+        title: { type: string }
+        details:
+          type: array
+          items: { type: string }
+    ChangelogRelease:
+      type: object
+      required: [version, date, platform, changes]
+      properties:
+        version: { type: string }
+        date: { type: string }
+        platform: { $ref: "#/components/schemas/ProductPlatform" }
+        changes:
+          type: array
+          items: { $ref: "#/components/schemas/ChangelogChange" }
+    ChangelogResponse:
+      type: object
+      required: [releases]
+      properties:
+        releases:
+          type: array
+          items: { $ref: "#/components/schemas/ChangelogRelease" }
     ContentKind:
       type: string
       enum: [user, review, list]
@@ -2642,6 +2696,70 @@ components:
         - details
 
 paths:
+  /api/changelog:
+    get:
+      operationId: getApiChangelog
+      summary: Shared member-facing release history, localized with English fallback
+      parameters:
+        - name: locale
+          in: query
+          schema: { type: string, maxLength: 35 }
+        - name: platform
+          in: query
+          schema: { $ref: "#/components/schemas/ProductPlatform" }
+      responses:
+        "200":
+          description: Release history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChangelogResponse" }
+        "400":
+          description: Invalid query
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BadRequestErrorResponse" }
+  /api/feedback:
+    post:
+      operationId: postApiFeedback
+      summary: Send a signed-in member's feedback to the product team
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FeedbackInput" }
+      responses:
+        "201":
+          description: Accepted; retries with the same requestId return the same receipt
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedbackReceipt" }
+        "400":
+          description: Invalid feedback
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BadRequestErrorResponse" }
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UnauthorizedErrorResponse" }
+        "429":
+          description: Too many submissions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TooManyRequestsErrorResponse" }
+        "503":
+          description: Feedback service unavailable; keep the draft and retry with the same requestId
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, message]
+                properties:
+                  error: { type: string }
+                  message: { type: string }
+
   /api/me/reports:
     post:
       operationId: postApiMeReports

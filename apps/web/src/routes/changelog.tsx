@@ -1,3 +1,4 @@
+import { ChangelogKind, ProductPlatform, useGetApiChangelog } from "@playdamnit/api-client";
 import { createFileRoute } from "@tanstack/react-router";
 import { cn } from "cn";
 import { useTranslation } from "react-i18next";
@@ -5,26 +6,28 @@ import { useTranslation } from "react-i18next";
 import { CHANGELOG } from "@/changelog";
 import { Namespace } from "@/i18n";
 import { format } from "@/i18n/date";
-import { ChangeKind, DateFormat } from "@/lib/enums";
+import { DateFormat } from "@/lib/enums";
 
 export const Route = createFileRoute("/changelog")({
   component: Changelog,
 });
 
 // New is the news; changes and fixes stay quiet
-const KIND_CLASS: Record<ChangeKind, string> = {
-  [ChangeKind.New]: "border-signal/60 text-signal",
-  [ChangeKind.Changed]: "border-border text-foreground/80",
-  [ChangeKind.Fixed]: "border-border text-dimmed",
+const KIND_CLASS: Record<ChangelogKind, string> = {
+  [ChangelogKind.New]: "border-signal/60 text-signal",
+  [ChangelogKind.Changed]: "border-border text-foreground/80",
+  [ChangelogKind.Fixed]: "border-border text-dimmed",
 };
 
 function Changelog() {
-  const { t } = useTranslation(Namespace.Changelog);
+  const { t, i18n } = useTranslation(Namespace.Changelog);
+  const history = useGetApiChangelog({ locale: i18n.language, platform: ProductPlatform.Web });
+  const releases = history.data?.releases ?? CHANGELOG;
   return (
     <>
       <h1 className="text-2xl font-bold">{t("title")}</h1>
       <div className="mt-6 max-w-3xl">
-        {CHANGELOG.map((release) => (
+        {releases.map((release) => (
           <section
             key={release.version}
             id={release.version}
@@ -43,7 +46,7 @@ function Changelog() {
                   <span
                     className={cn(
                       "eyebrow justify-self-start border px-1.5 py-1",
-                      KIND_CLASS[change.kind],
+                      KIND_CLASS[change.kind as ChangelogKind],
                     )}
                   >
                     {t(`kinds.${change.kind}`)}

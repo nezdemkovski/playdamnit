@@ -815,5 +815,17 @@
       "banned": "Suspended",
       "pending": "Pending"
     }
+  },
+  "feedback": {
+    "feature": "Request a feature",
+    "bug": "Report a bug",
+    "title": "Short summary",
+    "message": "Tell us more",
+    "metadata": "Your username, platform and language are included.",
+    "send": "Send feedback",
+    "sending": "Sending…",
+    "sent": "Thanks! Your feedback has been sent.",
+    "failed": "Could not send. Your message is still here. Please try again.",
+    "done": "Done"
   }
 }

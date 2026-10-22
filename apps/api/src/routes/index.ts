@@ -1,3 +1,4 @@
+import { productRoutes } from "./product";
 import { moderationRoutes } from "./moderation";
 import { Elysia } from "elysia";
 
@@ -43,6 +44,7 @@ import { listRoutes } from "./lists";
 import { postIgdbWebhook } from "./webhooks/igdb/POST";
 
 export const routes = new Elysia()
+  .use(productRoutes)
   .use(meRoutes)
   .use(getMeNow)
   .use(steamImportRoutes)
