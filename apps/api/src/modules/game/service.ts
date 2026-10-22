@@ -26,6 +26,7 @@ import { NotFoundError } from "@/utils/errors";
 import { GameSort } from "@/utils/enums";
 import { emptyGradeCounts, gradeOf } from "@/utils/grade";
 import { getImageUrl, IgdbImageSize } from "@/utils/image";
+import { toUserGameData } from "@/modules/userGame/entry";
 
 export const MAX_GAMES_PAGE_SIZE = 100;
 const SIMILAR_GAMES_LIMIT = 12;
@@ -282,7 +283,7 @@ const communityStats = async (gameId: number) => {
 export abstract class GameService {
   /**
    * Find a single game by ID. Deleted games are still served (libraries reference them) with
-   * `deleted: true`. `viewerId` adds the viewer's like state.
+   * `deleted: true`. `viewerId` adds the viewer's like state and library entry.
    */
   static async findById(gameId: number, viewerId: string | null = null) {
     const result = await db.query.game.findFirst({
@@ -296,7 +297,7 @@ export abstract class GameService {
     }
 
     const similarIds = (result.similarGameIds ?? []).slice(0, SIMILAR_GAMES_LIMIT);
-    const [children, editions, similar, community, liked] = await Promise.all([
+    const [children, editions, similar, community, liked, entry] = await Promise.all([
       findRelated("parentGameId", gameId),
       findRelated("versionParentId", gameId),
       similarIds.length
@@ -313,6 +314,9 @@ export abstract class GameService {
             columns: { gameId: true },
           })
         : Promise.resolve(undefined),
+      viewerId
+        ? db.query.userGames.findFirst({ where: { userId: viewerId, gameId } })
+        : Promise.resolve(undefined),
     ]);
 
     const byId = new Map(similar.map((g) => [g.id, g]));
@@ -325,7 +329,7 @@ export abstract class GameService {
         return g ? [transformGameResponse(g)] : [];
       }),
       community,
-      viewer: { liked: !!liked },
+      viewer: { liked: !!liked, entry: entry ? toUserGameData(entry) : null },
     };
   }
 
@@ -433,7 +437,7 @@ export abstract class GameService {
   /**
    * How many games release on each UTC day of a range (the release calendar's counts), with
    * the same filters as the list, and the covers of the day's most popular games. Days without
-   * releases are left out.
+   * releases are left out; `total` is how many games release in the whole range.
    */
   static async releaseDays(opts: GameFilters) {
     const day = sql`to_char(to_timestamp(${game.firstReleaseDate}) at time zone 'UTC', 'YYYY-MM-DD')`;
@@ -458,13 +462,13 @@ export abstract class GameService {
       group by date
       order by date
     `);
-    return {
-      days: rows.rows.map((r) => ({
-        date: r.date,
-        count: Number(r.count),
-        covers: (r.covers ?? []).map((c) => getImageUrl(c.source, c.hash, IgdbImageSize.COVER_BIG)),
-      })),
-    };
+    const days = rows.rows.map((r) => ({
+      date: r.date,
+      count: Number(r.count),
+      covers: (r.covers ?? []).map((c) => getImageUrl(c.source, c.hash, IgdbImageSize.COVER_BIG)),
+    }));
+    // Every matching game falls on exactly one day, so the range's total is the days' sum
+    return { days, total: days.reduce((sum, d) => sum + d.count, 0) };
   }
 
   /**

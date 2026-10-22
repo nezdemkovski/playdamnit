@@ -25,10 +25,12 @@ import { escapeLike } from "@/utils/searchGames";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { canSeeList, requireUser } from "@/utils/social";
 import { idleOf } from "./idle";
+import { toUserGameData } from "./entry";
 import { ENDED_STATUSES, MAX_REVIEW_LENGTH } from "./model";
 import { canGrade } from "./rules";
 import { todayIn } from "./completionDate";
 import { GameService } from "@/modules/game/service";
+import { ListService } from "@/modules/list/service";
 
 const MAX_IMPORT_GAMES = 1000;
 const IMPORT_FETCH_TIMEOUT_MS = 30_000;
@@ -133,24 +135,7 @@ type EntryRow = typeof userGames.$inferSelect & {
 /** A library row as the list serves it: the game's card with the member's entry on it */
 const toLibraryEntry = (entry: EntryRow & { game: NonNullable<EntryRow["game"]> }) => ({
   ...transformGameResponse(entry.game),
-  userGameData: {
-    id: entry.id,
-    status: entry.status,
-    rating: entry.rating !== null ? Number(entry.rating) : null,
-    grade: gradeOf(entry.rating),
-    review: entry.review,
-    platformId: entry.platformId,
-    addedAt: entry.addedAt,
-    endedAt: entry.endedAt,
-    source: entry.source,
-    mastered: entry.mastered,
-    spoilers: entry.spoilers,
-    allowReactions: entry.allowReactions,
-    steamMinutes: entry.steamMinutes,
-    steamLastPlayedAt: entry.steamLastPlayedAt,
-    updatedAt: entry.updatedAt,
-    idle: idleOf(entry),
-  },
+  userGameData: toUserGameData(entry),
 });
 
 const INDEX_GAME_WITH = {
@@ -199,6 +184,16 @@ const toIndexItems = (entries: IndexRow[]) =>
         ]
       : [],
   );
+
+/** A member's playthroughs of a game, newest first */
+const playthroughsOf = async (userId: string, gameId: number) => {
+  const rows = await postgresDb.query.playthrough.findMany({
+    where: { userId, gameId },
+    orderBy: { createdAt: "desc" },
+    with: { platform: true },
+  });
+  return rows.map((row) => ({ ...row, hours: row.hours !== null ? Number(row.hours) : null }));
+};
 
 /** A rating counts as a grade above zero; zero is what clearing a grade writes */
 const isGraded = (t: typeof userGames) => sql`coalesce(${t.rating}, 0) > 0`;
@@ -432,15 +427,23 @@ export abstract class UserGameService {
     };
   }
 
-  /** One entry in full, review included, as the library list serves it */
+  /**
+   * One entry in full, review included, as the library list serves it, with what its page shows
+   * next to it: the playthroughs and how many of the member's lists (those the viewer can see)
+   * hold the game
+   */
   static async getEntry(username: string, gameId: number, viewerId: string | null) {
     const userData = await requireUser(username, viewerId);
     if (!canSeeList(userData, viewerId)) {
       throw new ForbiddenError("This list is private");
     }
-    const entry = await libraryEntry(userData.id, gameId);
+    const [entry, playthroughs, listCount] = await Promise.all([
+      libraryEntry(userData.id, gameId),
+      playthroughsOf(userData.id, gameId),
+      ListService.countContaining(userData.id, gameId, viewerId),
+    ]);
     if (!entry) throw new NotFoundError("Game not found in user's library");
-    return entry;
+    return { ...entry, listCount, playthroughs };
   }
 
   /**
@@ -689,12 +692,7 @@ export abstract class UserGameService {
   static async listPlaythroughs(username: string, gameId: number, viewerId: string | null) {
     const owner = await requireUser(username, viewerId);
     if (!canSeeList(owner, viewerId)) throw new ForbiddenError("This list is private");
-    const rows = await postgresDb.query.playthrough.findMany({
-      where: { userId: owner.id, gameId },
-      orderBy: { createdAt: "desc" },
-      with: { platform: true },
-    });
-    return rows.map((row) => ({ ...row, hours: row.hours !== null ? Number(row.hours) : null }));
+    return playthroughsOf(owner.id, gameId);
   }
 
   static async addPlaythrough(userId: string, gameId: number, input: PlaythroughInput) {

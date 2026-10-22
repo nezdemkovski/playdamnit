@@ -2,11 +2,13 @@ import { t } from "elysia";
 
 import { UserGameStatus } from "@playdamnit/db/enums";
 import { Grade } from "@/utils/enums";
+import { MAX_PLAYTHROUGH_NOTE_LENGTH, MAX_REVIEW_LENGTH } from "@/utils/limits";
+import { ENDED_STATUSES as ENDED_STATUS_LIST } from "./rules";
 
-export const MAX_REVIEW_LENGTH = 5000;
+export { MAX_REVIEW_LENGTH };
 
 // Statuses that describe a finished run, the only ones where endedAt makes sense
-export const ENDED_STATUSES: readonly string[] = [UserGameStatus.Finished, UserGameStatus.Dropped];
+export const ENDED_STATUSES: readonly string[] = ENDED_STATUS_LIST;
 
 // Not t.UnionEnum: inside t.Optional, Elysia fills a missing UnionEnum with its first value,
 // which turned a PATCH without `status` into status "finished". t.Enum keeps it missing.
@@ -50,5 +52,5 @@ export const playthroughInputSchema = t.Object({
   endedAt: t.Optional(t.Nullable(t.String({ maxLength: 10 }))),
   hours: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 99999 }))),
   platformId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
-  note: t.Optional(t.Nullable(t.String({ maxLength: 1000 }))),
+  note: t.Optional(t.Nullable(t.String({ maxLength: MAX_PLAYTHROUGH_NOTE_LENGTH }))),
 });

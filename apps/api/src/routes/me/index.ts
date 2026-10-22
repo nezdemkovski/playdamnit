@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
 import { UserService } from "@/modules/user/service";
+import { MAX_BIO_LENGTH, MAX_PROFILE_LINK_LENGTH, MAX_PROFILE_LINKS } from "@/utils/limits";
 
 export const meRoutes = new Elysia()
   .use(betterAuth)
@@ -11,8 +12,12 @@ export const meRoutes = new Elysia()
     {
       auth: true,
       body: t.Object({
-        bio: t.Optional(t.Nullable(t.String({ maxLength: 300 }))),
-        links: t.Optional(t.Array(t.String({ maxLength: 200 }), { maxItems: 5 })),
+        bio: t.Optional(t.Nullable(t.String({ maxLength: MAX_BIO_LENGTH }))),
+        links: t.Optional(
+          t.Array(t.String({ maxLength: MAX_PROFILE_LINK_LENGTH }), {
+            maxItems: MAX_PROFILE_LINKS,
+          }),
+        ),
         listPublic: t.Optional(t.Boolean()),
       }),
     },

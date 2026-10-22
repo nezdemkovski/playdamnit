@@ -20,6 +20,7 @@ import { isValidUsername, USERNAME_MAX, USERNAME_MIN } from "@/modules/user/user
 import { changeEmail, deleteAccount, resetPassword, verifyEmail } from "@playdamnit/emails";
 
 import { emailEnabled, sendEmail } from "@/utils/email";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/utils/limits";
 import { Hostname, Origin, SocialProvider } from "@/utils/enums";
 
 const { trustedOrigins, isDev, betterAuthUrl, appleAppBundleId, appleClientId, appleClientSecret } =
@@ -68,6 +69,8 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: MIN_PASSWORD_LENGTH,
+    maxPasswordLength: MAX_PASSWORD_LENGTH,
     resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
     verifyEmailTokenExpiresIn: CONFIRMATION_SECONDS * 1000,
     // No email configured: accounts are usable right after sign-up and reset is unavailable

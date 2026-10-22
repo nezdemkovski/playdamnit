@@ -193,6 +193,22 @@ export abstract class ListService {
     return { added: false };
   }
 
+  /** How many of the owner's lists hold the game, counting only the lists the viewer can see */
+  static async countContaining(ownerId: string, gameId: number, viewerId: string | null) {
+    const [{ n }] = await db
+      .select({ n: count() })
+      .from(gameListItem)
+      .innerJoin(gameList, eq(gameList.id, gameListItem.listId))
+      .where(
+        and(
+          eq(gameList.userId, ownerId),
+          eq(gameListItem.gameId, gameId),
+          ownerId === viewerId ? undefined : eq(gameList.isPublic, true),
+        ),
+      );
+    return Number(n);
+  }
+
   /** The viewer's lists with a flag for whether each contains the game ("Manage lists") */
   static async membership(userId: string, gameId: number) {
     const rows = await db

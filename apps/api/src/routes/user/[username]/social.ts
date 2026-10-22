@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 
 import { betterAuth } from "@/lib/betterAuth";
+import { MAX_LIST_DESCRIPTION_LENGTH, MAX_LIST_NAME_LENGTH } from "@/utils/limits";
 import { GameService } from "@/modules/game/service";
 import { ListService } from "@/modules/list/service";
 import { ReviewService } from "@/modules/review/service";
@@ -98,8 +99,8 @@ export const userSocialRoutes = new Elysia()
       auth: true,
       params,
       body: t.Object({
-        name: t.String({ minLength: 1, maxLength: 100 }),
-        description: t.Optional(t.Nullable(t.String({ maxLength: 1000 }))),
+        name: t.String({ minLength: 1, maxLength: MAX_LIST_NAME_LENGTH }),
+        description: t.Optional(t.Nullable(t.String({ maxLength: MAX_LIST_DESCRIPTION_LENGTH }))),
         isPublic: t.Optional(t.Boolean()),
       }),
     },

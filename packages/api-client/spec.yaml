@@ -328,8 +328,14 @@ components:
           properties:
             liked:
               type: boolean
+            entry:
+              description: The signed-in viewer's library entry for the game in full, review included; null when signed out or not in the library
+              nullable: true
+              allOf:
+                - $ref: "#/components/schemas/UserGameData"
           required:
             - liked
+            - entry
         totalRatingCount:
           type: number
           nullable: true
@@ -1391,8 +1397,12 @@ components:
               - date
               - count
               - covers
+        total:
+          type: number
+          description: Games releasing in the whole range with the same filters (the days' counts summed)
       required:
         - days
+        - total
 
     GameListSummary:
       type: object
@@ -1505,11 +1515,83 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/GameType"
+        gradableStatuses:
+          type: array
+          description: The statuses an entry can carry a grade in; a write with any other status stores no grade
+          items:
+            $ref: "#/components/schemas/StatusEnum"
+        endedStatuses:
+          type: array
+          description: The statuses that keep an end date (endedAt); any other status clears it
+          items:
+            $ref: "#/components/schemas/StatusEnum"
+        chartYears:
+          $ref: "#/components/schemas/ChartYears"
+        limits:
+          $ref: "#/components/schemas/TextLimits"
       required:
         - genres
         - platforms
         - localPlatforms
         - types
+        - gradableStatuses
+        - endedStatuses
+        - chartYears
+        - limits
+
+    ChartYears:
+      type: object
+      description: The years the charts' year picker offers, both inclusive (to is next UTC year)
+      properties:
+        from:
+          type: number
+        to:
+          type: number
+      required:
+        - from
+        - to
+
+    TextLimits:
+      type: object
+      description: The lengths and counts the API validates text input with
+      properties:
+        bioLength:
+          type: number
+          description: Profile bio, characters (PATCH /api/me bio)
+        profileLinks:
+          type: number
+          description: Profile links, items (PATCH /api/me links)
+        profileLinkLength:
+          type: number
+          description: One profile link, characters
+        reviewLength:
+          type: number
+          description: Review text, characters
+        playthroughNoteLength:
+          type: number
+          description: Playthrough note, characters
+        listNameLength:
+          type: number
+          description: List name, characters (at least 1)
+        listDescriptionLength:
+          type: number
+          description: List description, characters
+        passwordMinLength:
+          type: number
+          description: Shortest password sign-up, reset and POST /api/me/password accept
+        passwordMaxLength:
+          type: number
+          description: Longest password accepted
+      required:
+        - bioLength
+        - profileLinks
+        - profileLinkLength
+        - reviewLength
+        - playthroughNoteLength
+        - listNameLength
+        - listDescriptionLength
+        - passwordMinLength
+        - passwordMaxLength
 
     LikedGameListResponse:
       type: object
@@ -1994,6 +2076,24 @@ components:
               $ref: "#/components/schemas/UserGameData"
           required:
             - userGameData
+
+    LibraryEntryDetail:
+      description: One entry as its page shows it (GET /api/user/{username}/games/{id})
+      allOf:
+        - $ref: "#/components/schemas/UserGameWithUserData"
+        - type: object
+          properties:
+            listCount:
+              type: number
+              description: How many of the member's lists hold the game, counting only the lists the viewer can see
+            playthroughs:
+              type: array
+              description: The entry's playthroughs, newest first (as GET .../playthroughs serves them)
+              items:
+                $ref: "#/components/schemas/Playthrough"
+          required:
+            - listCount
+            - playthroughs
 
     UserResponse:
       type: object
@@ -3230,14 +3330,14 @@ paths:
       operationId: getApiUserByUsernameGamesById
       tags:
         - User
-      summary: One entry in full, review included
+      summary: One entry in full, review included, with its playthroughs and list count
       responses:
         "200":
           description: The entry
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserGameWithUserData"
+                $ref: "#/components/schemas/LibraryEntryDetail"
         "403":
           description: The list is private
           content:
@@ -4547,7 +4647,7 @@ paths:
       operationId: getApiCatalog
       tags:
         - Games
-      summary: Lookup tables for filters (genres, platforms with games, game types)
+      summary: Lookup tables for filters (genres, platforms with games, game types) and the server's rules for clients (gradable and ended statuses, chart years, text limits)
       responses:
         "200":
           description: Lookups
