@@ -58,3 +58,12 @@ and feedback preserves its draft and shows a retryable error on an unavailable r
 Roll out the API before publishing the updated native client. Image publication, Flux
 readiness and live HTTP checks are distinct steps. Validate feedback with a clearly
 marked test submission in the product project, then cancel the test issue.
+
+### Verified rollout — 22 October 2026
+
+- Product source `816f80d636cef6bbd057913fc70392e1e4424f39` (0.1.62): CI and image/chart publication succeeded.
+- GitOps source `f31f8b9`: all three HelmReleases Ready; all deployments use pinned 0.1.62 digests; ExternalSecret Ready.
+- Live localized changelog responds successfully; anonymous feedback is rejected with 401.
+- Production feedback service created verification issue NEZ-60 in Play, damn it!, assigned to Yuri. A repeat returned the same receipt and created no duplicate. The verification issue was canceled.
+- Original App Store 1.0 (84) client decoded populated/null, empty, catalog and 404 responses after rollout. The iOS repo includes a reproducible `scripts/check-released-api.py` that extracts original generated sources and their original dependency lockfile.
+- Local server suite: 35 passed, 101 DB-dependent tests skipped; CI's PostgreSQL-backed suite passed. Native suite: 95 model tests passed; single-field feedback retry and shared changelog passed UI tests. Web form and retry verified in an isolated browser against mock responses; actual provider delivery verified separately in production.
