@@ -40,10 +40,6 @@ const TABS = [
   { value: ChartTab.Upcoming, icon: CalendarIcon, sort: GetApiGamesSort.Upcoming },
 ] as const;
 const PAGE = 50;
-const YEARS = Array.from(
-  { length: new Date().getFullYear() + 2 - 1980 },
-  (_, i) => new Date().getFullYear() + 1 - i,
-);
 
 export const Route = createFileRoute("/charts")({
   validateSearch: (raw: Record<string, unknown>) => ({
@@ -66,6 +62,11 @@ function ChartsPage() {
   const navigate = useNavigate({ from: "/charts" });
   const { byGameId } = useMyLibrary();
   const lookups = useGetApiCatalog();
+  // The years the API offers, newest first
+  const chartYears = lookups.data?.chartYears;
+  const years = chartYears
+    ? Array.from({ length: chartYears.to - chartYears.from + 1 }, (_, i) => chartYears.to - i)
+    : [];
   const tab = TABS.find((tb) => tb.value === search.tab)!;
 
   const query = useGetApiGames(
@@ -143,7 +144,7 @@ function ChartsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>{t("charts.anyYear")}</SelectItem>
-            {YEARS.map((y) => (
+            {years.map((y) => (
               <SelectItem key={y} value={String(y)}>
                 {y}
               </SelectItem>
