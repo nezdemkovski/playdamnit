@@ -40,7 +40,18 @@ describe("product endpoints", () => {
     const en = getChangelog();
     expect(en.releases.length).toBeGreaterThan(0);
     expect(getChangelog("unknown")).toEqual(en);
-    for (const locale of ["ru-RU", "es", "ja", "zh-CN"]) {
+    for (const locale of [
+      "ru-RU",
+      "es",
+      "ja",
+      "zh-CN",
+      "pt-BR",
+      "de",
+      "fr",
+      "ko",
+      "pl",
+      "zh-Hant",
+    ]) {
       const result = getChangelog(locale, ProductPlatform.IOS);
       expect(result.releases[0].changes[0].title).not.toBe(en.releases[0].changes[0].title);
       expect(
@@ -49,6 +60,31 @@ describe("product endpoints", () => {
         ),
       ).toBe(true);
     }
+  });
+  test("new native language variants select the same complete history", () => {
+    const variants = [
+      ["pt-BR", "pt", "pt_BR", "pt-br"],
+      ["de", "de-DE", "de_AT"],
+      ["fr", "fr-FR", "fr_CA"],
+      ["ko", "ko-KR", "ko_KR"],
+      ["pl", "pl-PL", "pl_PL"],
+      ["zh-Hant", "zh-TW", "zh-HK", "zh-MO", "zh_Hant_TW"],
+      ["zh-Hans", "zh", "zh-CN", "zh-SG", "zh_Hans_CN"],
+    ];
+    for (const [canonical, ...aliases] of variants) {
+      const history = getChangelog(canonical, ProductPlatform.IOS);
+      for (const alias of aliases) {
+        expect(getChangelog(alias, ProductPlatform.IOS)).toEqual(history);
+      }
+      for (const release of history.releases) {
+        for (const change of release.changes) {
+          const english = getChangelog("en").releases.find((r) => r.version === release.version)!;
+          expect(change.title).not.toBe(english.changes[release.changes.indexOf(change)].title);
+        }
+      }
+    }
+    expect(getChangelog("zh-TW")).not.toEqual(getChangelog("zh-CN"));
+    expect(getChangelog("unsupported")).toEqual(getChangelog("en"));
   });
   test("history is public and invalid query is rejected", async () => {
     const app = new Elysia().use(productRoutes);

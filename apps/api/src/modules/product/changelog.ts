@@ -15,6 +15,12 @@ const releases = [
           es: "Envía comentarios y descubre las novedades en Ajustes",
           ja: "設定からフィードバックを送信し、新機能を確認できます",
           "zh-Hans": "在设置中提交反馈并查看更新内容",
+          "pt-BR": "Envie feedback e confira as novidades nos Ajustes.",
+          de: "Sende Feedback und lies in den Einstellungen, was es Neues gibt.",
+          fr: "Envoie tes commentaires et découvre les nouveautés dans les réglages.",
+          ko: "설정에서 의견을 보내고 업데이트 소식을 확인하세요",
+          pl: "Wysyłaj opinie i sprawdzaj nowości w ustawieniach",
+          "zh-Hant": "在設定中傳送意見並查看更新內容",
         },
       },
     ],
@@ -32,13 +38,31 @@ const releases = [
           es: "Lanzamiento inicial",
           ja: "初回リリース",
           "zh-Hans": "首次发布",
+          "pt-BR": "Primeira versão",
+          de: "Erste Veröffentlichung",
+          fr: "Première version",
+          ko: "첫 출시",
+          pl: "Pierwsze wydanie",
+          "zh-Hant": "首次發行",
         },
       },
     ],
   },
 ];
 
-type Locale = keyof (typeof releases)[number]["changes"][number]["titles"];
+enum Locale {
+  English = "en",
+  Russian = "ru",
+  Spanish = "es",
+  Japanese = "ja",
+  SimplifiedChinese = "zh-Hans",
+  TraditionalChinese = "zh-Hant",
+  Portuguese = "pt-BR",
+  German = "de",
+  French = "fr",
+  Korean = "ko",
+  Polish = "pl",
+}
 export function getChangelog(locale = "en", platform = ProductPlatform.All) {
   const normalized = locale.toLowerCase().replaceAll("_", "-");
   const simplified =
@@ -47,7 +71,20 @@ export function getChangelog(locale = "en", platform = ProductPlatform.All) {
     normalized === "zh-sg" ||
     normalized === "zh-hans" ||
     normalized.startsWith("zh-hans-");
-  const language = simplified ? "zh-Hans" : normalized.split("-")[0];
+  const traditional =
+    normalized === "zh-tw" ||
+    normalized === "zh-hk" ||
+    normalized === "zh-mo" ||
+    normalized === "zh-hant" ||
+    normalized.startsWith("zh-hant-");
+  const base = normalized.split("-")[0];
+  const language = simplified
+    ? Locale.SimplifiedChinese
+    : traditional
+      ? Locale.TraditionalChinese
+      : base === "pt"
+        ? Locale.Portuguese
+        : base;
   return {
     releases: releases
       .filter(
