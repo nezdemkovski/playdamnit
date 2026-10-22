@@ -62,12 +62,14 @@ const takenAmong = async (names: string[]) => {
  */
 export const checkUsername = async (raw: string, viewerUsername: string | null) => {
   const username = raw.trim();
+  // The rule's bounds, so clients can word `reason` without a copy of the numbers
+  const rule = { minLength: USERNAME_MIN, maxLength: USERNAME_MAX };
   const problem = problemOf(username);
   if (problem) {
-    return { username, valid: false, available: false, reason: problem, suggestions: [] };
+    return { username, valid: false, available: false, reason: problem, suggestions: [], ...rule };
   }
   if (viewerUsername && username.toLowerCase() === viewerUsername.toLowerCase()) {
-    return { username, valid: true, available: true, reason: null, suggestions: [] };
+    return { username, valid: true, available: true, reason: null, suggestions: [], ...rule };
   }
   const candidates = candidatesFor(username);
   const taken = await takenAmong([username, ...candidates]);
@@ -80,5 +82,6 @@ export const checkUsername = async (raw: string, viewerUsername: string | null) 
     suggestions: available
       ? []
       : candidates.filter((c) => !taken.has(c.toLowerCase())).slice(0, SUGGESTIONS),
+    ...rule,
   };
 };

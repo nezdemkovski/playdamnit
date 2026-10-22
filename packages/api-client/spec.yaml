@@ -754,8 +754,12 @@ components:
       properties:
         liked:
           type: boolean
+        likes:
+          type: number
+          description: The game's like count after the write (the detail's `community.likes`)
       required:
         - liked
+        - likes
 
     ReactionResponse:
       type: object
@@ -763,16 +767,38 @@ components:
         reaction:
           type: string
           nullable: true
+        likes:
+          type: number
+          description: The review's reaction total after the write
+        reactions:
+          type: array
+          description: Per-emoji counts after the write, most used first (as on the review cards)
+          items:
+            type: object
+            properties:
+              emoji:
+                type: string
+              count:
+                type: number
+            required:
+              - emoji
+              - count
       required:
         - reaction
+        - likes
+        - reactions
 
     FollowResponse:
       type: object
       properties:
         following:
           type: boolean
+        followers:
+          type: number
+          description: The member's follower count after the write (the profile's `counts.followers`)
       required:
         - following
+        - followers
 
     CommunityUser:
       allOf:
@@ -1202,11 +1228,22 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/JournalItem"
+        years:
+          type: array
+          description: Every year the whole journal has items in, newest first (not only this page's or `year`'s); empty when private
+          items:
+            type: number
         private:
           type: boolean
+        meta:
+          description: The total under the `year` filter; without `limit`, limit is that total
+          allOf:
+            - $ref: "#/components/schemas/Meta"
       required:
         - results
+        - years
         - private
+        - meta
 
     SignInMethods:
       type: object
@@ -1923,12 +1960,20 @@ components:
           type: array
           items:
             type: string
+        minLength:
+          type: number
+          description: The rule's shortest name, for wording `tooShort`
+        maxLength:
+          type: number
+          description: The rule's longest name, for wording `tooLong`
       required:
         - username
         - valid
         - available
         - reason
         - suggestions
+        - minLength
+        - maxLength
 
     LibraryIndexResponse:
       type: object
@@ -4204,6 +4249,21 @@ paths:
           required: false
           schema:
             type: number
+        - name: limit
+          in: query
+          required: false
+          description: Page size; without it the whole journal comes back
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            default: 0
       responses:
         "200":
           description: Journal

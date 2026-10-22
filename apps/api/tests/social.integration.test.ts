@@ -91,7 +91,11 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
   });
 
   test("the game detail carries community stats, likes and the viewer's like", async () => {
-    await GameService.like("bob", GAME);
+    // The write answers with the count the detail shows, after it
+    expect(await GameService.like("carol", GAME)).toEqual({ liked: true, likes: 1 });
+    expect(await GameService.like("bob", GAME)).toEqual({ liked: true, likes: 2 });
+    expect(await GameService.like("bob", GAME)).toEqual({ liked: true, likes: 2 });
+    expect(await GameService.unlike("carol", GAME)).toEqual({ liked: false, likes: 1 });
     const detail = await GameService.findById(GAME, "bob");
     expect(detail.community.total).toBe(3);
     expect(detail.community.statuses.finished).toBe(1);
@@ -128,7 +132,15 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     await ReviewService.react("bob", review.id, "🔥");
     await ReviewService.react("bob", review.id, ReactionEmoji.Clap); // a second emoji replaces the first
     await ReviewService.react("alice", review.id, ReactionEmoji.Clap); // reacting to yourself makes no notification
-    await ReviewService.react("carol", review.id, ReactionEmoji.Heart);
+    // The write answers with the review's counts after it, as the cards carry them
+    expect(await ReviewService.react("carol", review.id, ReactionEmoji.Heart)).toEqual({
+      reaction: ReactionEmoji.Heart,
+      likes: 3,
+      reactions: [
+        { emoji: ReactionEmoji.Clap, count: 2 },
+        { emoji: ReactionEmoji.Heart, count: 1 },
+      ],
+    });
     await expect(ReviewService.react("carol", review.id, "🦄")).rejects.toThrow(/Unknown reaction/);
     const after = await ReviewService.list({
       gameId: GAME,
@@ -152,7 +164,15 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     ]);
     expect(notifications.results[0].game?.id).toBe(GAME);
 
-    await ReviewService.unreact("bob", review.id);
+    expect(await ReviewService.unreact("bob", review.id)).toEqual({
+      reaction: null,
+      likes: 2,
+      // Ties go by the emoji itself, as on the cards
+      reactions: [
+        { emoji: ReactionEmoji.Heart, count: 1 },
+        { emoji: ReactionEmoji.Clap, count: 1 },
+      ],
+    });
     await ReviewService.unreact("carol", review.id);
     expect(
       (await ReviewService.list({ gameId: GAME, viewerId: null, limit: 10, offset: 0 })).results[0]
@@ -168,8 +188,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
   });
 
   test("follow, connections, community search, feed and the follow notification", async () => {
-    await UserService.follow("bob", "alice");
-    await UserService.follow("carol", "alice");
+    // The write answers with the follower count the profile shows, after it
+    expect(await UserService.follow("bob", "alice")).toEqual({ following: true, followers: 1 });
+    expect(await UserService.follow("carol", "alice")).toEqual({ following: true, followers: 2 });
+    expect(await UserService.follow("carol", "alice")).toEqual({ following: true, followers: 2 });
     await expect(UserService.follow("alice", "alice")).rejects.toThrow();
 
     const profile = await UserService.findByUsername("alice", "bob");
@@ -214,7 +236,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     await UserService.markNotificationsRead("alice");
     expect((await UserService.notifications("alice", { limit: 10 })).unread).toBe(0);
 
-    await UserService.unfollow("carol", "alice");
+    expect(await UserService.unfollow("carol", "alice")).toEqual({
+      following: false,
+      followers: 1,
+    });
     expect((await UserService.findByUsername("alice")).counts.followers).toBe(1);
   });
 
@@ -283,7 +308,18 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
       ["playthrough", "2025-04-21"],
     ]);
     expect(journal.results[1].hours).toBe(40.5);
-    expect((await UserService.journal("alice", null, { year: 2025 })).results).toHaveLength(1);
+    // Years cover the whole journal, newest first; without a limit the whole journal comes back
+    expect(journal.years).toEqual([2026, 2025]);
+    expect(journal.meta).toEqual({ total: 2, limit: 2, offset: 0 });
+    const year2025 = await UserService.journal("alice", null, { year: 2025 });
+    expect(year2025.results).toHaveLength(1);
+    expect(year2025.years).toEqual([2026, 2025]);
+    expect(year2025.meta.total).toBe(1);
+    // Pages keep the order and the total
+    const second = await UserService.journal("alice", null, { limit: 1, offset: 1 });
+    expect(second.results.map((i) => i.date)).toEqual(["2025-04-21"]);
+    expect(second.meta).toEqual({ total: 2, limit: 1, offset: 1 });
+    expect(second.years).toEqual([2026, 2025]);
 
     // bob finished the other game without logging a playthrough: it shows up as an entry
     const added = await UserGameService.addUserGame("bob", OTHER_GAME, {
@@ -300,6 +336,8 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(bobs.results.map((i) => [i.kind, i.date, i.game.id])).toEqual([
       ["entry", "2024-12-31", OTHER_GAME],
     ]);
+    expect(bobs.years).toEqual([2024]);
+    expect(bobs.meta.total).toBe(1);
   });
 
   test("a private list hides the library, reviews, journal and feed from others", async () => {
@@ -324,7 +362,10 @@ describe.skipIf(!TEST_URL)("social features (integration)", () => {
     expect(
       (await ReviewService.list({ gameId: GAME, viewerId: "alice", limit: 10, offset: 0 })).results,
     ).toHaveLength(1);
-    expect((await UserService.journal("alice", "bob", {})).private).toBe(true);
+    const hidden = await UserService.journal("alice", "bob", {});
+    expect(hidden.private).toBe(true);
+    expect(hidden.years).toEqual([]);
+    expect(hidden.meta.total).toBe(0);
     expect((await UserService.feed("bob", { limit: 10, offset: 0 })).results).toHaveLength(0);
 
     await expect(UserService.updateProfile("alice", { links: ["ftp://nope"] })).rejects.toThrow(

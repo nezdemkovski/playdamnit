@@ -46,6 +46,17 @@ const AVATAR_TYPES = new Set<string>([MimeType.Jpeg, MimeType.Png, MimeType.Webp
 const gamesCount = sql<number>`(select count(*) from user_games ug where ug.user_id = "user".id)`;
 const followersCount = sql<number>`(select count(*) from user_follows uf where uf.following_id = "user".id)`;
 
+type Executor = Pick<typeof postgresDb, "select">;
+
+/** How many members follow this one: the profile's `followers` and the follow write's answer */
+const followerCount = async (executor: Executor, userId: string) => {
+  const [row] = await executor
+    .select({ n: count() })
+    .from(userFollows)
+    .where(eq(userFollows.followingId, userId));
+  return Number(row.n);
+};
+
 /** The avatar URL the API serves, versioned so caches drop the old picture */
 const avatarPath = (username: string, version: Date) =>
   `/api/user/${encodeURIComponent(username)}/avatar?v=${version.getTime()}`;
@@ -110,7 +121,7 @@ export abstract class UserService {
 
     // "This year" is the UTC calendar year (ended_at is kept in UTC), the same for every client
     const year = new Date().getUTCFullYear();
-    const [[library], [followers], [following], [lists], follows, followsYou] = await Promise.all([
+    const [[library], followers, [following], [lists], follows, followsYou] = await Promise.all([
       // The library in one pass: the counts everyone sees and the stats behind the badges
       postgresDb
         .select({
@@ -135,10 +146,7 @@ export abstract class UserService {
         })
         .from(userGames)
         .where(eq(userGames.userId, data.id)),
-      postgresDb
-        .select({ n: count() })
-        .from(userFollows)
-        .where(eq(userFollows.followingId, data.id)),
+      followerCount(postgresDb, data.id),
       postgresDb
         .select({ n: count() })
         .from(userFollows)
@@ -198,7 +206,7 @@ export abstract class UserService {
       createdAt: data.createdAt,
       counts: {
         games: total,
-        followers: Number(followers.n),
+        followers,
         following: Number(following.n),
         reviews,
         lists: Number(lists.n),
@@ -340,23 +348,31 @@ export abstract class UserService {
     };
   }
 
+  /** Follow a member; answers with their follower count after the write */
   static async follow(followerId: string, username: string) {
     const target = await requireUser(username, followerId);
     if (target.id === followerId) throw new BadRequestError("You can't follow yourself");
-    await postgresDb
-      .insert(userFollows)
-      .values({ followerId, followingId: target.id })
-      .onConflictDoNothing();
+    const followers = await postgresDb.transaction(async (tx) => {
+      await tx
+        .insert(userFollows)
+        .values({ followerId, followingId: target.id })
+        .onConflictDoNothing();
+      return followerCount(tx, target.id);
+    });
     await notify({ userId: target.id, actorId: followerId, type: NotificationType.Follow });
-    return { following: true };
+    return { following: true, followers };
   }
 
+  /** Stop following; answers with the target's follower count after the write */
   static async unfollow(followerId: string, username: string) {
     const target = await requireUser(username, followerId);
-    await postgresDb
-      .delete(userFollows)
-      .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, target.id)));
-    return { following: false };
+    const followers = await postgresDb.transaction(async (tx) => {
+      await tx
+        .delete(userFollows)
+        .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, target.id)));
+      return followerCount(tx, target.id);
+    });
+    return { following: false, followers };
   }
 
   static async connections(
@@ -579,60 +595,125 @@ export abstract class UserService {
     return { days: withLevels(rows.rows.map((r) => ({ ...r, score: Number(r.score) }))) };
   }
 
-  /** Journal: playthroughs plus finished/dropped entries without one, newest first */
-  static async journal(username: string, viewerId: string | null, opts: { year?: number }) {
+  /**
+   * Journal: playthroughs plus finished/dropped entries without one, newest first. Paged when
+   * `limit` is given (the whole journal otherwise); `years` always covers the whole journal.
+   */
+  static async journal(
+    username: string,
+    viewerId: string | null,
+    opts: { year?: number; limit?: number; offset?: number },
+  ) {
     const owner = await requireUser(username, viewerId);
-    if (!canSeeList(owner, viewerId)) return { results: [], private: true };
+    if (!canSeeList(owner, viewerId)) {
+      return {
+        results: [],
+        years: [],
+        private: true,
+        meta: { total: 0, limit: opts.limit ?? 0, offset: opts.offset ?? 0 },
+      };
+    }
 
+    // One query for the page's ids, the total under the year filter and every year the journal
+    // has. A playthrough's day is when it ended, else began, else was logged; an entry counts
+    // only when it is finished and the game has no playthroughs (those stand in for it).
+    const { rows } = await postgresDb.execute<{
+      years: number[];
+      total: number;
+      page: { kind: JournalKind; id: string }[];
+    }>(sql`
+      with items as (
+        select ${JournalKind.Playthrough}::text as kind, p.id::text as id,
+          coalesce(p.ended_at, p.started_at, p.created_at::date) as day
+        from ${playthrough} p
+        where p.user_id = ${owner.id}
+        union all
+        select ${JournalKind.Entry}::text, ug.id::text, ug.ended_at::date
+        from ${userGames} ug
+        where ug.user_id = ${owner.id} and ug.ended_at is not null
+          and not exists (
+            select 1 from ${playthrough} p where p.user_id = ug.user_id and p.game_id = ug.game_id
+          )
+      ),
+      filtered as (
+        select * from items
+        where ${opts.year ?? null}::int is null or extract(year from day) = ${opts.year ?? null}::int
+      )
+      select
+        (select coalesce(json_agg(y order by y desc), '[]'::json)
+          from (select distinct extract(year from day)::int as y from items) ys) as years,
+        (select count(*)::int from filtered) as total,
+        (select coalesce(json_agg(json_build_object('kind', kind, 'id', id) order by day desc, kind, id), '[]'::json)
+          from (select * from filtered order by day desc, kind, id
+                limit ${opts.limit ?? null}::int offset ${opts.offset ?? 0}::int) pg) as page
+    `);
+    const { years, total, page } = rows[0];
+
+    const runIds = page.filter((i) => i.kind === JournalKind.Playthrough).map((i) => i.id);
+    const entryIds = page.filter((i) => i.kind === JournalKind.Entry).map((i) => i.id);
     const [runs, entries] = await Promise.all([
-      postgresDb.query.playthrough.findMany({
-        where: { userId: owner.id },
-        with: {
-          game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH },
-          platform: true,
-        },
-      }),
-      postgresDb.query.userGames.findMany({
-        where: { userId: owner.id, endedAt: { isNotNull: true } },
-        with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
-      }),
+      runIds.length
+        ? postgresDb.query.playthrough.findMany({
+            where: { id: { in: runIds } },
+            with: {
+              game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH },
+              platform: true,
+            },
+          })
+        : Promise.resolve([]),
+      entryIds.length
+        ? postgresDb.query.userGames.findMany({
+            where: { id: { in: entryIds } },
+            with: { game: { columns: GAME_CARD_COLUMNS, with: GAME_CARD_WITH } },
+          })
+        : Promise.resolve([]),
     ]);
 
-    const withRuns = new Set(runs.map((run) => run.gameId));
-    const items = [
-      ...runs.map((run) => ({
-        id: run.id,
-        kind: JournalKind.Playthrough as const,
-        date: run.endedAt ?? run.startedAt ?? run.createdAt.toISOString().slice(0, 10),
-        startedAt: run.startedAt,
-        endedAt: run.endedAt,
-        hours: run.hours !== null ? Number(run.hours) : null,
-        platform: run.platform,
-        note: run.note,
-        game: transformGameResponse(run.game),
-      })),
-      ...entries
-        .filter((entry) => !withRuns.has(entry.gameId))
-        .map((entry) => ({
-          id: entry.id,
-          kind: JournalKind.Entry as const,
-          date: entry.endedAt!.toISOString().slice(0, 10),
-          startedAt: null,
-          endedAt: entry.endedAt!.toISOString().slice(0, 10),
-          hours: null,
-          platform: null,
-          note: null,
-          status: entry.status,
-          rating: entry.rating !== null ? Number(entry.rating) : null,
-          grade: gradeOf(entry.rating),
-          mastered: entry.mastered,
-          game: transformGameResponse(entry.game),
-        })),
-    ]
-      .filter((item) => !opts.year || item.date.startsWith(String(opts.year)))
-      .sort((a, b) => b.date.localeCompare(a.date));
+    const toRun = (run: (typeof runs)[number]) => ({
+      id: run.id,
+      kind: JournalKind.Playthrough as const,
+      date: run.endedAt ?? run.startedAt ?? run.createdAt.toISOString().slice(0, 10),
+      startedAt: run.startedAt,
+      endedAt: run.endedAt,
+      hours: run.hours !== null ? Number(run.hours) : null,
+      platform: run.platform,
+      note: run.note,
+      game: transformGameResponse(run.game),
+    });
+    const toEntry = (entry: (typeof entries)[number], day: string) => ({
+      id: entry.id,
+      kind: JournalKind.Entry as const,
+      date: day,
+      startedAt: null,
+      endedAt: day,
+      hours: null,
+      platform: null,
+      note: null,
+      status: entry.status,
+      rating: entry.rating !== null ? Number(entry.rating) : null,
+      grade: gradeOf(entry.rating),
+      mastered: entry.mastered,
+      game: transformGameResponse(entry.game),
+    });
+    const runById = new Map(runs.map((run) => [run.id, run]));
+    const entryById = new Map(entries.map((entry) => [entry.id, entry]));
+    const results = page.flatMap(
+      (item): (ReturnType<typeof toRun> | ReturnType<typeof toEntry>)[] => {
+        if (item.kind === JournalKind.Playthrough) {
+          const run = runById.get(item.id);
+          return run ? [toRun(run)] : [];
+        }
+        const entry = entryById.get(item.id);
+        return entry?.endedAt ? [toEntry(entry, entry.endedAt.toISOString().slice(0, 10))] : [];
+      },
+    );
 
-    return { results: items, private: false };
+    return {
+      results,
+      years,
+      private: false,
+      meta: { total, limit: opts.limit ?? total, offset: opts.offset ?? 0 },
+    };
   }
 
   static async setAvatar(userId: string, file: File) {

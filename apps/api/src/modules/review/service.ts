@@ -32,6 +32,23 @@ const reactionSummary = (userGameId: unknown) =>
     { emoji: string; count: number }[]
   >`(select coalesce(json_agg(json_build_object('emoji', r.emoji, 'count', r.n) order by r.n desc, r.emoji), '[]'::json) from (select ${reviewReaction.emoji} as emoji, count(*)::int as n from ${reviewReaction} where ${reviewReaction.userGameId} = ${userGameId} group by ${reviewReaction.emoji}) r)`;
 
+type Executor = Pick<typeof db, "select">;
+
+/** A review's reaction counts as the cards show them: the total and `[{ emoji, count }]` */
+const reactionTotals = async (executor: Executor, userGameId: string) => {
+  const [row] = await executor
+    .select({
+      likes: reactionCount(userGames.id),
+      reactions: reactionSummary(userGames.id),
+    })
+    .from(userGames)
+    .where(eq(userGames.id, userGameId));
+  return {
+    likes: Number(row?.likes ?? 0),
+    reactions: (row?.reactions ?? []).map((r) => ({ emoji: r.emoji, count: Number(r.count) })),
+  };
+};
+
 /**
  * Reviews are library entries with text. They are public when the author's list is public,
  * and always visible to the author.
@@ -117,7 +134,10 @@ export abstract class ReviewService {
     };
   }
 
-  /** Set (or change) the viewer's reaction; the author is told about it */
+  /**
+   * Set (or change) the viewer's reaction; the author is told about it. Answers with the review's
+   * counts after the write, the same numbers the review cards carry
+   */
   static async react(userId: string, userGameId: string, emoji: string) {
     if (!Object.values<string>(ReactionEmoji).includes(emoji)) {
       throw new BadRequestError("Unknown reaction");
@@ -129,13 +149,16 @@ export abstract class ReviewService {
     if (!entry) throw new NotFoundError("Review not found");
     await requireVisibleAuthor(entry.userId, userId);
     if (!entry.allowReactions) throw new ForbiddenError("The author turned reactions off");
-    await db
-      .insert(reviewReaction)
-      .values({ userId, userGameId, emoji: emoji as ReactionEmoji })
-      .onConflictDoUpdate({
-        target: [reviewReaction.userId, reviewReaction.userGameId],
-        set: { emoji: emoji as ReactionEmoji, createdAt: new Date() },
-      });
+    const totals = await db.transaction(async (tx) => {
+      await tx
+        .insert(reviewReaction)
+        .values({ userId, userGameId, emoji: emoji as ReactionEmoji })
+        .onConflictDoUpdate({
+          target: [reviewReaction.userId, reviewReaction.userGameId],
+          set: { emoji: emoji as ReactionEmoji, createdAt: new Date() },
+        });
+      return reactionTotals(tx, userGameId);
+    });
     await notify({
       userId: entry.userId,
       actorId: userId,
@@ -143,13 +166,17 @@ export abstract class ReviewService {
       gameId: entry.gameId,
       emoji,
     });
-    return { reaction: emoji };
+    return { reaction: emoji, ...totals };
   }
 
+  /** Take the viewer's reaction back; answers with the review's counts after it */
   static async unreact(userId: string, userGameId: string) {
-    await db
-      .delete(reviewReaction)
-      .where(and(eq(reviewReaction.userId, userId), eq(reviewReaction.userGameId, userGameId)));
-    return { reaction: null };
+    const totals = await db.transaction(async (tx) => {
+      await tx
+        .delete(reviewReaction)
+        .where(and(eq(reviewReaction.userId, userId), eq(reviewReaction.userGameId, userGameId)));
+      return reactionTotals(tx, userGameId);
+    });
+    return { reaction: null, ...totals };
   }
 }

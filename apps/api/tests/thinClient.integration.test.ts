@@ -14,6 +14,8 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
   let UserService: typeof import("@/modules/user/service").UserService;
   let UserGameService: typeof import("@/modules/userGame/service").UserGameService;
   let checkUsername: typeof import("@/modules/user/username").checkUsername;
+  let USERNAME_MIN: number;
+  let USERNAME_MAX: number;
 
   const GAMES = [940001, 940002, 940003, 940004, 940005];
   const NO_COVER = 940006;
@@ -52,7 +54,7 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
     }
     ({ UserService } = await import("@/modules/user/service"));
     ({ UserGameService } = await import("@/modules/userGame/service"));
-    ({ checkUsername } = await import("@/modules/user/username"));
+    ({ checkUsername, USERNAME_MIN, USERNAME_MAX } = await import("@/modules/user/username"));
 
     const [g1, g2, g3, g4, g5] = GAMES;
     await UserGameService.addUserGame("dana", g1, {
@@ -137,6 +139,9 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
       valid: false,
       available: false,
       reason: UsernameProblem.TooShort,
+      // The rule's bounds, so the message needs no copy of them
+      minLength: USERNAME_MIN,
+      maxLength: USERNAME_MAX,
     });
     expect((await checkUsername("a".repeat(31), null)).reason).toBe(UsernameProblem.TooLong);
     expect((await checkUsername("no spaces", null)).reason).toBe(UsernameProblem.Characters);
@@ -146,6 +151,8 @@ describe.skipIf(!TEST_URL)("thin client reads (integration)", () => {
       available: true,
       reason: null,
       suggestions: [],
+      minLength: 3,
+      maxLength: 30,
     });
   });
 

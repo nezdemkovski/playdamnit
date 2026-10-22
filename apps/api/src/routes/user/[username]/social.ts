@@ -65,10 +65,19 @@ export const userSocialRoutes = new Elysia()
     {
       viewer: true,
       params,
-      query: t.Object({ year: t.Optional(t.Numeric({ minimum: 1970, maximum: 2100 })) }),
+      // No `limit` keeps the whole journal in one answer, as before paging
+      query: t.Object({
+        year: t.Optional(t.Numeric({ minimum: 1970, maximum: 2100 })),
+        limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+        offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
+      }),
     },
     ({ params, query, viewer }) =>
-      UserService.journal(params.username, viewer?.id ?? null, { year: query.year }),
+      UserService.journal(params.username, viewer?.id ?? null, {
+        year: query.year,
+        limit: query.limit,
+        offset: query.offset ?? 0,
+      }),
   )
   .get(
     "/user/:username/likes",

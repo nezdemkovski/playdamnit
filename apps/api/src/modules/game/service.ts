@@ -180,9 +180,20 @@ const findRelated = (column: "parentGameId" | "versionParentId", id: number) =>
     with: { cover: true },
   });
 
+type Executor = Pick<typeof db, "select">;
+
+/** How many members liked a game: the detail's `community.likes` and the like write's answer */
+const likeCount = async (executor: Executor, gameId: number) => {
+  const [row] = await executor
+    .select({ n: count() })
+    .from(gameLike)
+    .where(eq(gameLike.gameId, gameId));
+  return Number(row.n);
+};
+
 /** What this site's members did with the game: status counts, ratings, likes, lists */
 const communityStats = async (gameId: number) => {
-  const [statusRows, [ratings], [likes], [lists], histogramRows] = await Promise.all([
+  const [statusRows, [ratings], likes, [lists], histogramRows] = await Promise.all([
     db
       .select({ status: userGames.status, mastered: userGames.mastered, n: count() })
       .from(userGames)
@@ -196,7 +207,7 @@ const communityStats = async (gameId: number) => {
       })
       .from(userGames)
       .where(and(eq(userGames.gameId, gameId), sql`${userGames.rating} > 0`)),
-    db.select({ n: count() }).from(gameLike).where(eq(gameLike.gameId, gameId)),
+    likeCount(db, gameId),
     db
       .select({ n: count() })
       .from(gameListItem)
@@ -260,7 +271,7 @@ const communityStats = async (gameId: number) => {
     histogram,
     gradeCounts,
     reviews: Number(reviewCount.n),
-    likes: Number(likes.n),
+    likes,
     lists: Number(lists.n),
   };
 };
@@ -512,16 +523,25 @@ export abstract class GameService {
     return communityStats(gameId);
   }
 
+  /** Like a game; answers with the game's like count after the write */
   static async like(userId: string, gameId: number) {
     const exists = await db.query.game.findFirst({ where: { id: gameId }, columns: { id: true } });
     if (!exists) throw new NotFoundError("Game not found");
-    await db.insert(gameLike).values({ userId, gameId }).onConflictDoNothing();
-    return { liked: true };
+    const likes = await db.transaction(async (tx) => {
+      await tx.insert(gameLike).values({ userId, gameId }).onConflictDoNothing();
+      return likeCount(tx, gameId);
+    });
+    return { liked: true, likes };
   }
 
   static async unlike(userId: string, gameId: number) {
-    await db.delete(gameLike).where(and(eq(gameLike.userId, userId), eq(gameLike.gameId, gameId)));
-    return { liked: false };
+    const likes = await db.transaction(async (tx) => {
+      await tx
+        .delete(gameLike)
+        .where(and(eq(gameLike.userId, userId), eq(gameLike.gameId, gameId)));
+      return likeCount(tx, gameId);
+    });
+    return { liked: false, likes };
   }
 
   /** Games a user liked, newest first */
