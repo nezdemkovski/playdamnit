@@ -271,7 +271,7 @@ What landed (2026-10-11):
   `user_games_game_id_game_id_fk`. Check first that no `user_games.game_id` is missing from `game`;
   create flagged stubs or clean them up.
 - Write a fresh `ARCHITECTURE.md` for the new design (search flow, queues, env vars, data model) and
-  update the relevant CLAUDE.md sections.
+  update the relevant AGENTS.md sections.
 - Integration test: the fake librarian loses `search-igdb`; add tests for the webhook receiver
   (secret check, dirty row), the drain, and `writeGamesBatch` deriving columns from `raw`.
 

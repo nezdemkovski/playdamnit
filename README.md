@@ -49,4 +49,4 @@ docker compose up -d --build
 
 Each app has its own Dockerfile built from the repo root (`docker build -f apps/api/Dockerfile .`).
 
-See `docs/ARCHITECTURE.md` for how the services fit together, `docs/CATALOG_MIRROR_PLAN.md` for the remaining rollout and `CLAUDE.md` for conventions.
+See `docs/ARCHITECTURE.md` for how the services fit together, `docs/CATALOG_MIRROR_PLAN.md` for the remaining rollout and `AGENTS.md` for conventions.
