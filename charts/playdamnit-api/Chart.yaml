@@ -2,7 +2,7 @@ apiVersion: v2
 name: playdamnit-api
 description: "playdamnit HTTP API (Elysia on Bun)"
 type: application
-version: 0.1.62
-appVersion: "0.1.62"
+version: 0.1.63
+appVersion: "0.1.63"
 annotations:
   org.opencontainers.image.source: https://github.com/nezdemkovski/playdamnit

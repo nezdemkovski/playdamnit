@@ -1,5 +1,5 @@
 {
-  "updated": "Last updated: 18 October 2026",
+  "updated": "Last updated: 22 October 2026",
   "operatorTitle": "Who operates the service",
   "registration": "Czech sole trader · IČO {{ico}}",
   "contactTitle": "Contact",
@@ -15,7 +15,8 @@
           "Account data includes your email address, username, display name, verification status, sign-in credentials or provider identifiers, and account settings. Passwords are stored as hashes. Passkeys use a public key; their private key stays with your authenticator.",
           "We store the information you add: your game library, statuses, grades, reviews, playthroughs, notes, lists, reactions, follows, profile bio, links, and uploaded avatar. Some activity and statistics are calculated from those records.",
           "Sessions and security records can include your IP address, user agent, session identifiers, and timestamps. Diagnostics can include device and app information, an installation identifier, errors, request URLs and search queries, and performance traces.",
-          "We also store personal blocks, content reports, and moderation decisions. Reports are shared with authorized moderators, not published as part of your profile. A report can include a limited copy of the reported content so it can be reviewed."
+          "We also store personal blocks, content reports, and moderation decisions. Reports are shared with authorized moderators, not published as part of your profile. A report can include a limited copy of the reported content so it can be reviewed.",
+          "If you opt in to usage analytics in the native app, we send selected app interactions, action outcomes, app and operating-system versions, device type, and random installation/session identifiers to PostHog in the EU. This does not include screen recordings, account identifiers, email addresses, game identifiers, written content, search terms, or request URLs. GeoIP enrichment is disabled; the provider receives the network address needed to handle the connection."
         ]
       },
       {
@@ -23,7 +24,8 @@
         "title": "Why we use it",
         "paragraphs": [
           "We process account and library data to provide the service you request, including signing you in, saving your records, displaying profiles, handling imports and exports, suggesting games based on your library, grades, likes, and playtime, and sending account verification, security, and password-reset emails. Where GDPR applies, the basis is performance of our contract with you.",
-          "We use security records and diagnostics to prevent abuse, troubleshoot failures, and keep the service reliable. Where GDPR applies, we rely on our legitimate interests in operating and protecting the service, balanced against your rights. We also process data where necessary to meet a legal obligation. Where a feature requires consent under applicable law, we request it separately; you may withdraw it."
+          "We use security records and diagnostics to prevent abuse, troubleshoot failures, and keep the service reliable. Where GDPR applies, we rely on our legitimate interests in operating and protecting the service, balanced against your rights. We also process data where necessary to meet a legal obligation. Where a feature requires consent under applicable law, we request it separately; you may withdraw it.",
+          "Optional native usage analytics helps us understand how the app is used and which workflows fail. It starts only after you agree. You can withdraw consent in Settings by turning off Share usage analytics; this stops collection and discards unsent analytics. Signing out also turns it off. Analytics is not required to use the app and is not used for advertising or tracking across other companies’ apps or websites. Contact us for questions about previously collected data or deletion requests."
         ]
       },
       {
@@ -47,7 +49,7 @@
         "id": "providers",
         "title": "Service providers and disclosures",
         "paragraphs": [
-          "We use Sentry for error reporting and performance diagnostics, Resend to deliver account emails, and Cloudflare to route and protect traffic to the service. Apple, Steam, and YouTube process information when you use their respective features.",
+          "We use Sentry for error reporting and performance diagnostics, Resend to deliver account emails, and Cloudflare to route and protect traffic to the service. Apple, Steam, and YouTube process information when you use their respective features. PostHog processes optional native usage analytics only after consent; it is separate from website analytics.",
           "Providers may process data outside the European Economic Area. Resend stores email data in the United States, including when messages are sent from its European sending region. Its Data Processing Addendum applies to every account and includes the EU Standard Contractual Clauses for international transfers. Cloudflare’s Data Processing Addendum forms part of its subscription terms. Provider privacy and processing information is linked below; contact us for information relevant to your data.",
           "We may disclose information where necessary to comply with a legal obligation or protect the rights and security of the service and its users. We do not sell personal data or use it for third-party advertising."
         ],
@@ -83,6 +85,10 @@
           {
             "label": "Cloudflare Data Processing Addendum",
             "href": "https://www.cloudflare.com/cloudflare-customer-dpa/"
+          },
+          {
+            "label": "PostHog privacy and processing",
+            "href": "https://posthog.com/privacy"
           }
         ]
       },
