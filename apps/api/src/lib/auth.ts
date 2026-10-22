@@ -72,7 +72,6 @@ export const auth = betterAuth({
     minPasswordLength: MIN_PASSWORD_LENGTH,
     maxPasswordLength: MAX_PASSWORD_LENGTH,
     resetPasswordTokenExpiresIn: 1 * 60 * 60 * 1000, // 1 hour
-    verifyEmailTokenExpiresIn: CONFIRMATION_SECONDS * 1000,
     // No email configured: accounts are usable right after sign-up and reset is unavailable
     requireEmailVerification: emailEnabled,
     ...(emailEnabled && {
@@ -82,6 +81,7 @@ export const auth = betterAuth({
     }),
   },
   emailVerification: {
+    expiresIn: CONFIRMATION_SECONDS,
     sendOnSignUp: emailEnabled,
     // Signing in before the address is confirmed sends a fresh link (the first may have expired)
     sendOnSignIn: emailEnabled,
