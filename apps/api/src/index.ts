@@ -169,7 +169,13 @@ setupApp()
     process.exit(1);
   });
 
+// A terminal or supervisor can send SIGINT and SIGTERM together; the second must not close the
+// pool again, which throws and turns a clean stop into exit 1
+let shuttingDown = false;
+
 const shutdown = async () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.system("Application shutting down...");
 
   try {

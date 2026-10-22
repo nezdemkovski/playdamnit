@@ -55,7 +55,12 @@ const start = async () => {
   logger.system("All workers registered. Librarian is running.");
 };
 
+// SIGINT and SIGTERM can arrive together; pg-boss is stopped once
+let shuttingDown = false;
+
 const shutdown = async () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.system("Librarian shutting down...");
 
   try {
