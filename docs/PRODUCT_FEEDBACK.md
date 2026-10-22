@@ -42,7 +42,9 @@ a successful acknowledgement means Linear has confirmed the issue.
 The new operations and schema names are additive. No existing endpoint, schema, enum,
 authentication behavior or request shape changes. `tests/released-contract.test.ts`
 compares every preexisting operation/schema to canonical hashes of product commit
-`ddd1c637472da224c2a5e8b0a4f9bc54804bf6d4` (0.1.59). Keep this guard; future compatible
+`816f80d636cef6bbd057913fc70392e1e4424f39` (0.1.62), including the newly shipped
+changelog/feedback contracts used by native build 100. The preceding 0.1.59 operations
+and schemas were separately verified unchanged in this rollout. Keep this guard; future compatible
 contract extensions require original-client verification before updating its baseline.
 
 App Store Connect was checked on 22 October 2026: public App Store 1.0 (84) is Ready for

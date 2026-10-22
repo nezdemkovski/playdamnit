@@ -1,6 +1,8 @@
 {
-  "source": "ddd1c637472da224c2a5e8b0a4f9bc54804bf6d4",
+  "source": "816f80d636cef6bbd057913fc70392e1e4424f39",
   "paths": {
+    "/api/changelog": "5b3436112f41bb9b0d9e31386294b93a77e39aa21945d7ad5ff9dcce182ecfc3",
+    "/api/feedback": "88249d7009d2fe8c91e006d237591ec0800bead1ad8d789db0c51e86b69c607c",
     "/api/me/reports": "a9e4e8b70292b532deacfa0f4e0a1240378c2899d073aa81649f73220978e9ac",
     "/api/me/blocks": "06212bd923446b2f4106297bf72129635a9b470e3defb9f93cc26961b8e92e87",
     "/api/me/blocks/{id}": "5bb697c22db7f9524b225f721e99eaa14c7611fdf564d7fcba18349434c3f3a8",
@@ -64,6 +66,14 @@
     "/api/chat/ai": "a56407e579a38d117f0c85234b431536c3bbae608821c9aa3290e4777b8bd042"
   },
   "schemas": {
+    "FeedbackKind": "2f03bb741eabe8ae5cc140b6080e1f2c5ae3ed732c253631e60b7f5b94090ab3",
+    "ProductPlatform": "d7e14b5cfd656ab2e0bd3f223220c8f6a223a182e122cb8d867d6912387d5474",
+    "ChangelogKind": "04e0f6c4173fbfb845b25b395b173096611d9784ecdcfe5b60e9d4101db7cedc",
+    "FeedbackInput": "047ae8edb2e82dfeb42b41b241700283d219daa7ec2f64fbd1fb35ae19dbc764",
+    "FeedbackReceipt": "2316a97068f56e97f5e9fc0479705c97d9c47a5ab50ffd5c9f1027491db8f37b",
+    "ChangelogChange": "90ded06f6e00d5079f5e2ab2535d98f45f8299b48c7ab926d865098db5f29589",
+    "ChangelogRelease": "fceeb5356ae8d9dd6880ea904753aacecf2157e5b500433e8d7bd2f77cfd85a6",
+    "ChangelogResponse": "88472f2d6ba4b52c876055df18af053130cf56cbf9126335028ab46de4accf74",
     "ContentKind": "d8b5c3b4a27a4babd2f8c94cbf8112fee7c095ed0558db5461130beb41b64186",
     "ReportReason": "ae0ae0b0f16100dafba67dd4744bce149713f4f9d1f898ef7b0ca57b030694ec",
     "ModerationAction": "713d59e504147fa773dd23f7d3d954892f6dc5df481cc4b4050e4a21e91a0945",

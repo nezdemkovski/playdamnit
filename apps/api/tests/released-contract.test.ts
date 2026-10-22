@@ -19,7 +19,7 @@ const hash = (value: unknown) =>
     .update(JSON.stringify(canonical(value)))
     .digest("hex");
 
-test("new product endpoints leave every preexisting operation and schema unchanged", () => {
+test("contracts supported by released native clients remain unchanged", () => {
   const spec = Bun.YAML.parse(
     readFileSync(new URL("../../../packages/api-client/spec.yaml", import.meta.url), "utf8"),
   ) as {
