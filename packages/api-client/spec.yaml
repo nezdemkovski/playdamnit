@@ -1003,6 +1003,15 @@ components:
         - readAt
         - createdAt
 
+    NotificationDeletionResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        unread:
+          type: number
+      required: [ok, unread]
+
     NotificationListResponse:
       type: object
       properties:
@@ -4103,6 +4112,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotificationListResponse"
+
+    delete:
+      operationId: deleteApiMeNotifications
+      tags: [User]
+      summary: Permanently clear the signed-in member's entire inbox
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Inbox cleared, with the current unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDeletionResponse"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UnauthorizedErrorResponse" }
+
+  /api/me/notifications/{id}:
+    delete:
+      operationId: deleteApiMeNotificationsById
+      tags: [User]
+      summary: Permanently delete one notification from the signed-in member's inbox
+      description: Idempotent. Missing notifications and notifications owned by another member both return success without changing another inbox.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Notification removed, with the current unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDeletionResponse"
+        "400":
+          description: Invalid notification ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BadRequestErrorResponse" }
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UnauthorizedErrorResponse" }
 
   /api/me/notifications/unread:
     get:

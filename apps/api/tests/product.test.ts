@@ -91,7 +91,9 @@ describe("product endpoints", () => {
     const response = await app.handle(new Request("http://localhost/changelog?locale=ru"));
     expect(response.status).toBe(200);
     const history = (await response.json()) as ReturnType<typeof getChangelog>;
-    expect(history.releases[0].changes[0].title).toContain("Предлагай");
+    expect(history.releases[0].changes[0].title).toBe(
+      getChangelog("ru").releases[0].changes[0].title,
+    );
     expect(
       (await app.handle(new Request("http://localhost/changelog?platform=invalid"))).status,
     ).toBeGreaterThanOrEqual(400);

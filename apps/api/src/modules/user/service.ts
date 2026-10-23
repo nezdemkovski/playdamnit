@@ -493,6 +493,20 @@ export abstract class UserService {
     return { ok: true };
   }
 
+  /** Idempotent dismissal, scoped in SQL to the recipient (including hidden notifications). */
+  static async deleteNotification(userId: string, id: string) {
+    await postgresDb
+      .delete(notification)
+      .where(and(eq(notification.userId, userId), eq(notification.id, id)));
+    return { ok: true, ...(await this.unreadNotifications(userId)) };
+  }
+
+  /** The whole inbox, including notifications beyond the client's loaded page. */
+  static async clearNotifications(userId: string) {
+    await postgresDb.delete(notification).where(eq(notification.userId, userId));
+    return { ok: true, ...(await this.unreadNotifications(userId)) };
+  }
+
   /** What the people you follow did lately (entries added or changed) */
   static async feed(userId: string, opts: { limit: number; offset: number }) {
     const rows = await postgresDb.query.userGames.findMany({

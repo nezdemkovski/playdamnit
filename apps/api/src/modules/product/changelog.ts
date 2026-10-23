@@ -3,6 +3,29 @@ import { ChangeKind, ProductPlatform } from "./model";
 /** The single release history for web and native clients. Add member-facing features here. */
 const releases = [
   {
+    version: "1.2",
+    date: "2026-10-23",
+    platform: ProductPlatform.IOS,
+    changes: [
+      {
+        kind: ChangeKind.New,
+        titles: {
+          en: "Delete inbox notifications with a swipe, or clear them all at once",
+          ru: "Удаляй уведомления свайпом или очищай весь инбокс сразу",
+          es: "Elimina notificaciones deslizando o vacía toda la bandeja de entrada",
+          ja: "スワイプで通知を削除するか、受信トレイをまとめて空にできます",
+          "zh-Hans": "滑动删除单条通知，或一次清空收件箱",
+          "pt-BR": "Deslize para excluir notificações ou limpe toda a caixa de entrada de uma vez",
+          de: "Lösche Benachrichtigungen per Wischgeste oder leere den gesamten Posteingang",
+          fr: "Supprime les notifications d’un geste ou vide toute la boîte de réception",
+          ko: "스와이프로 알림을 삭제하거나 받은 편지함을 한 번에 비울 수 있어요",
+          pl: "Usuwaj powiadomienia przesunięciem lub wyczyść całą skrzynkę naraz",
+          "zh-Hant": "滑動刪除單則通知，或一次清空收件匣",
+        },
+      },
+    ],
+  },
+  {
     version: "1.1",
     date: "2026-10-22",
     platform: ProductPlatform.All,

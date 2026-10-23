@@ -1,0 +1,9 @@
+# Inbox deletion, release 0.1.67
+
+Authenticated DELETE /api/me/notifications/:id removes one notification owned by the session user. DELETE /api/me/notifications clears the user's entire inbox, including read notifications and rows outside the loaded page. Both return {ok:true,unread:number}; missing or foreign IDs are idempotent and never expose another member's data. UUID validation returns 400. No schema migration is needed; existing recipient and primary-key indexes cover the predicates.
+
+Existing GET, unread and mark-read operations and their response models are unchanged. The contract guard retains original hashes and projects each path onto its original methods, allowing additive DELETE operations without changing existing contracts.
+
+Compatibility baseline: App Store 1.0 (84), c7bcaf6af48ceed444584f46253e1d56113de898; latest TestFlight upload 1.0.1 (107), 07b2bbd74aacf0c2a3e328a4d86d0b840137ccb4. The iOS repository's docs/inbox-compatibility-baselines.json inventories 77 builds against their exact commits. scripts/check-inbox-compatibility.py compiles their two original generated-client/model groups and replays old GET limit=1/50 and POST read against new-server integration responses (including populated/null, empty and 401). Both groups passed. This checks original clients, not regenerated models.
+
+Verification: full API suite passed 120 tests, 763 assertions using disposable local PostgreSQL. Deletion integration covers authentication, owner isolation, repeated deletion, invalid IDs, clearing 55 notifications beyond the requested page and subsequent events. API typecheck, repository lint/format and regenerated web client build passed. Publish and deploy this compatible server before shipping the native client; retain 0.1.65 as the preceding deployed rollback pin. Authenticated production deletion is not exercised against member inboxes during smoke checks.

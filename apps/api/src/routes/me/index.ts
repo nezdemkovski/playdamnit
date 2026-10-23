@@ -31,6 +31,14 @@ export const meRoutes = new Elysia()
     },
     ({ user, query }) => UserService.notifications(user.id, { limit: query.limit ?? 30 }),
   )
+  .delete("/me/notifications", { auth: true }, ({ user }) =>
+    UserService.clearNotifications(user.id),
+  )
+  .delete(
+    "/me/notifications/:id",
+    { auth: true, params: t.Object({ id: t.String({ format: "uuid" }) }) },
+    ({ user, params }) => UserService.deleteNotification(user.id, params.id),
+  )
   .get("/me/notifications/unread", { auth: true }, ({ user }) =>
     UserService.unreadNotifications(user.id),
   )
