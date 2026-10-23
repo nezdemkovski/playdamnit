@@ -2,7 +2,7 @@ apiVersion: v2
 name: playdamnit-web
 description: "playdamnit web app (static SPA served by nginx)"
 type: application
-version: 0.1.67
-appVersion: "0.1.67"
+version: 0.1.68
+appVersion: "0.1.68"
 annotations:
   org.opencontainers.image.source: https://github.com/nezdemkovski/playdamnit
